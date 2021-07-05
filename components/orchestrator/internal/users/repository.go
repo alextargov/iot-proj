@@ -1,0 +1,267 @@
+package users
+
+import (
+	"context"
+	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/operation"
+	"iot-proj/components/orchestrator/pkg/database"
+	"time"
+
+	"github.com/google/uuid"
+
+	"github.com/pkg/errors"
+)
+
+const usersCollection string = `users`
+
+type pgRepository struct {
+	existQuerier database.ExistQuerierGlobal
+}
+
+func NewRepository() *pgRepository {
+	return &pgRepository{
+		existQuerier: database.NewExistQuerierGlobal(usersCollection),
+		delete:
+	}
+}
+
+func (r *pgRepository) Exists(ctx context.Context, id string) (bool, error) {
+	return r.existQuerier.ExistsGlobal(ctx, "_id", id)
+}
+
+func (r *pgRepository) Delete(ctx context.Context, tenant, id string) error {
+	opMode := operation.ModeFromCtx(ctx)
+	if opMode == graphql.OperationModeAsync {
+		app, err := r.GetByID(ctx, tenant, id)
+		if err != nil {
+			return err
+		}
+
+		app.SetReady(false)
+		app.SetError("")
+		if app.GetDeletedAt().IsZero() { // Needed for the tests but might be useful for the production also
+			app.SetDeletedAt(time.Now())
+		}
+
+		return r.Update(ctx, app)
+	}
+
+	return r.deleter.DeleteOne(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
+}
+
+func (r *pgRepository) DeleteGlobal(ctx context.Context, id string) error {
+	opMode := operation.ModeFromCtx(ctx)
+	if opMode == graphql.OperationModeAsync {
+		app, err := r.GetGlobalByID(ctx, id)
+		if err != nil {
+			return err
+		}
+
+		app.SetReady(false)
+		app.SetError("")
+		if app.DeletedAt.IsZero() { // Needed for the tests but might be useful for the production also
+			app.SetDeletedAt(time.Now())
+		}
+
+		return r.Update(ctx, app)
+	}
+
+	return r.globalDeleter.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)})
+}
+
+func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.Application, error) {
+	var appEnt Entity
+	if err := r.singleGetter.Get(ctx, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &appEnt); err != nil {
+		return nil, err
+	}
+
+	appModel := r.conv.FromEntity(&appEnt)
+
+	return appModel, nil
+}
+
+func (r *pgRepository) GetGlobalByID(ctx context.Context, id string) (*model.Application, error) {
+	var appEnt Entity
+	if err := r.globalGetter.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &appEnt); err != nil {
+		return nil, err
+	}
+
+	appModel := r.conv.FromEntity(&appEnt)
+
+	return appModel, nil
+}
+
+func (r *pgRepository) ListAll(ctx context.Context, tenantID string) ([]*model.Application, error) {
+	var entities EntityCollection
+
+	err := r.lister.List(ctx, tenantID, &entities)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return r.multipleFromEntities(entities)
+}
+
+func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error) {
+	var appsCollection EntityCollection
+	tenantID, err := uuid.Parse(tenant)
+	if err != nil {
+		return nil, errors.Wrap(err, "while parsing tenant as UUID")
+	}
+	filterSubquery, args, err := label.FilterQuery(model.ApplicationLabelableObject, label.IntersectSet, tenantID, filter)
+	if err != nil {
+		return nil, errors.Wrap(err, "while building filter query")
+	}
+
+	var conditions repo.Conditions
+	if filterSubquery != "" {
+		conditions = append(conditions, repo.NewInConditionForSubQuery("id", filterSubquery, args))
+	}
+
+	page, totalCount, err := r.pageableQuerier.List(ctx, tenant, pageSize, cursor, "id", &appsCollection, conditions...)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var items []*model.Application
+
+	for _, appEnt := range appsCollection {
+		m := r.conv.FromEntity(&appEnt)
+		items = append(items, m)
+	}
+	return &model.ApplicationPage{
+		Data:       items,
+		TotalCount: totalCount,
+		PageInfo:   page}, nil
+}
+
+func (r *pgRepository) ListGlobal(ctx context.Context, pageSize int, cursor string) (*model.ApplicationPage, error) {
+	var appsCollection EntityCollection
+
+	page, totalCount, err := r.globalPageableQuerier.ListGlobal(ctx, pageSize, cursor, "id", &appsCollection)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var items []*model.Application
+
+	for _, appEnt := range appsCollection {
+		m := r.conv.FromEntity(&appEnt)
+		items = append(items, m)
+	}
+	return &model.ApplicationPage{
+		Data:       items,
+		TotalCount: totalCount,
+		PageInfo:   page}, nil
+}
+
+func (r *pgRepository) ListByScenarios(ctx context.Context, tenant uuid.UUID, scenarios []string, pageSize int, cursor string, hidingSelectors map[string][]string) (*model.ApplicationPage, error) {
+	var appsCollection EntityCollection
+
+	// Scenarios query part
+	var scenariosFilters []*labelfilter.LabelFilter
+	for _, scenarioValue := range scenarios {
+		query := fmt.Sprintf(`$[*] ? (@ == "%s")`, scenarioValue)
+		scenariosFilters = append(scenariosFilters, labelfilter.NewForKeyWithQuery(model.ScenariosKey, query))
+	}
+
+	scenariosSubquery, scenariosArgs, err := label.FilterQuery(model.ApplicationLabelableObject, label.UnionSet, tenant, scenariosFilters)
+	if err != nil {
+		return nil, errors.Wrap(err, "while creating scenarios filter query")
+	}
+
+	// Application Hide query part
+	var appHideFilters []*labelfilter.LabelFilter
+	for key, values := range hidingSelectors {
+		for _, value := range values {
+			appHideFilters = append(appHideFilters, labelfilter.NewForKeyWithQuery(key, fmt.Sprintf(`"%s"`, value)))
+		}
+	}
+
+	appHideSubquery, appHideArgs, err := label.FilterSubquery(model.ApplicationLabelableObject, label.ExceptSet, tenant, appHideFilters)
+	if err != nil {
+		return nil, errors.Wrap(err, "while creating scenarios filter query")
+	}
+
+	// Combining both queries
+	combinedQuery := scenariosSubquery + appHideSubquery
+	combinedArgs := append(scenariosArgs, appHideArgs...)
+
+	var conditions repo.Conditions
+	if combinedQuery != "" {
+		conditions = append(conditions, repo.NewInConditionForSubQuery("id", combinedQuery, combinedArgs))
+	}
+
+	page, totalCount, err := r.pageableQuerier.List(ctx, tenant.String(), pageSize, cursor, "id", &appsCollection, conditions...)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var items []*model.Application
+
+	for _, appEnt := range appsCollection {
+		m := r.conv.FromEntity(&appEnt)
+		items = append(items, m)
+	}
+	return &model.ApplicationPage{
+		Data:       items,
+		TotalCount: totalCount,
+		PageInfo:   page}, nil
+}
+
+func (r *pgRepository) Create(ctx context.Context, model *model.Application) error {
+	if model == nil {
+		return apperrors.NewInternalError("model can not be empty")
+	}
+
+	log.C(ctx).Debugf("Converting Application model with id %s to entity", model.ID)
+	appEnt, err := r.conv.ToEntity(model)
+	if err != nil {
+		return errors.Wrap(err, "while converting to Application entity")
+	}
+
+	log.C(ctx).Debugf("Persisting Application entity with id %s to db", model.ID)
+	return r.creator.Create(ctx, appEnt)
+}
+
+func (r *pgRepository) Update(ctx context.Context, model *model.Application) error {
+	return r.updateSingle(ctx, model, false)
+}
+
+func (r *pgRepository) TechnicalUpdate(ctx context.Context, model *model.Application) error {
+	return r.updateSingle(ctx, model, true)
+}
+
+func (r *pgRepository) updateSingle(ctx context.Context, model *model.Application, isTechnical bool) error {
+	if model == nil {
+		return apperrors.NewInternalError("model can not be empty")
+	}
+
+	log.C(ctx).Debugf("Converting Application model with id %s to entity", model.ID)
+	appEnt, err := r.conv.ToEntity(model)
+	if err != nil {
+		return errors.Wrap(err, "while converting to Application entity")
+	}
+
+	log.C(ctx).Debugf("Persisting updated Application entity with id %s to db", model.ID)
+	if isTechnical {
+		return r.updater.TechnicalUpdate(ctx, appEnt)
+	}
+	return r.updater.UpdateSingle(ctx, appEnt)
+}
+
+func (r *pgRepository) multipleFromEntities(entities EntityCollection) ([]*model.Application, error) {
+	var items []*model.Application
+	for _, ent := range entities {
+		m := r.conv.FromEntity(&ent)
+		items = append(items, m)
+	}
+	return items, nil
+}
