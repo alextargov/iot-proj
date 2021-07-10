@@ -3,10 +3,11 @@ package main
 import (
 	"context"
 	"github.com/gin-gonic/gin"
+	"github.com/iot-proj/components/orchestrator/internal/users"
+	"github.com/iot-proj/components/orchestrator/pkg/database"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/vrischmann/envconfig"
-	"iot-proj/components/orchestrator/pkg/database"
 	"net/http"
 	"os/signal"
 	"syscall"
@@ -19,9 +20,9 @@ type config struct {
 	Address         string        `envconfig:"default=127.0.0.1:8080"`
 	ServerTimeout   time.Duration `envconfig:"default=110s"`
 	ShutdownTimeout time.Duration `envconfig:"default=10s"`
-	DefaultAPI string `envconfig:"APP_ROOT_API,default=/"`
-	RootAPI string `envconfig:"APP_ROOT_API,default=/api"`
-	Database database.DatabaseConfig
+	DefaultAPI      string        `envconfig:"APP_ROOT_API,default=/"`
+	RootAPI         string        `envconfig:"APP_ROOT_API,default=/api"`
+	Database        database.DatabaseConfig
 }
 
 func main() {
@@ -39,6 +40,8 @@ func main() {
 		err := closeFunc(ctx)
 		exitOnError(err, "Error while closing the connection to the database")
 	}()
+
+	ctx = database.SaveToContext(ctx, db)
 
 	handler, err := initAPIHandler(ctx, cfg, db)
 	exitOnError(err, "Error while registering handler")
@@ -89,13 +92,20 @@ func createServer(ctx context.Context, cfg config, handler http.Handler, name st
 	return runFn, shutdownFn
 }
 
-
 func initAPIHandler(ctx context.Context, cfg config, db database.PersistenceOp) (http.Handler, error) {
 	mainRouter := gin.Default()
 	mainRouter.Use()
 
-	//router := mainRouter.Group(cfg.RootAPI)
+	router := mainRouter.Group(cfg.RootAPI)
 	healthCheckRouter := mainRouter.Group(cfg.DefaultAPI)
+
+	conv := users.NewConverter()
+
+	r := users.NewRepository(conv)
+
+	s := users.NewService(r)
+
+	users.RegisterRouters(ctx, db, router, s)
 
 	//if err := tenant.RegisterHandler(ctx, router, cfg.Handler, authCfg, transact); err != nil {
 	//	return nil, err

@@ -1,10 +1,10 @@
 package users
 
 type Entity struct {
-	ID       string `bson:"id,omitempty"`
-	Username string `bson:"username,omitempty"`
-	Password string `bson:"password,omitempty"`
-	Type     string `bson:"type,omitempty"`
+	ID       *string `bson:"id,omitempty"`
+	Username string  `bson:"username,omitempty"`
+	Password string  `bson:"password,omitempty"`
+	Type     string  `bson:"type,omitempty"`
 }
 
 type EntityCollection []Entity
