@@ -41,9 +41,13 @@ func (db *db) Collection(name string) *mongo.Collection {
 	return db.instance.Collection(name, nil)
 }
 
-//go:generate mockery --name=PersistenceOp --output=automock --outpkg=automock --case=underscore
+func (db *db) StartSession(opts ...*options.SessionOptions) (mongo.Session, error) {
+	return db.client.StartSession(opts...)
+}
+
 type PersistenceOp interface {
 	Collection(name string) *mongo.Collection
+	StartSession(opts ...*options.SessionOptions) (mongo.Session, error)
 }
 
 // Configure returns the instance of the database
