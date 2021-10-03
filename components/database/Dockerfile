@@ -2,6 +2,10 @@
 FROM mongo:latest
 # RUN apt-get update && apt-get install -y gawk
 # Modify child mongo to use /data/db2 as dbpath (because /data/db wont persist the build)
+
+ENV MONGO_INITDB_ROOT_USERNAME admin
+ENV MONGO_INITDB_ROOT_PASSWORD admin
+
 RUN mkdir -p /data/db2 \
     && echo "dbpath = /data/db2" > /etc/mongodb.conf \
     && chown -R mongodb:mongodb /data/db2

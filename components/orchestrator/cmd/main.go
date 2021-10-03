@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"github.com/gin-gonic/gin"
+	"github.com/iot-proj/components/orchestrator/internal/auth"
+	"github.com/iot-proj/components/orchestrator/internal/encryption"
 	"github.com/iot-proj/components/orchestrator/internal/users"
 	"github.com/iot-proj/components/orchestrator/pkg/database"
 	"github.com/pkg/errors"
@@ -23,6 +25,7 @@ type config struct {
 	DefaultAPI      string        `envconfig:"APP_ROOT_API,default=/"`
 	RootAPI         string        `envconfig:"APP_ROOT_API,default=/api"`
 	Database        database.DatabaseConfig
+	Config          auth.Config
 }
 
 func main() {
@@ -51,7 +54,6 @@ func main() {
 	go func() {
 		<-ctx.Done()
 
-		// Interrupt signal received - shut down the servers
 		shutdownMainSrv()
 	}()
 
@@ -103,13 +105,12 @@ func initAPIHandler(ctx context.Context, cfg config, db database.PersistenceOp) 
 
 	r := users.NewRepository(conv)
 
-	s := users.NewService(r)
+	encryptionService := encryption.NewService()
 
-	users.RegisterRouters(ctx, db, router, s)
+	s := users.NewService(cfg.Config, r, encryptionService)
 
-	//if err := tenant.RegisterHandler(ctx, router, cfg.Handler, authCfg, transact); err != nil {
-	//	return nil, err
-	//}
+	users.RegisterPrivateRouters(cfg.Config, conv, db, router, s)
+	users.RegisterPublicRouters(conv, db, router, s)
 
 	logrus.Infof("Registering readiness endpoint...")
 	healthCheckRouter.GET("/readyz", newReadinessHandler())

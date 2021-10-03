@@ -2,7 +2,7 @@ package conditions
 
 import (
 	"github.com/pkg/errors"
-	"github.com/prometheus/common/log"
+	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"reflect"
@@ -86,11 +86,11 @@ func parseValue(value interface{}, isHex bool) (interface{}, error) {
 			return slice, nil
 		default:
 			msg := "Proper type is not passed"
-			log.Error(msg)
+			logrus.Error(msg)
 
 			return nil, errors.New(msg)
 		}
 	}
 
-	return value, nil
+	return parsedValue, nil
 }

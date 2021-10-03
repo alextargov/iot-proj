@@ -1,7 +1,7 @@
 package users
 
 type Entity struct {
-	ID       *string `bson:"id,omitempty"`
+	ID       *string `bson:"_id,omitempty"`
 	Username string  `bson:"username,omitempty"`
 	Password string  `bson:"password,omitempty"`
 	Type     string  `bson:"type,omitempty"`
