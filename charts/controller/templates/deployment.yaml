@@ -1,0 +1,136 @@
+{{/*apiVersion: apps/v1*/}}
+{{/*kind: Deployment*/}}
+{{/*metadata:*/}}
+{{/*  labels:*/}}
+{{/*    app: {{ .Chart.Name }}*/}}
+{{/*    release: {{ .Release.Name }}*/}}
+{{/*    control-plane: controller-manager*/}}
+{{/*  name: {{ template "fullname" . }}*/}}
+{{/*  namespace: {{ .Release.Namespace }}*/}}
+{{/*spec:*/}}
+{{/*  replicas: {{ .Values.manager.replicaCount }}*/}}
+{{/*  selector:*/}}
+{{/*    matchLabels:*/}}
+{{/*      control-plane: controller-manager*/}}
+{{/*  template:*/}}
+{{/*    metadata:*/}}
+{{/*      labels:*/}}
+{{/*        app: {{ .Chart.Name }}*/}}
+{{/*        release: {{ .Release.Name }}*/}}
+{{/*        control-plane: controller-manager*/}}
+{{/*    spec:*/}}
+{{/*      serviceAccountName: controller-manager*/}}
+{{/*      containers:*/}}
+{{/*      - args:*/}}
+{{/*        - --secure-listen-address=0.0.0.0:8443*/}}
+{{/*        - --upstream=http://127.0.0.1:8080/*/}}
+{{/*        - --logtostderr=true*/}}
+{{/*        - --v=10*/}}
+{{/*        image: gcr.io/kubebuilder/kube-rbac-proxy:v0.5.0*/}}
+{{/*        name: kube-rbac-proxy*/}}
+{{/*        ports:*/}}
+{{/*        - containerPort: 8443*/}}
+{{/*          name: https*/}}
+{{/*      - env:*/}}
+{{/*          - name: SERVER_METRIC_ADDRESS*/}}
+{{/*            value: ":{{ .Values.metrics.port }}"*/}}
+{{/*          - name: SERVER_HEALTH_ADDRESS*/}}
+{{/*            value: ":{{ .Values.health.port }}"*/}}
+{{/*          - name: SERVER_ENABLE_LEADER_ELECTION*/}}
+{{/*            value: "true"*/}}
+{{/*          - name: GRAPHQL_CLIENT_GRAPHQL_ENDPOINT*/}}
+{{/*            value: "https://{{ .Values.global.gateway.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"*/}}
+{{/*          - name: DIRECTOR_OPERATION_ENDPOINT*/}}
+{{/*            value: "https://{{ .Values.global.gateway.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.operations.path }}"*/}}
+{{/*          - name: HTTP_CLIENT_SKIP_SSL_VALIDATION*/}}
+{{/*            value: "{{ .Values.http.client.skipSSLValidation }}"*/}}
+{{/*          - name: EXTERNAL_CLIENT_CERT_SECRET*/}}
+{{/*            value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}/{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"*/}}
+{{/*        image: alextargov/iot-controller*/}}
+{{/*        name: {{ .Chart.Name }}*/}}
+{{/*        resources:*/}}
+{{/*          limits:*/}}
+{{/*            cpu: {{ .Values.manager.resources.limits.cpu }}*/}}
+{{/*            memory: {{ .Values.manager.resources.limits.memory }}*/}}
+{{/*          requests:*/}}
+{{/*            cpu: {{ .Values.manager.resources.requests.cpu }}*/}}
+{{/*            memory: {{ .Values.manager.resources.requests.memory }}*/}}
+{{/*      terminationGracePeriodSeconds: 10*/}}
+
+{{/*apiVersion: v1*/}}
+{{/*kind: Namespace*/}}
+{{/*metadata:*/}}
+{{/*  labels:*/}}
+{{/*    control-plane: controller-manager*/}}
+{{/*  name: system*/}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: controller-manager
+  namespace: system
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name }}
+    meta.helm.sh/release-namespace: "default"
+  labels:
+    control-plane: controller-manager
+    namespace: system
+    app: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: "Helm"
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+  replicas: 1
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+      labels:
+        control-plane: controller-manager
+    spec:
+      volumes:
+      - name: task-pv-storage
+        persistentVolumeClaim:
+          claimName: task-pv-claim
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - command:
+            - /manager
+          args:
+            - --leader-elect
+          image: alextargov/iot-controller
+          name: manager
+          securityContext:
+            allowPrivilegeEscalation: false
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8081
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8081
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          # TODO(user): Configure the resources accordingly based on the project requirements.
+          # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+          resources:
+            limits:
+              cpu: 500m
+              memory: 128Mi
+            requests:
+              cpu: 10m
+              memory: 64Mi
+          volumeMounts:
+          - mountPath: "/usr/share/nginx/html"
+            name: task-pv-storage
+      serviceAccountName: controller-manager
+      terminationGracePeriodSeconds: 10

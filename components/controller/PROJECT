@@ -1,0 +1,16 @@
+domain: controller
+layout:
+- go.kubebuilder.io/v3
+projectName: controller
+repo: github.com/iot-proj/components/controller
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: controller
+  group: op
+  kind: Application
+  path: github.com/iot-proj/components/controller/api/v1alpha1
+  version: v1alpha1
+version: "3"

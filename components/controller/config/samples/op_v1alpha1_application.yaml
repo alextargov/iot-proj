@@ -1,0 +1,12 @@
+apiVersion: op.controller/v1alpha1
+kind: Application
+metadata:
+  name: application-sample-3
+  namespace: system
+spec:
+  # TODO(user): Add fields here
+  source_code: |
+    const a = 5;
+    return a;
+  node_version: 15.0.0
+  replicas_count: 1
