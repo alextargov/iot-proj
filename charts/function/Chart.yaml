@@ -1,0 +1,4 @@
+apiVersion: v1
+description: A Helm chart for the Function deps
+name: function
+version: 0.1.0

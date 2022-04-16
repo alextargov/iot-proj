@@ -71,7 +71,7 @@ metadata:
   namespace: system
   annotations:
     meta.helm.sh/release-name: {{ .Release.Name }}
-    meta.helm.sh/release-namespace: "default"
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
   labels:
     control-plane: controller-manager
     namespace: system
@@ -93,10 +93,6 @@ spec:
       labels:
         control-plane: controller-manager
     spec:
-      volumes:
-      - name: task-pv-storage
-        persistentVolumeClaim:
-          claimName: task-pv-claim
       securityContext:
         runAsNonRoot: true
       containers:
@@ -104,7 +100,8 @@ spec:
             - /manager
           args:
             - --leader-elect
-          image: alextargov/iot-controller
+          image: iot-controller
+          imagePullPolicy: IfNotPresent
           name: manager
           securityContext:
             allowPrivilegeEscalation: false
@@ -129,8 +126,5 @@ spec:
             requests:
               cpu: 10m
               memory: 64Mi
-          volumeMounts:
-          - mountPath: "/usr/share/nginx/html"
-            name: task-pv-storage
-      serviceAccountName: controller-manager
+      serviceAccountName: {{ template "fullname" . }}
       terminationGracePeriodSeconds: 10
