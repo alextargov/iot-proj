@@ -10,11 +10,12 @@ import (
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . StatusManager
 type StatusManager interface {
 	Initialize(ctx context.Context, application *v1alpha1.Application) error
-	BuildReady(ctx context.Context, application *v1alpha1.Application) error
+	WatchBuildReady(ctx context.Context, application *v1alpha1.Application) error
 	BuildError(ctx context.Context, application *v1alpha1.Application, errMsg string) error
-	CodeObtained(ctx context.Context, application *v1alpha1.Application) error
-	ImageReady(ctx context.Context, application *v1alpha1.Application) error
-	DeploymentReady(ctx context.Context, application *v1alpha1.Application) error
+	ObtainCode(ctx context.Context, application *v1alpha1.Application) error
+	BuildImage(ctx context.Context, application *v1alpha1.Application) error
+	Deploy(ctx context.Context, application *v1alpha1.Application) error
+	WatchDeployReady(ctx context.Context, application *v1alpha1.Application) error
 	DeploymentError(ctx context.Context, application *v1alpha1.Application, errMsg string) error
 }
 

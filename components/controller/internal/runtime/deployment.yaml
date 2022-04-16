@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .AppName }}
+  namespace: {{ .Namespace }}
+  labels:
+    control-plane: {{ .AppName }}
+    namespace: {{ .Namespace }}
+spec:
+  selector:
+    matchLabels:
+      control-plane: {{ .AppName }}
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        control-plane: {{ .AppName }}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: {{ .AppName }}
+          image: {{ .AppImage }}
+          imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            limits:
+              cpu: 500m
+              memory: 128Mi
+            requests:
+              cpu: 10m
+              memory: 64Mi
+      terminationGracePeriodSeconds: 5

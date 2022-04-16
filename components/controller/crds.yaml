@@ -4,9 +4,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.8.0
   creationTimestamp: null
-  name: applications.op.controller
+  name: applications.func.controller
 spec:
-  group: op.controller
+  group: func.controller
   names:
     kind: Application
     listKind: ApplicationList
@@ -52,11 +52,11 @@ spec:
                 enum:
                 - Initial
                 - Code Obtained
+                - Build Started
                 - Build Ready
-                - Build Error
                 - Image Ready
                 - Deployment Ready
-                - Deployment Error
+                - Deployment Started
                 type: string
             type: object
         type: object

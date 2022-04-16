@@ -42,9 +42,9 @@ func NewApplicationReconciler(statusManager StatusManager, k8sClient KubernetesC
 	}
 }
 
-//+kubebuilder:rbac:groups=op.controller,resources=applications,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=op.controller,resources=applications/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=op.controller,resources=applications/finalizers,verbs=update
+//+kubebuilder:rbac:groups=controller,resources=applications,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=controller,resources=applications/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=controller,resources=applications/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -57,12 +57,12 @@ func (r *ApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	ctx = log.ContextWithLogger(ctx, logger)
 
 	application, err := r.k8sClient.Get(ctx, req.NamespacedName)
+	if err != nil {
+		return r.handleGetError(ctx, req.NamespacedName, err)
+	}
+
 	data := "Reconciles " + string(application.Status.Phase)
 	log.C(ctx).Info(data)
-
-	if err != nil {
-		r.handleGetError(ctx, req.NamespacedName, err)
-	}
 
 	switch application.Status.Phase {
 	case "":
@@ -70,7 +70,23 @@ func (r *ApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			return r.handleInitializationError(ctx, err)
 		}
 	case opv1alpha1.StateInitial:
-		if err := r.statusManager.CodeObtained(ctx, application); err != nil {
+		if err := r.statusManager.ObtainCode(ctx, application); err != nil {
+			return r.handleError(ctx, err, opv1alpha1.StateInitial, application.Name)
+		}
+	case opv1alpha1.StateCodeObtained:
+		if err := r.statusManager.BuildImage(ctx, application); err != nil {
+			return r.handleError(ctx, err, opv1alpha1.StateInitial, application.Name)
+		}
+	case opv1alpha1.StateBuildStarted:
+		if err := r.statusManager.WatchBuildReady(ctx, application); err != nil {
+			return r.handleError(ctx, err, opv1alpha1.StateInitial, application.Name)
+		}
+	case opv1alpha1.StateBuildReady:
+		if err := r.statusManager.Deploy(ctx, application); err != nil {
+			return r.handleError(ctx, err, opv1alpha1.StateInitial, application.Name)
+		}
+	case opv1alpha1.StateDeploymentStarted:
+		if err := r.statusManager.WatchDeployReady(ctx, application); err != nil {
 			return r.handleError(ctx, err, opv1alpha1.StateInitial, application.Name)
 		}
 	}

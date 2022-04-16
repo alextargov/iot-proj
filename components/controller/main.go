@@ -17,10 +17,13 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"flag"
 	"github.com/iot-proj/components/controller/internal/k8s"
+	"github.com/iot-proj/components/controller/internal/k8s/function"
 	"github.com/iot-proj/components/controller/internal/k8s/status"
 	"os"
+	"time"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -80,21 +83,20 @@ func main() {
 		os.Exit(1)
 	}
 
-	//d1 := []byte("hello\ngo\n")
-	//e := os.WriteFile("/usr/share/nginx/html/file.txt", d1, 0644)
-	//if e != nil {
-	//	panic(e)
-	//}
+	mgrClient := mgr.GetClient()
 
-	b, err := os.ReadFile("/usr/share/nginx/html/file.txt")
+	ctx := context.Background()
+	k8sConfig := k8s.Config{}
+	k8sClient, err := k8s.NewKubernetesClientSet(ctx, k8sConfig.PollInterval, k8sConfig.PollTimeout, k8sConfig.Timeout)
 	if err != nil {
-		panic(err)
+		setupLog.Error(err, "unable to create k8s client")
+		os.Exit(1)
 	}
-	setupLog.Info(string(b))
+	appCode := function.NewFunctionBuilder(mgrClient)
 
 	controller := controllers.NewApplicationReconciler(
-		status.NewManager(mgr.GetClient()),
-		k8s.NewClient(mgr.GetClient()),
+		status.NewManager(mgrClient, appCode, k8sClient.CoreV1().Pods("system"), k8sClient.AppsV1().Deployments("system"), time.Second),
+		k8s.NewControllerClient(mgrClient),
 	)
 
 	if err = controller.SetupWithManager(mgr); err != nil {

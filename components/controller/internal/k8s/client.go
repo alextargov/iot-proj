@@ -2,27 +2,58 @@ package k8s
 
 import (
 	"context"
-	"github.com/iot-proj/components/controller/api/v1alpha1"
+	"github.com/iot-proj/components/controller/internal/log"
+	"path/filepath"
+	"time"
 
-	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/kubernetes"
+	restclient "k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/util/homedir"
 )
 
-// client implements KubernetesClient and acts as a wrapper of the default kubernetes controller client
-type client struct {
-	ctrlclient.Client
+// Config missing godoc
+type Config struct {
+	PollInterval time.Duration `envconfig:"default=2s,APP_KUBERNETES_POLL_INTERVAL"`
+	PollTimeout  time.Duration `envconfig:"default=1m,APP_KUBERNETES_POLL_TIMEOUT"`
+	Timeout      time.Duration `envconfig:"default=2m,APP_KUBERNETES_TIMEOUT"`
 }
 
-// NewClient constructs a new client instance
-func NewClient(ctrlClient ctrlclient.Client) *client {
-	return &client{Client: ctrlClient}
-}
+// NewKubernetesClientSet missing godoc
+func NewKubernetesClientSet(ctx context.Context, interval, pollingTimeout, timeout time.Duration) (*kubernetes.Clientset, error) {
+	kubeConfig, err := restclient.InClusterConfig()
+	if err != nil {
+		log.C(ctx).Error(err, "An error has occurred while trying to read in cluster Config:")
+		log.C(ctx).Info("Trying to initialize Kubernetes Client with local Config")
+		home := homedir.HomeDir()
+		kubeConfPath := filepath.Join(home, ".kube", "Config")
+		kubeConfig, err = clientcmd.BuildConfigFromFlags("", kubeConfPath)
+		if err != nil {
+			return nil, errors.Errorf("failed to read k8s in-cluster configuration, %s", err.Error())
+		}
+	}
 
-// Get wraps the default kubernetes controller client Get method
-func (c *client) Get(ctx context.Context, key ctrlclient.ObjectKey) (*v1alpha1.Application, error) {
-	var operation = &v1alpha1.Application{}
-	err := c.Client.Get(ctx, key, operation)
+	kubeConfig.Timeout = timeout
+
+	kubeClientSet, err := kubernetes.NewForConfig(kubeConfig)
+	if err != nil {
+		return nil, errors.Errorf("failed to create k8s core client, %s", err.Error())
+	}
+
+	err = wait.PollImmediate(interval, pollingTimeout, func() (bool, error) {
+		_, err := kubeClientSet.ServerVersion()
+		if err != nil {
+			log.C(ctx).Error(err, "An error has occurred while trying to access API Server")
+			return false, nil
+		}
+		return true, nil
+	})
 	if err != nil {
 		return nil, err
 	}
-	return operation, nil
+
+	log.C(ctx).Info("Successfully initialized kubernetes client")
+	return kubeClientSet, nil
 }

@@ -22,20 +22,21 @@ import (
 
 // ApplicationSpec defines the desired state of Application
 type ApplicationSpec struct {
-	SourceCode    string `json:"source_code,omitempty"`
-	NodeVersion   string `json:"node_version,omitempty"`
-	ReplicasCount int    `json:"replicas_count,omitempty"`
+	SourceCode    string `json:"sourceCode,omitempty"`
+	NodeVersion   string `json:"nodeVersion,omitempty"`
+	ReplicasCount int    `json:"replicasCount,omitempty"`
 }
 
-// +kubebuilder:validation:Enum=Initial;Code Obtained;Build Ready;Image Ready;Deployment Ready;
+// +kubebuilder:validation:Enum=Initial;Code Obtained;Build Ready;Image Ready;Deployment Ready;Deployment Started;
 type State string
 
 const (
-	StateInitial         State = "Initial"
-	StateCodeObtained    State = "Code Obtained"
-	StateBuildReady      State = "Build Ready"
-	StateImageReady      State = "Image Ready"
-	StateDeploymentReady State = "Deployment Ready"
+	StateInitial           State = "Initial"
+	StateCodeObtained      State = "Code Obtained"
+	StateBuildStarted      State = "Build Started"
+	StateBuildReady        State = "Build Ready"
+	StateDeploymentReady   State = "Deployment Ready"
+	StateDeploymentStarted State = "Deployment Started"
 )
 
 // +kubebuilder:validation:Enum=Build Error;Deployment Error
