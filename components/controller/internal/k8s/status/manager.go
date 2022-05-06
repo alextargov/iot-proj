@@ -97,7 +97,7 @@ func (m *manager) BuildImage(ctx context.Context, application *v1alpha1.Applicat
 }
 
 // BuildError sets the initial status of an Application CR.
-func (m *manager) BuildError(ctx context.Context, application *v1alpha1.Application, errMsg string) error {
+func (m *manager) BuildError(ctx context.Context, application *v1alpha1.Application) error {
 	if err := application.Validate(); err != nil {
 		return err
 	}
@@ -299,7 +299,6 @@ func (m *manager) processDeploymentEvents(ctx context.Context, events <-chan wat
 			case watch.Added:
 				fallthrough
 			case watch.Modified:
-				log.Info("Deployment updated")
 				deployment, ok := ev.Object.(*appsv1.Deployment)
 				if !ok {
 					log.Info("Unexpected error: object is not Deployment. Try again")

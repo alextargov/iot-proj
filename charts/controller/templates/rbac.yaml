@@ -154,7 +154,13 @@ rules:
     resources:
       - applications/finalizers
     verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
       - update
+      - watch
   - apiGroups:
       - func.controller
     resources:

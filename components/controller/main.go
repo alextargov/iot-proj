@@ -97,6 +97,7 @@ func main() {
 	controller := controllers.NewApplicationReconciler(
 		status.NewManager(mgrClient, appCode, k8sClient.CoreV1().Pods("system"), k8sClient.AppsV1().Deployments("system"), time.Second),
 		k8s.NewControllerClient(mgrClient),
+		appCode,
 	)
 
 	if err = controller.SetupWithManager(mgr); err != nil {

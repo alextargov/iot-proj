@@ -5,6 +5,7 @@ import (
 	"fmt"
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
+	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -157,8 +158,17 @@ func (c *app) DeleteImageBuilder(ctx context.Context, name, namespace string) er
 			Namespace: namespace,
 		},
 	}
-	log.Info(fmt.Sprintf("Delete image builder with name \"%s\"", podName))
-	return c.k8sClient.Delete(ctx, pod)
+
+	log.Info(fmt.Sprintf("Delete image builder pod with name \"%s\"", podName))
+	if err := c.k8sClient.Delete(ctx, pod); err != nil {
+		if !kubeerrors.IsNotFound(err) {
+			return err
+		}
+
+		log.Info("Image builder pod not found")
+	}
+
+	return nil
 }
 
 func (c *app) PushFunctionDeployment(ctx context.Context, replicas int, name, namespace string) error {
@@ -226,4 +236,39 @@ func (c *app) PushFunctionService(ctx context.Context, name, namespace string) e
 	}
 
 	return c.k8sClient.Create(ctx, svc)
+}
+
+func (c *app) DeleteFunctionResources(ctx context.Context, name, namespace string) error {
+	deployment := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+	}
+
+	svc := &apiv1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+	}
+
+	if err := c.k8sClient.Delete(ctx, deployment); err != nil {
+		if !kubeerrors.IsNotFound(err) {
+			return err
+		}
+
+		log.Error(err, fmt.Sprintf("%s deployment resource was not found on API server", name))
+	}
+
+	if err := c.k8sClient.Delete(ctx, svc); err != nil {
+		if !kubeerrors.IsNotFound(err) {
+			return err
+		}
+
+		log.Error(err, fmt.Sprintf("%s svc resource was not found on API server", name))
+	}
+
+	return nil
+
 }

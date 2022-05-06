@@ -19,13 +19,13 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"github.com/iot-proj/components/controller/internal/log"
-	"k8s.io/apimachinery/pkg/types"
-
 	opv1alpha1 "github.com/iot-proj/components/controller/api/v1alpha1"
+	"github.com/iot-proj/components/controller/internal/log"
 	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 // ApplicationReconciler reconciles a Application object
@@ -33,12 +33,18 @@ type ApplicationReconciler struct {
 	statusManager StatusManager
 	k8sClient     KubernetesClient
 	Scheme        *runtime.Scheme
+	function      Function
 }
 
-func NewApplicationReconciler(statusManager StatusManager, k8sClient KubernetesClient) *ApplicationReconciler {
+type Function interface {
+	DeleteFunctionResources(ctx context.Context, name, namespace string) error
+}
+
+func NewApplicationReconciler(statusManager StatusManager, k8sClient KubernetesClient, function Function) *ApplicationReconciler {
 	return &ApplicationReconciler{
 		statusManager: statusManager,
 		k8sClient:     k8sClient,
+		function:      function,
 	}
 }
 
@@ -46,12 +52,6 @@ func NewApplicationReconciler(statusManager StatusManager, k8sClient KubernetesC
 //+kubebuilder:rbac:groups=controller,resources=applications/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=controller,resources=applications/finalizers,verbs=update
 
-// Reconcile is part of the main kubernetes reconciliation loop which aims to
-// move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the Application object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
 func (r *ApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := ctrl.Log.WithValues("application", req.NamespacedName)
 	ctx = log.ContextWithLogger(ctx, logger)
@@ -63,6 +63,34 @@ func (r *ApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	data := "Reconciles " + string(application.Status.Phase)
 	log.C(ctx).Info(data)
+
+	finalizer := "application/delete-finalizer"
+
+	if application.ObjectMeta.DeletionTimestamp == nil || application.ObjectMeta.DeletionTimestamp.IsZero() {
+		if !controllerutil.ContainsFinalizer(application, finalizer) {
+			log.C(ctx).Info("Finalizer does not exists. Will try to add it.")
+			controllerutil.AddFinalizer(application, finalizer)
+			if err := r.k8sClient.Update(ctx, application); err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+
+	} else {
+		if controllerutil.ContainsFinalizer(application, finalizer) {
+			log.C(ctx).Info(fmt.Sprintf("Application \"%s\" is being deleted. Will remove finalizer and delete related resources.", application.Name))
+
+			if err := r.function.DeleteFunctionResources(ctx, application.Name, application.Namespace); err != nil {
+				return ctrl.Result{}, err
+			}
+
+			controllerutil.RemoveFinalizer(application, finalizer)
+			if err := r.k8sClient.Update(ctx, application); err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+
+		return ctrl.Result{}, nil
+	}
 
 	switch application.Status.Phase {
 	case "":

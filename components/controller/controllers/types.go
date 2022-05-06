@@ -11,7 +11,7 @@ import (
 type StatusManager interface {
 	Initialize(ctx context.Context, application *v1alpha1.Application) error
 	WatchBuildReady(ctx context.Context, application *v1alpha1.Application) error
-	BuildError(ctx context.Context, application *v1alpha1.Application, errMsg string) error
+	BuildError(ctx context.Context, application *v1alpha1.Application) error
 	ObtainCode(ctx context.Context, application *v1alpha1.Application) error
 	BuildImage(ctx context.Context, application *v1alpha1.Application) error
 	Deploy(ctx context.Context, application *v1alpha1.Application) error
@@ -24,4 +24,5 @@ type StatusManager interface {
 type KubernetesClient interface {
 	Get(ctx context.Context, key client.ObjectKey) (*v1alpha1.Application, error)
 	Delete(ctx context.Context, obj client.Object, opts ...client.DeleteOption) error
+	Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error
 }
