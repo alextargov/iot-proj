@@ -1,0 +1,73 @@
+<mxfile host="65bd71144e">
+    <diagram id="sczDvvEbDDEiLgmw9G9E" name="Page-1">
+        <mxGraphModel dx="1323" dy="362" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="p9vXs1nj2fepQLXRhasd-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;startArrow=classic;startFill=1;" parent="1" source="p9vXs1nj2fepQLXRhasd-1" target="p9vXs1nj2fepQLXRhasd-2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p9vXs1nj2fepQLXRhasd-5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;startArrow=classic;startFill=1;" parent="1" source="p9vXs1nj2fepQLXRhasd-1" target="p9vXs1nj2fepQLXRhasd-4" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p9vXs1nj2fepQLXRhasd-1" value="Orchestrator" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="350" y="560" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="p9vXs1nj2fepQLXRhasd-2" value="Mongo" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="350" y="690" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="p9vXs1nj2fepQLXRhasd-4" value="UI" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="350" y="430" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="p9vXs1nj2fepQLXRhasd-7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;startArrow=classic;startFill=1;" parent="1" source="p9vXs1nj2fepQLXRhasd-6" target="p9vXs1nj2fepQLXRhasd-1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p9vXs1nj2fepQLXRhasd-6" value="Pod Scheduler" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="570" y="610" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="p9vXs1nj2fepQLXRhasd-9" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;startArrow=classic;startFill=1;" parent="1" source="p9vXs1nj2fepQLXRhasd-8" target="p9vXs1nj2fepQLXRhasd-6" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p9vXs1nj2fepQLXRhasd-10" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;startArrow=classic;startFill=1;entryX=0.75;entryY=0;entryDx=0;entryDy=0;" parent="1" source="p9vXs1nj2fepQLXRhasd-8" target="p9vXs1nj2fepQLXRhasd-1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p9vXs1nj2fepQLXRhasd-8" value="Pod running JS" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fixedSize=1;" parent="1" vertex="1">
+                    <mxGeometry x="570" y="480" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="p9vXs1nj2fepQLXRhasd-17" value="UI" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;swimlaneLine=1;glass=0;sketch=0;shadow=0;rounded=0;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="70" width="240" height="198" as="geometry">
+                        <mxRectangle x="150" y="300" width="100" height="30" as="alternateBounds"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="p9vXs1nj2fepQLXRhasd-18" value="Visualization&#10;Create devices&#10;View predefinied device type&#10;Create customized types via Data Model&#10;- Views:&#10;    Devices - CRUD table    &#10;    Statistics - blockly? customizable by &#10;device data&#10;    Data Model - Add custom devices and data" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" parent="p9vXs1nj2fepQLXRhasd-17" vertex="1">
+                    <mxGeometry y="30" width="240" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="p9vXs1nj2fepQLXRhasd-19" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;" parent="p9vXs1nj2fepQLXRhasd-17" vertex="1">
+                    <mxGeometry y="190" width="240" height="8" as="geometry"/>
+                </mxCell>
+                <mxCell id="p9vXs1nj2fepQLXRhasd-21" value="Orchestrator" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;swimlaneLine=1;glass=0;sketch=0;shadow=0;rounded=0;" parent="1" vertex="1">
+                    <mxGeometry x="330" y="70" width="340" height="198" as="geometry">
+                        <mxRectangle x="150" y="300" width="100" height="30" as="alternateBounds"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="p9vXs1nj2fepQLXRhasd-22" value="API&#10;Auth/Authz&#10;Notify Pod Scheduler&#10;DB management&#10;Bind device data to Pod. Notify Pod when Data change" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" parent="p9vXs1nj2fepQLXRhasd-21" vertex="1">
+                    <mxGeometry y="30" width="340" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="p9vXs1nj2fepQLXRhasd-23" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;" parent="p9vXs1nj2fepQLXRhasd-21" vertex="1">
+                    <mxGeometry y="190" width="340" height="8" as="geometry"/>
+                </mxCell>
+                <mxCell id="p9vXs1nj2fepQLXRhasd-24" value="Pod running JS" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;swimlaneLine=1;glass=0;sketch=0;shadow=0;rounded=0;" parent="1" vertex="1">
+                    <mxGeometry x="-350" y="70" width="340" height="198" as="geometry">
+                        <mxRectangle x="150" y="300" width="100" height="30" as="alternateBounds"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="p9vXs1nj2fepQLXRhasd-25" value="API&#10;Auth/Authz&#10;Notify Pod Scheduler&#10;DB management&#10;Bind device data to Pod. Notify Pod when Data change" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" parent="p9vXs1nj2fepQLXRhasd-24" vertex="1">
+                    <mxGeometry y="30" width="340" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="p9vXs1nj2fepQLXRhasd-26" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;" parent="p9vXs1nj2fepQLXRhasd-24" vertex="1">
+                    <mxGeometry y="190" width="340" height="8" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>
