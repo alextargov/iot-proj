@@ -1,0 +1,68 @@
+<div class="dashboard__container-header">
+  <h2>
+    Dashboard
+  </h2>
+  <div class="dashboard__container-header-buttons">
+    <button
+        *ngIf="!isLocked"
+        mat-mini-fab
+        (mousedown)="removeAll($event, item)"
+        (touchstart)="removeAll($event, item)"
+      >
+        <mat-icon>delete</mat-icon>
+      </button>
+
+    <button mat-mini-fab *ngIf="!isLocked" (click)="addItem()" class="add-button cols-2">
+      <mat-icon>add</mat-icon>
+    </button>
+
+    <div class="dashboard__container-header-buttons-locks">
+      <a class="dashboard__container-header-buttons-locks-button" mat-raised-button (click)="onLockButtonClick()">
+          <mat-icon *ngIf="!isLocked">lock_open</mat-icon>
+          <span *ngIf="!isLocked">Lock grid</span>
+
+          <mat-icon *ngIf="isLocked">lock</mat-icon>
+          <span *ngIf="isLocked">Unlock grid</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<gridster [options]="options" class="dashboard__container-content">
+  <gridster-item [item]="item" *ngFor="let item of dashboard">
+    <div class="button-holder">
+      <div class="gridster-item-content" *ngIf="item.hasContent">
+        <div class="stuff">
+          <span
+            >Some content to select and click without dragging the widget</span
+          >
+          <a href="https://www.google.com" target="_blank">Link to Google</a>
+        </div>
+      </div>
+      <div class="item-buttons" *ngIf="item.hasContent">
+        <button mat-icon-button mat-raised-button class="drag-handler">
+          <mat-icon>open_with</mat-icon>
+        </button>
+        <button
+          mat-icon-button
+          mat-raised-button
+          class="remove-button"
+          (mousedown)="removeItem($event, item)"
+          (touchstart)="removeItem($event, item)"
+        >
+          <mat-icon>delete</mat-icon>
+        </button>
+      </div>
+      <label *ngIf="!item.hasContent">{{ item.label }}</label>
+      <button
+        class="dashboard__container-content-button"
+        *ngIf="!item.hasContent && !isLocked"
+        mat-mini-fab
+        (mousedown)="removeItem($event, item)"
+        (touchstart)="removeItem($event, item)"
+      >
+        <mat-icon>delete</mat-icon>
+      </button>
+    </div>
+  </gridster-item>
+</gridster>

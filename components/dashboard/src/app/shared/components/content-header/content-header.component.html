@@ -1,0 +1,12 @@
+<mat-toolbar  class="content-header--container">
+  <span>{{ title }}</span>
+
+  <div class="content-header--buttons">
+    <button *ngFor="let button of buttons" (click)="button.action()" class="content-header--buttons-item" mat-raised-button [color]="button.color">
+      <mat-icon *ngIf="button.icon">{{ button.icon }}</mat-icon>
+      <span *ngIf="button.text">{{ button.text }}</span>
+    </button>
+  </div>
+</mat-toolbar>
+
+<mat-divider></mat-divider>

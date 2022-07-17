@@ -1,0 +1,46 @@
+<mat-stepper #stepper class="widget-create__container">
+  <mat-step [stepControl]="detailsFormGroup" [errorMessage]="detailsFormGroup.errors">
+    <form [formGroup]="detailsFormGroup" class="widget-create__detailsForm">
+      <ng-template matStepLabel>Widget details</ng-template>
+      <mat-form-field class="widget-create__detailsForm-field">
+        <mat-label>Name</mat-label>
+        <input matInput placeholder="Widget name" formControlName="name" required>
+        <mat-error *ngIf="detailsFormGroup?.get('name')?.errors?.required">Name is required</mat-error>
+        <mat-error *ngIf="detailsFormGroup?.get('name')?.errors?.maxlength">Max length is {{ NAME_MAX_LENGTH }}</mat-error>
+      </mat-form-field>
+      <mat-form-field class="widget-create__detailsForm-field">
+        <mat-label>Description</mat-label>
+        <input matInput placeholder="Widget description" formControlName="description">
+        <mat-error *ngIf="detailsFormGroup?.get('description')?.errors?.maxlength">>Max length is {{ DESCRIPTION_MAX_LENGTH }}</mat-error>
+      </mat-form-field>
+      <div class="widget-create__detailsForm-field">
+        <mat-slide-toggle formControlName="isActive">{{ detailsFormGroup?.get('isActive').value ? 'Active' : 'Inactive' }}</mat-slide-toggle>
+      </div>
+    </form>
+    <div>
+      <button mat-button matStepperNext>Next</button>
+    </div>
+  </mat-step>
+  <mat-step class="widget-create__logic">
+    <ng-template matStepLabel>Widget logic</ng-template>
+      <ngx-blockly
+        class="widget-create__logic-blockly"
+        #blockly
+        [config]="config"
+        [readOnly]="readOnly"
+        [customBlocks]="customBlocks"
+        (javascriptCode)="onCode($event)">
+      </ngx-blockly>
+    <div>
+      <button mat-button matStepperNext>Next</button>
+    </div>
+  </mat-step>
+  <mat-step>
+    <ng-template matStepLabel>Done</ng-template>
+    <p>You are now done.</p>
+    <div>
+      <button mat-button matStepperPrevious>Back</button>
+      <button mat-button (click)="stepper.reset()">Reset</button>
+    </div>
+  </mat-step>
+</mat-stepper>

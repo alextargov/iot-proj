@@ -1,0 +1,57 @@
+:host {
+  display: block;
+  height: 100%;
+  overflow-y: hidden;
+}
+
+:host ::ng-deep .mat-horizontal-content-container {
+  height: 100%
+}
+
+:host ::ng-deep .mat-horizontal-stepper-content {
+  height: 100%
+}
+
+
+// :host ::ng-deep .blockly-wrapper {
+//   position: relative;
+// }
+
+.widget-create {
+  &__container {
+    background: none;
+    display: block;
+    height: 100%;
+    position: relative;
+
+  }
+
+  &__detailsForm {
+    display: flex;
+    flex-direction: column;
+    max-width: 50%;
+
+    &-field {
+      margin-bottom: 1rem;
+    }
+  }
+
+  &__logic {
+    overflow: hidden;
+    display: flex;
+
+    //
+    height: 50vh !important;
+
+    &-blockly {
+      height: 50vh !important;
+      display: block;
+
+      .blockly-wrapper {
+        // position: relative;
+        height: 50vh !important;
+      }
+    }
+
+  }
+}

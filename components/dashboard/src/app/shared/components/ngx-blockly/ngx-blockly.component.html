@@ -1,0 +1,14 @@
+<!-- <div id="blockly-wrapper" class="blockly-wrapper">
+    <div #primaryContainer class="blockly"></div>
+    <div #secondaryContainer class="blockly hidden"></div>
+</div> -->
+<p>YES</p>
+
+<ngx-blockly
+        class="widget-create__logic-blockly"
+        #blockly1
+        [config]="config"
+        [readOnly]="readOnly"
+        [customBlocks]="customBlocks"
+        (javascriptCode)="onCode($event)">
+      </ngx-blockly>
