@@ -1,20 +1,14 @@
 # Where are all the schema files located? globs are supported eg  src/**/*.graphqls
-schema:
-  - internal/graphql/*.graphqls
+schema: schema.graphql
 
 # Where should the generated server code go?
 exec:
-  filename: internal/graphql/generated.go
-  package: graphql
-
-# Enable Apollo federation support
-federation:
-  filename: internal/graphql/federation.go
+  filename: schema_gen.go
   package: graphql
 
 # Where should any generated models go?
 model:
-  filename: internal/graphql/models_gen.go
+  filename: models_gen.go
   package: graphql
 
 # Where should the resolver implementations go?

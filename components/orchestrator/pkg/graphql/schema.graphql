@@ -1,0 +1,25 @@
+type Device {
+  id: ID!
+  name: String!
+  description: String!
+  userId: ID!
+  isAlive: Boolean!
+  host: String!
+}
+
+type Query {
+  devices: [Device!]!
+  device(id: ID!): Device!
+}
+
+input DeviceInput {
+    name: String!
+    description: String!
+    userId: ID!
+    isAlive: Boolean
+    host: String
+}
+
+type Mutation {
+  createDevice(input: DeviceInput!): Device!
+}
