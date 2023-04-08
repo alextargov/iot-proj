@@ -1,4 +1,5 @@
-import {CustomBlock, Blockly, NgxBlocklyGenerator} from "ngx-blockly";
+import { CustomBlock, Blockly } from "ngx-blockly";
+import {javascriptGenerator} from 'blockly/javascript';
 
 export class AggregationBlock extends CustomBlock {
   private id: string;
@@ -37,6 +38,6 @@ export class AggregationBlock extends CustomBlock {
     // TODO: Assemble JavaScript into code variable.
     var code = ``;
 
-    return [code, Blockly[NgxBlocklyGenerator.JAVASCRIPT].ORDER_NONE]
+    return [code, javascriptGenerator.ORDER_NONE]
   }
 }

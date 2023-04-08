@@ -1,5 +1,5 @@
-import {CustomBlock, Blockly, NgxBlocklyGenerator} from "ngx-blockly";
-
+import {CustomBlock, Blockly } from "ngx-blockly";
+import {javascriptGenerator} from 'blockly/javascript';
 export enum RepeatTypes {
   'SECONDS',
   'MINUTES',
@@ -45,11 +45,11 @@ export class RepeatForBlock extends CustomBlock {
 
     const intervalValue = +this.block.getField("intervalValue").getValue()
     const intervalType = this.block.getField("intervalType").getValue()
+    let statementToCode = javascriptGenerator.statementToCode(block, "do")
 
-    const statementToCode = Blockly[NgxBlocklyGenerator.JAVASCRIPT].statementToCode(block, 'do');
     return `
 setInterval(async () => {
-  ${statementToCode}
+   ${statementToCode}
 }, ${this.calculateInterval(intervalType, intervalValue)})`;
   }
 

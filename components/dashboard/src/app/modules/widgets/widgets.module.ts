@@ -11,6 +11,7 @@ import { WidgetDetailsComponent } from './widget-details/widget-details.componen
 
 import 'blockly/blocks';
 import { NgxBlocklyModule } from 'ngx-blockly';
+import { MatInputModule } from '@angular/material/input';
 
 @NgModule({
     declarations: [
@@ -27,6 +28,7 @@ import { NgxBlocklyModule } from 'ngx-blockly';
         CoreModule,
         MaterialModule,
         NgxBlocklyModule,
+        MatInputModule,
 
         WidgetsRoutingModule,
         SharedModule,

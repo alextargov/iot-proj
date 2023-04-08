@@ -1,12 +1,11 @@
 import {
   CustomBlock,
   Blockly,
-  NgxBlocklyGenerator,
 } from "ngx-blockly";
-
+import {javascriptGenerator} from 'blockly/javascript';
 
 export class DynamicDropdownBlock extends CustomBlock {
-  public data: string[][]
+  public data: Blockly.MenuOption[]
   public readonly id: string;
   public readonly isOutput: boolean
 
@@ -62,11 +61,9 @@ export class DynamicDropdownBlock extends CustomBlock {
 
 
     if (this.isOutput) {
-      return [code, Blockly[NgxBlocklyGenerator.JAVASCRIPT].ORDER_NONE]
+      return [code, javascriptGenerator.ORDER_NONE]
     } else {
       return code
     }
-    // return code;
-    // TODO: Change ORDER_NONE to the correct strength.
   }
 }

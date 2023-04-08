@@ -183,15 +183,15 @@
         <form class="device-create__data-output-form" [formGroup]="deviceCreateOutputFormGroup">
           <mat-form-field class="device-create__data-output-form-field">
             <mat-label>Data Output</mat-label>
-            <mat-chip-list #dataOutputList aria-label="Data output selection">
-              <mat-chip
+            <mat-chip-listbox #dataOutputList aria-label="Data output selection">
+              <mat-chip-option
                 *ngFor="let dataOutputType of dataOutputTypes"
                 (removed)="removeDataOutputType(dataOutputType.name)">
                 {{dataOutputType.name}}
                 <button matChipRemove>
                   <mat-icon>cancel</mat-icon>
                 </button>
-              </mat-chip>
+              </mat-chip-option>
               <input
                 placeholder="New data type..."
                 #dataOutputInput
@@ -200,7 +200,7 @@
                 [matChipInputFor]="dataOutputList"
                 [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
               >
-            </mat-chip-list>
+            </mat-chip-listbox>
             <mat-autocomplete #auto="matAutocomplete" (optionSelected)="selectedDataType($event)">
               <mat-option *ngFor="let dataType of filteredDataTypes | async" [value]="dataType" [disabled]="isDataTypeOptionDisabled(dataType)">
                 {{dataType}}

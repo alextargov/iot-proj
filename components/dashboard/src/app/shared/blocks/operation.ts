@@ -1,4 +1,4 @@
-import {CustomBlock, Blockly, NgxBlocklyGenerator} from "ngx-blockly";
+import {CustomBlock, Blockly } from "ngx-blockly";
 
 export interface IOperation {
   id: string,
@@ -18,7 +18,7 @@ export class OperationBlock extends CustomBlock {
   private readonly hasOutputConnection: boolean
   private readonly hasPrevConnection: boolean
   private readonly hasNextConnection: boolean
-  private readonly additionalText: boolean
+  private readonly additionalText: string
   private readonly hasSecondInput: boolean
 
 

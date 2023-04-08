@@ -27,33 +27,28 @@
         <form [formGroup]="detailsFormGroup" class="widget-create__details-devices">
           <mat-form-field class="widget-create__details-devices-select" appearance="fill">
             <mat-label>Select devices for widget logic</mat-label>
-            <mat-chip-list #chipList aria-label="Select devices for widget logic" multiple>
-              <mat-chip
-                *ngFor="let keyword of selectedDevices"
-                [selected]="keyword"
-                [removable]="true"
-                [value]="keyword.name"
-                (removed)="removeDevice(keyword)">
+            <mat-chip-grid #chipGrid aria-label="Select devices for widget logic">
+              <mat-chip-row  *ngFor="let keyword of selectedDevices" (removed)="removeDevice(keyword)" [value]="keyword.name" [selected]="keyword">
                 {{keyword.name}}
-                <button matChipRemove>
+                <button matChipRemove [attr.aria-label]="'remove ' + keyword">
                   <mat-icon>cancel</mat-icon>
                 </button>
-              </mat-chip>
-              <input
-                #deviceInput
-                placeholder="New device..."
-                formControlName="device"
-                [matAutocomplete]="auto"
-                [matChipInputFor]="chipList"
-                [matChipInputSeparatorKeyCodes]="separatorKeysCodes">
-            </mat-chip-list>
+              </mat-chip-row>
+            </mat-chip-grid>
+            <input
+              placeholder="New device..."
+              #deviceInput
+              formControlName="device"
+              [matChipInputFor]="chipGrid"
+              [matAutocomplete]="auto"
+              [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+              />
             <mat-autocomplete #auto="matAutocomplete" (optionSelected)="selected($event)">
               <mat-option *ngFor="let device of filteredDevices | async" [value]="device">
                 {{device.name}}
               </mat-option>
             </mat-autocomplete>
           </mat-form-field>
-
         </form>
       </div>
 
