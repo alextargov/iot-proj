@@ -13,13 +13,13 @@ import { NgxBlocklyModule } from 'ngx-blockly';
 
 @NgModule({
     imports: [
-      MatIconModule,
-      MatToolbarModule,
-      BrowserAnimationsModule,
-      BrowserModule,
-      MaterialModule,
-      AppRoutingModule,
-      NgxBlocklyModule
+        MatIconModule,
+        MatToolbarModule,
+        BrowserAnimationsModule,
+        BrowserModule,
+        MaterialModule,
+        AppRoutingModule,
+        NgxBlocklyModule
     ],
     declarations: [
         NgxBlocklyComponent1,
@@ -28,8 +28,6 @@ import { NgxBlocklyModule } from 'ngx-blockly';
     exports: [
         NgxBlocklyComponent1,
         ContentHeaderComponent
-    ],
-    entryComponents: [
     ]
 })
 export class ComponentsModule {}

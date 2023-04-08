@@ -8,8 +8,9 @@ describe('ContentHeaderComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ ContentHeaderComponent ]
-    })
+    declarations: [ContentHeaderComponent],
+    teardown: { destroyAfterEach: false }
+})
     .compileComponents();
   });
 

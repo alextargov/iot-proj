@@ -8,8 +8,9 @@ describe('DeviceCreateComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ DeviceCreateComponent ]
-    })
+    declarations: [DeviceCreateComponent],
+    teardown: { destroyAfterEach: false }
+})
     .compileComponents();
   });
 
