@@ -1,5 +1,5 @@
 import {AfterViewInit, Component, ElementRef, OnInit, ViewChild} from '@angular/core';
-import {FormBuilder, FormControl, FormGroup, Validators} from "@angular/forms";
+import {UntypedFormBuilder, UntypedFormControl, UntypedFormGroup, Validators} from "@angular/forms";
 import {COMMA, ENTER} from "@angular/cdk/keycodes";
 import {MatAutocompleteSelectedEvent} from "@angular/material/autocomplete";
 import {Observable} from "rxjs";
@@ -24,9 +24,9 @@ import { v4 as uuidv4 } from 'uuid';
   styleUrls: ['./device-create.component.scss'],
 })
 export class DeviceCreateComponent implements OnInit, AfterViewInit {
-  public deviceCreateMetadataFormGroup: FormGroup;
-  public deviceCreateAuthorizationFormGroup: FormGroup;
-  public deviceCreateOutputFormGroup: FormGroup;
+  public deviceCreateMetadataFormGroup: UntypedFormGroup;
+  public deviceCreateAuthorizationFormGroup: UntypedFormGroup;
+  public deviceCreateOutputFormGroup: UntypedFormGroup;
   public readonly authorizationPolicies: AuthPolicy[] = [AuthPolicy.None, AuthPolicy.Basic, AuthPolicy.OAuth, AuthPolicy.Certificate, AuthPolicy.Bearer];
   public selectedAuthorizationPolicy: AuthPolicy = AuthPolicy.None;
   public authPolicy = AuthPolicy;
@@ -52,7 +52,7 @@ export class DeviceCreateComponent implements OnInit, AfterViewInit {
   @ViewChild('tokenInput') tokenInput: ElementRef<HTMLInputElement>;
   @ViewChild('deviceStepper') stepper: MatStepper;
 
-  constructor(private fb: FormBuilder, private deviceService: DeviceService, private toast: ToastrService) {
+  constructor(private fb: UntypedFormBuilder, private deviceService: DeviceService, private toast: ToastrService) {
   }
 
   public ngOnInit(): void {
@@ -90,7 +90,7 @@ export class DeviceCreateComponent implements OnInit, AfterViewInit {
   }
 
   get dataOutputControl() {
-    return this.deviceCreateOutputFormGroup.controls["dataOutput"] as FormControl;
+    return this.deviceCreateOutputFormGroup.controls["dataOutput"] as UntypedFormControl;
   }
 
   public removeDataOutputType(dataOutputType: string): void {

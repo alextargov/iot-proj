@@ -1,6 +1,6 @@
 import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
 import {STEPPER_GLOBAL_OPTIONS, StepperSelectionEvent} from '@angular/cdk/stepper';
-import {FormBuilder, FormGroup, Validators} from '@angular/forms';
+import {UntypedFormBuilder, UntypedFormGroup, Validators} from '@angular/forms';
 import {COMMA, ENTER} from '@angular/cdk/keycodes';
 
 import {
@@ -110,7 +110,7 @@ export class WidgetCreateComponent implements OnInit {
     }
   ];
 
-  public detailsFormGroup: FormGroup;
+  public detailsFormGroup: UntypedFormGroup;
 
   public devices: IDevice[]
   public selectedDevices: Set<IDevice> = new Set();
@@ -153,8 +153,7 @@ export class WidgetCreateComponent implements OnInit {
 
   @ViewChild('blockly') blocklyComponent: NgxBlocklyComponent;
 
-  constructor(private formBuilder: FormBuilder, private deviceService: DeviceService) {}
-
+  constructor(private formBuilder: UntypedFormBuilder, private deviceService: DeviceService) {}
   ngOnInit(): void {
     this.deviceService.getDevices().subscribe((deviceList) => {
       this.devices = deviceList;
@@ -207,6 +206,7 @@ export class WidgetCreateComponent implements OnInit {
 
   onCode(code: string) {
     this.workspaceCode = code
+    console.log(code)
   }
 
   removeDevice(keyword) {
@@ -238,7 +238,11 @@ export class WidgetCreateComponent implements OnInit {
 //     <field name="intervalType">0</field>
 //   </block>
 // </xml>`)
-      this.blocklyComponent.fromXml(`<xml><block type="repeatForBlock" id="7PXEeoJd08$_MK)!I_9h" x="29" y="77"><field name="intervalValue">1</field><field name="intervalType">0</field><statement name="do"><block type="controls_if" id="G[@TMT,$5@:DP^}W4!WT"><value name="IF0"><block type="logic_compare" id="Gn.!bPr*p,SUE1Rlx+Hl"><field name="OP">EQ</field><value name="A"><block type="deviceDropdownOutput" id="Qs399?AkV%1|{|7$511+"><field name="selectedDeviceOutput">b2e8f85c-3caa-4d2e-8c0e-641385d3ddbc</field><value name="aggregation"><block type="aggregation_0" id="}g]322#ioc%aWV_kDWbt"></block></value></block></value><value name="B"><block type="math_number" id="I1Fu27{Ht:\`x/m;!+@]x"><field name="NUM">0</field></block></value></block></value><statement name="DO0"><block type="operation_2" id="GYL@Pb3M].LCx=|2B[x!"><value name="operation"><block type="text" id="Er,nBi;6#T(Bjg(]FU%d"><field name="TEXT">alex</field></block></value></block></statement></block></statement></block></xml>`)
+
+
+      // this.blocklyComponent.fromXml(`<xml><block type="repeatForBlock" id="7PXEeoJd08$_MK)!I_9h" x="29" y="77"><field name="intervalValue">1</field><field name="intervalType">0</field><statement name="do"><block type="controls_if" id="G[@TMT,$5@:DP^}W4!WT"><value name="IF0"><block type="logic_compare" id="Gn.!bPr*p,SUE1Rlx+Hl"><field name="OP">EQ</field><value name="A"><block type="deviceDropdownOutput" id="Qs399?AkV%1|{|7$511+"><field name="selectedDeviceOutput">b2e8f85c-3caa-4d2e-8c0e-641385d3ddbc</field><value name="aggregation"><block type="aggregation_0" id="}g]322#ioc%aWV_kDWbt"></block></value></block></value><value name="B"><block type="math_number" id="I1Fu27{Ht:\`x/m;!+@]x"><field name="NUM">0</field></block></value></block></value><statement name="DO0"><block type="operation_2" id="GYL@Pb3M].LCx=|2B[x!"><value name="operation"><block type="text" id="Er,nBi;6#T(Bjg(]FU%d"><field name="TEXT">alex</field></block></value></block></statement></block></statement></block></xml>`)
+
+
       // Blockly.Xml.domToWorkspace(
       //   Blockly.Xml.textToDom(`<xml><block type="repeatForBlock" id="7PXEeoJd08$_MK)!I_9h" x="29" y="77"><field name="intervalValue">1</field><field name="intervalType">0</field><statement name="do"><block type="controls_if" id="G[@TMT,$5@:DP^}W4!WT"><value name="IF0"><block type="logic_compare" id="Gn.!bPr*p,SUE1Rlx+Hl"><field name="OP">EQ</field><value name="A"><block type="deviceDropdownOutput" id="Qs399?AkV%1|{|7$511+"><field name="selectedDeviceOutput">b2e8f85c-3caa-4d2e-8c0e-641385d3ddbc</field><value name="aggregation"><block type="aggregation_0" id="}g]322#ioc%aWV_kDWbt"></block></value></block></value><value name="B"><block type="math_number" id="I1Fu27{Ht:\`x/m;!+@]x"><field name="NUM">0</field></block></value></block></value><statement name="DO0"><block type="operation_2" id="GYL@Pb3M].LCx=|2B[x!"><value name="operation"><block type="text" id="Er,nBi;6#T(Bjg(]FU%d"><field name="TEXT">alex</field></block></value></block></statement></block></statement></block></xml>`),
       //   this.blocklyComponent.workspace
@@ -249,7 +253,7 @@ export class WidgetCreateComponent implements OnInit {
 
   public workspaceChange(e) {
     this.workspaceXML = this.blocklyComponent.toXml();
-    console.log(this.workspaceXML)
+    // console.log(this.workspaceXML)
   }
 
   public onSelectionChange(event: StepperSelectionEvent) {
