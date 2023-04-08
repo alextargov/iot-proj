@@ -1,21 +1,5 @@
-mat-toolbar {
-  background: #004a9f;
-  color: white;
-}
-
-mat-sidenav {
-  margin: 16px;
-  width: 200px;
-  border-right: none;
-  background: #002b5c;
-  color: white;
-  border-radius: 10px;
-  padding: 16px;
-  text-align: center;
-}
-
 .content {
-  height: calc(100vh - 130px);
+  height: 100vh;
   border-radius: 10px;
   margin: 16px;
   margin-left: 32px;
@@ -23,10 +7,6 @@ mat-sidenav {
   padding: 16px;
 
   overflow: auto;
-}
-
-mat-sidenav-container {
-  height: calc(100vh - 65px);
 }
 
 .menu-button {
@@ -63,4 +43,41 @@ mat-divider {
   margin-top: 16px;
   margin-bottom: 16px;
   background-color: rgba(255, 255, 255, 0.5);
+}
+
+
+.app {
+  &__wrapper {
+    display: flex;
+    height: 100%;
+  }
+
+  &__left-panel {
+    margin: 16px;
+    width: 200px;
+    border-right: none;
+    background: #002b5c;
+    color: white;
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+    box-shadow: 0px 5px 5px -3px rgb(0 0 0 / 20%), 0px 8px 10px 1px rgb(0 0 0 / 14%), 0px 3px 14px 2px rgb(0 0 0 / 12%);
+  }
+
+  &__right-panel {
+    //height: 100%;
+    border-radius: 10px;
+    margin: 16px;
+    padding: 16px;
+    width: 100%;
+    box-shadow: 0px 5px 5px -3px rgb(0 0 0 / 20%), 0px 8px 10px 1px rgb(0 0 0 / 14%), 0px 3px 14px 2px rgb(0 0 0 / 12%);
+  }
+}
+
+::ng-deep .mat-horizontal-stepper-content {
+  height: 100%;
+}
+
+::ng-deep .mat-horizontal-content-container {
+  height: 100%;
 }

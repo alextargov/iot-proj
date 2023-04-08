@@ -6,17 +6,22 @@ exec:
   filename: schema_gen.go
   package: graphql
 
+# Enable Apollo federation support
+federation:
+  filename: federation.go
+  package: graphql
+
 # Where should any generated models go?
 model:
   filename: models_gen.go
   package: graphql
 
 # Where should the resolver implementations go?
-resolver:
-  layout: follow-schema
-  dir: internal/graphql
-  package: graphql
-  filename_template: "{name}.resolvers.go"
+#resolver:
+#  layout: follow-schema
+#  dir: internal/graphql
+#  package: graphql
+#  filename_template: "{name}.resolvers.go"
 
 # Optional: turn on use ` + "`" + `gqlgen:"fieldName"` + "`" + ` tags in your models
 # struct_tag: json
@@ -29,8 +34,8 @@ resolver:
 
 # gqlgen will search for any type names in the schema in these go packages
 # if they match it will use them, otherwise it will generate them.
-autobind:
-  - "github.com/iot-proj/components/orchestrator/internal/graphql/model"
+#autobind:
+#  - "github.com/iot-proj/components/orchestrator/internal/graphql/model"
 
 # This section declares type mapping between the GraphQL and go type systems
 #
@@ -49,3 +54,8 @@ models:
       - github.com/99designs/gqlgen/graphql.Int
       - github.com/99designs/gqlgen/graphql.Int64
       - github.com/99designs/gqlgen/graphql.Int32
+  Device:
+    model: "github.com/iot-proj/components/orchestrator/pkg/graphql.Device"
+    fields:
+      host:
+        resolver: true

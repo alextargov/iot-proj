@@ -27,7 +27,7 @@ interface Safe extends GridsterConfig {
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  encapsulation: ViewEncapsulation.None
+  // encapsulation: ViewEncapsulation.None
 })
 export class DashboardComponent implements OnInit {
   public options: Safe;

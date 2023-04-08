@@ -1,45 +1,92 @@
-<mat-stepper #stepper class="widget-create__container">
+<app-content-header class="widget-create__content-header" title="Widget create"></app-content-header>
+
+<mat-stepper (selectionChange)="onSelectionChange($event)"  #stepper orientation="horizontal" class="widget-create__container">
   <mat-step [stepControl]="detailsFormGroup" [errorMessage]="detailsFormGroup.errors">
-    <form [formGroup]="detailsFormGroup" class="widget-create__detailsForm">
-      <ng-template matStepLabel>Widget details</ng-template>
-      <mat-form-field class="widget-create__detailsForm-field">
-        <mat-label>Name</mat-label>
-        <input matInput placeholder="Widget name" formControlName="name" required>
-        <mat-error *ngIf="detailsFormGroup?.get('name')?.errors?.required">Name is required</mat-error>
-        <mat-error *ngIf="detailsFormGroup?.get('name')?.errors?.maxlength">Max length is {{ NAME_MAX_LENGTH }}</mat-error>
-      </mat-form-field>
-      <mat-form-field class="widget-create__detailsForm-field">
-        <mat-label>Description</mat-label>
-        <input matInput placeholder="Widget description" formControlName="description">
-        <mat-error *ngIf="detailsFormGroup?.get('description')?.errors?.maxlength">>Max length is {{ DESCRIPTION_MAX_LENGTH }}</mat-error>
-      </mat-form-field>
-      <div class="widget-create__detailsForm-field">
-        <mat-slide-toggle formControlName="isActive">{{ detailsFormGroup?.get('isActive').value ? 'Active' : 'Inactive' }}</mat-slide-toggle>
+    <ng-template matStepLabel>Widget details</ng-template>
+
+    <div class="widget-create__step">
+      <div class="widget-create__details">
+        <form [formGroup]="detailsFormGroup" class="widget-create__details-form">
+
+          <mat-form-field class="widget-create__detailsForm-field">
+            <mat-label>Name</mat-label>
+            <input matInput placeholder="Widget name" formControlName="name" required>
+            <mat-error *ngIf="detailsFormGroup?.get('name')?.errors?.required">Name is required</mat-error>
+            <mat-error *ngIf="detailsFormGroup?.get('name')?.errors?.maxlength">Max length is {{ NAME_MAX_LENGTH }}</mat-error>
+          </mat-form-field>
+          <mat-form-field class="widget-create__detailsForm-field">
+            <mat-label>Description</mat-label>
+            <input matInput placeholder="Widget description" formControlName="description">
+            <mat-error *ngIf="detailsFormGroup?.get('description')?.errors?.maxlength">>Max length is {{ DESCRIPTION_MAX_LENGTH }}</mat-error>
+          </mat-form-field>
+          <div class="widget-create__detailsForm-field">
+            <mat-slide-toggle formControlName="isActive">{{ detailsFormGroup?.get('isActive').value ? 'Active' : 'Inactive' }}</mat-slide-toggle>
+          </div>
+        </form>
+
+        <form [formGroup]="detailsFormGroup" class="widget-create__details-devices">
+          <mat-form-field class="widget-create__details-devices-select" appearance="fill">
+            <mat-label>Select devices for widget logic</mat-label>
+            <mat-chip-list #chipList aria-label="Select devices for widget logic" multiple>
+              <mat-chip
+                *ngFor="let keyword of selectedDevices"
+                [selected]="keyword"
+                [removable]="true"
+                [value]="keyword.name"
+                (removed)="removeDevice(keyword)">
+                {{keyword.name}}
+                <button matChipRemove>
+                  <mat-icon>cancel</mat-icon>
+                </button>
+              </mat-chip>
+              <input
+                #deviceInput
+                placeholder="New device..."
+                formControlName="device"
+                [matAutocomplete]="auto"
+                [matChipInputFor]="chipList"
+                [matChipInputSeparatorKeyCodes]="separatorKeysCodes">
+            </mat-chip-list>
+            <mat-autocomplete #auto="matAutocomplete" (optionSelected)="selected($event)">
+              <mat-option *ngFor="let device of filteredDevices | async" [value]="device">
+                {{device.name}}
+              </mat-option>
+            </mat-autocomplete>
+          </mat-form-field>
+
+        </form>
       </div>
-    </form>
-    <div>
-      <button mat-button matStepperNext>Next</button>
+
+      <div class="widget-create__container-navigations">
+        <button mat-button matStepperNext (click)="onNavigateToBlockly()">Next</button>
+      </div>
     </div>
   </mat-step>
   <mat-step class="widget-create__logic">
     <ng-template matStepLabel>Widget logic</ng-template>
+    <div class="widget-create__step">
+
       <ngx-blockly
         class="widget-create__logic-blockly"
         #blockly
         [config]="config"
         [readOnly]="readOnly"
         [customBlocks]="customBlocks"
+        (workspaceChange)="workspaceChange($event)"
         (javascriptCode)="onCode($event)">
       </ngx-blockly>
-    <div>
-      <button mat-button matStepperNext>Next</button>
+
+      <div class="widget-create__container-navigations">
+        <button mat-button matStepperPrevious>Back</button>
+        <button mat-button matStepperNext>Next</button>
+      </div>
     </div>
   </mat-step>
   <mat-step>
     <ng-template matStepLabel>Done</ng-template>
     <p>You are now done.</p>
-    <div>
-      <button mat-button matStepperPrevious>Back</button>
+    <div class="widget-create__container-navigations">
+      <button mat-button matStepperPrevious (click)="onNavigateToBlockly()">Back</button>
       <button mat-button (click)="stepper.reset()">Reset</button>
     </div>
   </mat-step>

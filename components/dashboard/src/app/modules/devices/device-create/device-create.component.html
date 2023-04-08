@@ -1,0 +1,240 @@
+<app-content-header class="device-create__content-header" title="Device create"></app-content-header>
+<mat-stepper class="device-create__container" #deviceStepper>
+  <mat-step [stepControl]="deviceCreateMetadataFormGroup" errorMessage="Name is required.">
+    <div class="device-create__container-step">
+      <form
+        [formGroup]="deviceCreateMetadataFormGroup"
+        class="device-create__metadata"
+      >
+        <ng-template matStepLabel>Metadata</ng-template>
+        <div class="device-create__metadata-items">
+          <div class="device-create__metadata-items-left">
+            <mat-form-field appearance="standard">
+              <mat-label>Name</mat-label>
+              <input matInput formControlName="name" required>
+            </mat-form-field>
+            <mat-form-field appearance="standard">
+              <mat-label>Description</mat-label>
+              <input matInput formControlName="description" required>
+            </mat-form-field>
+          </div>
+
+          <div class="device-create__metadata-items-right">
+            <mat-form-field appearance="standard">
+              <mat-label>Device URL</mat-label>
+              <input matInput formControlName="deviceURL">
+            </mat-form-field>
+            <mat-form-field appearance="standard">
+              <mat-label>Turn On Endpoint</mat-label>
+              <input matInput formControlName="turnOnEndpoint">
+            </mat-form-field>
+            <mat-form-field appearance="standard">
+              <mat-label>Turn Off Endpoint</mat-label>
+              <input matInput formControlName="turnOffEndpoint">
+            </mat-form-field>
+          </div>
+        </div>
+      </form>
+
+      <div class="device-create__container-navigations">
+        <button mat-button matStepperNext>Next</button>
+      </div>
+    </div>
+
+  </mat-step>
+  <mat-step [stepControl]="deviceCreateAuthorizationFormGroup" errorMessage="Address is required.">
+    <ng-template matStepLabel>
+      <p>
+        Connectivity
+        <mat-icon #tooltip="matTooltip" matTooltip="Authorization data to access the device's APIs">
+        help
+        </mat-icon>
+      </p>
+
+    </ng-template>
+
+    <div class="device-create__container-step">
+      <form class="device-create__authorization" [formGroup]="deviceCreateAuthorizationFormGroup">
+
+        <div class="device-create__authorization-items">
+
+          <mat-accordion class="device-create__authorization-items-accordion">
+            <mat-expansion-panel [hideToggle]="true" #mep1="matExpansionPanel">
+              <mat-expansion-panel-header>
+                <mat-icon (click)="mep1.expanded = !mep1.expanded" *ngIf="mep1.expanded">expand_less</mat-icon>
+                <mat-icon (click)="mep1.expanded = !mep1.expanded" *ngIf="!mep1.expanded">expand_more</mat-icon>
+                <mat-panel-title>
+                  <div matTooltip="Communication: Service to Device">
+                    <mat-icon>desktop_windows</mat-icon>&nbsp;
+                    <mat-icon>east</mat-icon>&nbsp;
+                    <mat-icon>memory</mat-icon>
+                  </div>
+                </mat-panel-title>
+                <mat-panel-description>
+                  <mat-slide-toggle formControlName="communicationToDevice" (click)="onEnableConnectionClick($event, 'serverToDevice')">
+                    Enable communication
+                  </mat-slide-toggle>
+                </mat-panel-description>
+              </mat-expansion-panel-header>
+
+              <div class="device-create__authorization-items-accordion-content">
+                <div class="device-create__authorization-items-accordion-content-left">
+                  <mat-form-field appearance="standard">
+                    <mat-label>Choose an authorization</mat-label>
+                    <mat-select [(value)]="selectedAuthorizationPolicy">
+                      <mat-option *ngFor="let authPolicy of authorizationPolicies" [value]="authPolicy">{{ authPolicy }}</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                </div>
+
+                <div class="device-create__authorization-items-accordion-content-right">
+                  <div class="device-create__authorization-items-form" *ngIf="selectedAuthorizationPolicy === authPolicy.Basic">
+                    <mat-form-field appearance="standard">
+                      <mat-label>Username</mat-label>
+                      <input matInput formControlName="authCredentialsBasicUsername">
+                    </mat-form-field>
+                    <mat-form-field appearance="standard">
+                      <mat-label>Password</mat-label>
+                      <input matInput formControlName="authCredentialsBasicPassword">
+                    </mat-form-field>
+                  </div>
+
+                  <div class="device-create__authorization-items-form" *ngIf="selectedAuthorizationPolicy === authPolicy.OAuth">
+                    <mat-form-field appearance="standard" >
+                      <mat-label>Client ID</mat-label>
+                      <input matInput formControlName="authCredentialsOAuthClientID">
+                    </mat-form-field>
+                    <mat-form-field appearance="standard">
+                      <mat-label>Client Secret</mat-label>
+                      <input matInput formControlName="authCredentialsOAuthClientSecret">
+                    </mat-form-field>
+                  </div>
+
+                  <div class="device-create__authorization-items-form" *ngIf="selectedAuthorizationPolicy === authPolicy.Certificate">
+                    <mat-form-field appearance="standard">
+                      <mat-label>Client ID</mat-label>
+                      <input matInput formControlName="authCredentialsCertificateClientID">
+                    </mat-form-field>
+                    <mat-form-field appearance="standard">
+                      <mat-label>Client Secret</mat-label>
+                      <input matInput formControlName="authCredentialsCertificateClientSecret">
+                    </mat-form-field>
+                    <mat-form-field appearance="standard">
+                      <mat-label>Certificate</mat-label>
+                      <input matInput formControlName="authCredentialsCertificateClientCert">
+                    </mat-form-field>
+                  </div>
+
+                  <div class="device-create__authorization-items-form" *ngIf="selectedAuthorizationPolicy === authPolicy.Bearer">
+                    <mat-form-field appearance="standard">
+                      <mat-label>Bearer Token</mat-label>
+                      <input matInput formControlName="authCredentialsBearerToken">
+                    </mat-form-field>
+                  </div>
+                </div>
+              </div>
+            </mat-expansion-panel>
+
+            <mat-expansion-panel class="device-create__authorization-items-accordion-panel" [hideToggle]="true" #mep2="matExpansionPanel">
+              <mat-expansion-panel-header>
+                <mat-icon (click)="mep2.expanded = !mep2.expanded" *ngIf="mep2.expanded">expand_less</mat-icon>
+                <mat-icon (click)="mep2.expanded = !mep2.expanded" *ngIf="!mep2.expanded">expand_more</mat-icon>
+                <mat-panel-title>
+                  <div matTooltip="Communication: Device to Service">
+                    <mat-icon>memory</mat-icon>&nbsp;
+                    <mat-icon>east</mat-icon>&nbsp;
+                    <mat-icon>desktop_windows</mat-icon>
+                  </div>
+
+                </mat-panel-title>
+                <mat-panel-description>
+                  <mat-slide-toggle formControlName="communicationToServer" (click)="onEnableConnectionClick($event, 'deviceToServer')">
+                    Enable communication
+                  </mat-slide-toggle>
+                </mat-panel-description>
+              </mat-expansion-panel-header>
+
+              <div class="device-create__authorization-items-accordion-content">
+                <mat-form-field class="device-create__authorization-items-accordion-content-fill">
+                  <mat-label>Token</mat-label>
+                  <input matInput #tokenInput>
+                  <mat-hint align="start"><strong>Use this token to initialize communication with the service</strong> </mat-hint>
+                </mat-form-field>
+              </div>
+            </mat-expansion-panel>
+          </mat-accordion>
+
+
+        </div>
+      </form>
+
+      <div class="device-create__container-navigations">
+        <button mat-button matStepperPrevious>Back</button>
+        <button mat-button matStepperNext>Next</button>
+      </div>
+    </div>
+
+  </mat-step>
+  <mat-step>
+    <ng-template matStepLabel>Data Output</ng-template>
+
+    <div class="device-create__container-step">
+      <div class="device-create__data-output">
+        <form class="device-create__data-output-form" [formGroup]="deviceCreateOutputFormGroup">
+          <mat-form-field class="device-create__data-output-form-field">
+            <mat-label>Data Output</mat-label>
+            <mat-chip-list #dataOutputList aria-label="Data output selection">
+              <mat-chip
+                *ngFor="let dataOutputType of dataOutputTypes"
+                (removed)="removeDataOutputType(dataOutputType.name)">
+                {{dataOutputType.name}}
+                <button matChipRemove>
+                  <mat-icon>cancel</mat-icon>
+                </button>
+              </mat-chip>
+              <input
+                placeholder="New data type..."
+                #dataOutputInput
+                formControlName="dataOutput"
+                [matAutocomplete]="auto"
+                [matChipInputFor]="dataOutputList"
+                [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+              >
+            </mat-chip-list>
+            <mat-autocomplete #auto="matAutocomplete" (optionSelected)="selectedDataType($event)">
+              <mat-option *ngFor="let dataType of filteredDataTypes | async" [value]="dataType" [disabled]="isDataTypeOptionDisabled(dataType)">
+                {{dataType}}
+              </mat-option>
+            </mat-autocomplete>
+          </mat-form-field>
+        </form>
+
+        <div class="device-create__data-output-keys">
+          <h4>Enter Data Type keys used by widgets</h4>
+          <mat-form-field *ngFor="let dataOutputType of dataOutputTypes" class="device-create__data-output-keys-field">
+            <mat-label>{{ dataOutputType.name }}</mat-label>
+            <input matInput type="text" [(ngModel)]="dataOutputType.key">
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="device-create__container-navigations">
+        <button mat-button matStepperPrevious>Back</button>
+        <button mat-button matStepperNext>Next</button>
+      </div>
+    </div>
+  </mat-step>
+  <mat-step>
+    <ng-template matStepLabel>Review</ng-template>
+
+    <div class="device-create__container-step">
+      <div class="device-create__container-navigations">
+        <button mat-button matStepperPrevious>Back</button>
+        <button mat-button (click)="onResetClick(deviceStepper)">Reset</button>
+        <button mat-button (click)="onSaveClick()">Save</button>
+      </div>
+    </div>
+
+  </mat-step>
+</mat-stepper>
+

@@ -22,5 +22,4 @@ export class WidgetsComponent implements OnInit {
   public onAddClick(): void {
     this.router.navigate(['widgets/create'])
   }
-
 }

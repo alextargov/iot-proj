@@ -1,0 +1,109 @@
+:host {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: scroll;
+}
+
+.device-create {
+
+  &__content-header {
+    display: flex;
+  }
+
+  &__container {
+    background: none;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+
+    &-step {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      padding-bottom: 0;
+    }
+
+    &-navigations {
+      align-self: end;
+    }
+  }
+
+  &__metadata {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+
+    &-items {
+      display: flex;
+      justify-content: space-between;
+
+      &-left, &-right {
+        display: flex;
+        flex-direction: column;
+        width: 45%;
+      }
+    }
+  }
+
+  &__authorization {
+    height: 100%;
+
+    &-items {
+      display: flex;
+      justify-content: space-between;
+      height: 100%;
+
+      &-accordion {
+        width: 100%;
+
+        &-panel {
+          margin-top: 1rem
+        }
+
+        &-content {
+          display: flex;
+          justify-content: space-between;
+          margin-top: 1rem;
+
+          &-left, &-right {
+            display: flex;
+            flex-direction: column;
+            width: 45%;
+          }
+
+          &-fill {
+            width: 100%;
+          }
+        }
+      }
+
+      &-form {
+        display: flex;
+        flex-direction: column;
+      }
+    }
+  }
+
+  &__data-output {
+    display: flex;
+    justify-content: space-between;
+    height: 100%;
+
+    &-keys, &-form {
+      width: 45%;
+    }
+
+    &-form {
+      &-field {
+        width: 100%;
+      }
+    }
+
+    &-keys {
+      display: flex;
+      flex-direction: column;
+      margin-top: 1rem;
+    }
+  }
+}

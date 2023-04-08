@@ -1,25 +1,157 @@
-type Device {
-  id: ID!
-  name: String!
-  description: String!
-  userId: ID!
-  isAlive: Boolean!
-  host: String!
+scalar PageCursor
+scalar Any
+scalar Timestamp
+
+union CredentialData = BasicCredentialData | OAuthCredentialData | CertificateOAuthCredentialData
+
+interface Pageable {
+    pageInfo: PageInfo!
+    totalCount: Int!
 }
 
-type Query {
-  devices: [Device!]!
-  device(id: ID!): Device!
+interface OneTimeToken {
+    token: String!
+    expiresAt: Timestamp!
+    createdAt: Timestamp
+    usedAt: Timestamp
+}
+
+enum AggregationType {
+    SUM
+    AVERAGE
+    LAST_WEEK
+}
+
+enum OperationType {
+    TURN_ON
+    TURN_OFF
+    SEND_EMAIL
+    SEND_EMAIL_WITH_CONTENT
+}
+
+enum DeviceStatus {
+    INITIAL
+    ALIVE
+    UNREACHABLE
+    ERROR
+}
+
+type BasicCredentialData {
+    username: String!
+    password: String!
+}
+
+type OAuthCredentialData {
+    clientId: ID!
+    clientSecret: String!
+    url: String!
+}
+
+type CertificateOAuthCredentialData {
+    clientId: ID!
+    certificate: String!
+    url: String!
+}
+
+type PageInfo {
+    startCursor: PageCursor!
+    endCursor: PageCursor!
+    hasNextPage: Boolean!
+}
+
+type Auth {
+    credential: CredentialData
+    accessStrategy: String
+    oneTimeToken: OneTimeToken
+}
+
+type Device {
+    id: ID!
+    name: String!
+    description: String
+    status: DeviceStatus!
+    tenantId: ID!
+    host: Host
+    communicationToken: String
+    auth: Auth
+}
+
+type Host {
+    id: ID!
+    url: String!
+    turnOnEndpoint: String
+    turnOffEndpoint: String
+}
+
+type DevicePage implements Pageable {
+    data: [Device!]!
+    pageInfo: PageInfo!
+    totalCount: Int!
+}
+
+input HostInput {
+    url: String!
+    turnOnEndpoint: String
+    turnOffEndpoint: String
 }
 
 input DeviceInput {
     name: String!
-    description: String!
-    userId: ID!
-    isAlive: Boolean
-    host: String
+    description: String
+    status: DeviceStatus!
+    host: HostInput!
+    communicationToken: String
+    auth: AuthInput
+}
+
+input OneTimeTokenInput {
+    token: String!
+    expiresAt: Timestamp!
+    createdAt: Timestamp!
+    usedAt: Timestamp!
+}
+
+input BasicCredentialDataInput {
+    username: String!
+    password: String!
+}
+
+
+input CertificateOAuthCredentialDataInput {
+    clientId: ID!
+    certificate: String!
+    url: String!
+}
+
+
+input OAuthCredentialDataInput {
+    clientId: ID!
+    clientSecret: String!
+    url: String!
+}
+
+input CredentialDataInput {
+    basic: BasicCredentialDataInput
+    oauth: OAuthCredentialDataInput
+    certificateOAuth: CertificateOAuthCredentialDataInput
+}
+
+input AuthInput {
+    credential: CredentialDataInput
+    accessStrategy: String
+    oneTimeToken: OneTimeTokenInput
+}
+
+type Query {
+    devices: [Device]!
+    devicesForTenant: DevicePage!
+    device(id: ID!): Device
+    deviceByIdAndAggregation(id: ID!, aggregation: AggregationType!): Device
 }
 
 type Mutation {
-  createDevice(input: DeviceInput!): Device!
+    createDevice(input: DeviceInput!): Device!
+    setDeviceOperation(id: ID!, op: OperationType!): Device!
+    setOperation(op: OperationType!, data: Any): Boolean!
+    deleteDevice(id: String!): String!
 }

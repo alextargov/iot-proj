@@ -22,6 +22,7 @@ data:
         "express": "^4.15.3",
         "morgan": "^1.8.2",
         "prom-client": "^10.0.2",
-        "axios": "^0.21.1"
+        "axios": "^0.21.1",
+        "graphql-request": "^5.0.0"
       }
     }

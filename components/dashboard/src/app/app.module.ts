@@ -12,6 +12,10 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { SharedModule } from './shared/shared.module';
 import { ProfileModule } from './modules/profile/profile.module';
 import { WidgetsModule } from './modules/widgets/widgets.module';
+import { DevicesListComponent } from './modules/devices/devices-list/devices-list.component';
+import { DevicesModule } from './modules/devices/devices.module';
+import { HttpClientModule } from '@angular/common/http';
+import {ToastrModule} from "ngx-toastr";
 
 @NgModule({
   declarations: [
@@ -20,18 +24,26 @@ import { WidgetsModule } from './modules/widgets/widgets.module';
   imports: [
     BrowserModule,
     AppRoutingModule,
+    HttpClientModule,
 
     SharedModule,
     DashboardModule,
     ProfileModule,
     WidgetsModule,
+    DevicesModule,
 
     CoreModule,
     BrowserAnimationsModule,
     ComponentsModule,
     MaterialModule,
   ],
-  providers: [],
+  providers: [
+    {
+        provide: 'app.config',
+        // tslint:disable-next-line no-string-literal
+        useFactory: () => window['_env_'],
+    },
+  ],
   exports: [],
   bootstrap: [AppComponent]
 })

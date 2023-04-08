@@ -1,55 +1,81 @@
 :host {
-  display: block;
+  display: flex;
+  flex-direction: column;
   height: 100%;
-  overflow-y: hidden;
 }
 
 :host ::ng-deep .mat-horizontal-content-container {
-  height: 100%
+  padding-bottom: 0;
 }
-
-:host ::ng-deep .mat-horizontal-stepper-content {
-  height: 100%
-}
-
-
-// :host ::ng-deep .blockly-wrapper {
-//   position: relative;
-// }
 
 .widget-create {
-  &__container {
-    background: none;
-    display: block;
+
+  &__step {
     height: 100%;
-    position: relative;
-
-  }
-
-  &__detailsForm {
     display: flex;
     flex-direction: column;
-    max-width: 50%;
+  }
 
-    &-field {
-      margin-bottom: 1rem;
+  &__content-header {
+    display: flex;
+  }
+  &__container {
+    background: none;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+
+    &-navigations {
+      align-self: end;
+    }
+  }
+
+  &__details {
+    display: flex;
+    height: 100%;
+
+    &-form {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+
+      &-field {
+        margin-bottom: 1rem;
+      }
+    }
+
+    &-devices {
+      width: 100%;
+      margin-left: 5rem;
+
+      &-select {
+        width: 100%;
+      }
+
+      &-tree {
+        background: none;
+      }
     }
   }
 
   &__logic {
-    overflow: hidden;
-    display: flex;
+    //overflow: hidden;
+    //display: flex;
 
     //
-    height: 50vh !important;
+    //height: 50vh !important;
 
     &-blockly {
-      height: 50vh !important;
+      height:100%;
       display: block;
-
+      position: relative;
+      box-shadow: 0px 5px 5px -3px rgb(0 0 0 / 20%), 0px 8px 10px 1px rgb(0 0 0 / 14%), 0px 3px 14px 2px rgb(0 0 0 / 12%);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 2rem;
       .blockly-wrapper {
         // position: relative;
-        height: 50vh !important;
+        //height: 50vh !important;
       }
     }
 
