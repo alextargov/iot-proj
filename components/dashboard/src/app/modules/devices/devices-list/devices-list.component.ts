@@ -7,6 +7,7 @@ import {DeviceStatus, IDevice} from 'src/app/shared/services/device/device.inter
 import {DeviceService} from 'src/app/shared/services/device/device.service';
 import {ContentHeaderButton} from "../../../shared/components/content-header/content-header.component";
 import {Router} from "@angular/router";
+import { DeviceInfoFragment } from 'src/app/shared/graphql/generated';
 
 @Component({
   selector: 'app-devices-list',
@@ -15,7 +16,7 @@ import {Router} from "@angular/router";
 })
 export class DevicesListComponent implements OnInit {
   displayedColumns: string[] = ['name', 'description', 'url', 'isRunning', 'createdAt', 'actions'];
-  dataSource = new MatTableDataSource<IDevice>();
+  dataSource = new MatTableDataSource<DeviceInfoFragment>();
 
   public buttons: ContentHeaderButton[] = [{
     text: 'Create device',
@@ -33,8 +34,8 @@ export class DevicesListComponent implements OnInit {
   constructor(private deviceService: DeviceService, private router: Router) { }
 
   public ngOnInit(): void {
-    this.deviceService.getDeviceByUserId("").subscribe((deviceList) => {
-        this.dataSource.data = deviceList.data;
+    this.deviceService.getAllDevices().subscribe((deviceList) => {
+        this.dataSource.data = deviceList;
     });
   }
 
@@ -51,8 +52,8 @@ export class DevicesListComponent implements OnInit {
   public async onAddClick(): Promise<void> {
     try {
       await this.router.navigate(['devices/create'])
-    } catch {
-
+    } catch(e) {
+      console.log(e)
     }
   }
 }

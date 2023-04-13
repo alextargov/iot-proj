@@ -9,6 +9,7 @@ import (
 	"github.com/iot-proj/components/orchestrator/internal/auth"
 	"github.com/iot-proj/components/orchestrator/internal/domain"
 	"github.com/iot-proj/components/orchestrator/internal/middlewares/authenticator"
+	"github.com/iot-proj/components/orchestrator/internal/middlewares/cors"
 	"github.com/iot-proj/components/orchestrator/pkg/graphql"
 	"github.com/iot-proj/components/orchestrator/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/executor"
@@ -138,11 +139,15 @@ func initAPIHandler(ctx context.Context, cfg config, db persistence.Transactione
 	rootResolver := domain.NewRootResolver(db)
 	srv := handler.NewDefaultServer(graphql.NewExecutableSchema(graphql.Config{Resolvers: rootResolver}))
 	//mainRouter.Handle("/", playground.Handler("GraphQL playground", cfg.APIEndpoint))
+	mainRouter.Use(cors.New().Handler())
+
 	mainRouter.HandleFunc("/", playground.Handler("GraphQL playground", cfg.APIEndpoint))
 
 	gqlRouter := mainRouter.PathPrefix(cfg.APIEndpoint).Subrouter()
-	gqlRouter.Handle("", srv)
+	gqlRouter.Use(cors.New().Handler())
+
 	gqlRouter.Use(authMiddleware.Handler())
+	gqlRouter.Handle("", srv)
 
 	logrus.Infof("Registering readiness endpoint...")
 

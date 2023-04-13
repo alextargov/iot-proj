@@ -9,7 +9,6 @@ import slugify from "slugify";
 import {DeviceService} from "../../../shared/services/device/device.service";
 import {
   AuthPolicy,
-  DeviceStatus,
   IDevice,
   IDeviceCredentialsBasic, IDeviceCredentialsBearer,
   IDeviceCredentialsCertificate,
@@ -17,6 +16,13 @@ import {
 } from "../../../shared/services/device/device.interface";
 import {ToastrService} from "../../../shared/services/toastr/toastr.service";
 import { v4 as uuidv4 } from 'uuid';
+import {
+  AuthInput,
+  BasicCredentialDataInput,
+  CredentialDataInput,
+  DeviceInput,
+  DeviceStatus, InputMaybe
+} from "../../../shared/graphql/generated";
 
 @Component({
   selector: 'app-device-create',
@@ -125,7 +131,6 @@ export class DeviceCreateComponent implements OnInit, AfterViewInit {
 
   public onSaveClick(): void {
     const data = this.convertToModel();
-    console.log(data)
     this.deviceService.createDevice(data).subscribe(() => {
       console.log('success')
       this.toast.showSuccess("Successfully created device")
@@ -144,9 +149,8 @@ export class DeviceCreateComponent implements OnInit, AfterViewInit {
 
   }
 
-  private convertToModel(): IDevice {
+  private convertToModel(): DeviceInput {
     return {
-      userID: "",
       name: this.deviceCreateMetadataFormGroup.get("name").value,
       description: this.deviceCreateMetadataFormGroup.get("description").value,
       host: {
@@ -154,39 +158,47 @@ export class DeviceCreateComponent implements OnInit, AfterViewInit {
         turnOffEndpoint:  this.deviceCreateMetadataFormGroup.get("turnOffEndpoint").value,
         turnOnEndpoint: this.deviceCreateMetadataFormGroup.get("turnOnEndpoint").value
       },
-      status: DeviceStatus.INITIAL,
-      credentials: {
-        type: this.selectedAuthorizationPolicy,
-        credentials: this.getAuthorizationCredentials(this.selectedAuthorizationPolicy)
+      status: DeviceStatus.Alive,
+      auth: {
+        credential: this.getAuthorizationCredentials(this.selectedAuthorizationPolicy)
       },
-      dataOutput: this.dataOutputTypes
+      // dataOutput: this.dataOutputTypes
       // dataOutputUnit: ""
     }
   }
 
-  private getAuthorizationCredentials(policy: AuthPolicy): IDeviceCredentialsBasic | IDeviceCredentialsOAuth | IDeviceCredentialsCertificate | IDeviceCredentialsBearer {
+  private getAuthorizationCredentials(policy: AuthPolicy): CredentialDataInput {
     switch (policy) {
       case AuthPolicy.None:
         return null;
       case AuthPolicy.Basic:
         return {
-          username: this.deviceCreateAuthorizationFormGroup.get("authCredentialsBasicUsername").value,
-          password: this.deviceCreateAuthorizationFormGroup.get("authCredentialsBasicPassword").value,
-        }
+          basic: {
+            username: this.deviceCreateAuthorizationFormGroup.get("authCredentialsBasicUsername").value,
+            password: this.deviceCreateAuthorizationFormGroup.get("authCredentialsBasicPassword").value,
+          }
+        };
       case AuthPolicy.OAuth:
         return {
-          clientID: this.deviceCreateAuthorizationFormGroup.get("authCredentialsOAuthClientID").value,
-          clientSecret: this.deviceCreateAuthorizationFormGroup.get("authCredentialsOAuthClientSecret").value,
-        }
+          oauth: {
+            clientId: this.deviceCreateAuthorizationFormGroup.get("authCredentialsOAuthClientID").value,
+            clientSecret: this.deviceCreateAuthorizationFormGroup.get("authCredentialsOAuthClientSecret").value,
+            url: this.deviceCreateAuthorizationFormGroup.get("authCredentialsOAuthURL").value,
+          }
+        };
       case AuthPolicy.Certificate:
         return {
-          clientID: this.deviceCreateAuthorizationFormGroup.get("authCredentialsCertificateClientID").value,
-          clientSecret: this.deviceCreateAuthorizationFormGroup.get("authCredentialsCertificateClientSecret").value,
-          certificate: this.deviceCreateAuthorizationFormGroup.get("authCredentialsCertificateCert").value,
-        }
+          certificateOAuth: {
+            clientId: this.deviceCreateAuthorizationFormGroup.get("authCredentialsCertificateClientID").value,
+            url: this.deviceCreateAuthorizationFormGroup.get("authCredentialsCertificateClientSecret").value,
+            certificate: this.deviceCreateAuthorizationFormGroup.get("authCredentialsCertificateCert").value,
+          }
+        };
       case AuthPolicy.Bearer:
         return {
-          token: this.deviceCreateAuthorizationFormGroup.get("authCredentialsBearerToken").value,
+          bearerToken: {
+            token: this.deviceCreateAuthorizationFormGroup.get("authCredentialsBearerToken").value,
+          },
         }
     }
   }

@@ -47,12 +47,15 @@ type ComplexityRoot struct {
 	Auth struct {
 		AccessStrategy func(childComplexity int) int
 		Credential     func(childComplexity int) int
-		OneTimeToken   func(childComplexity int) int
 	}
 
 	BasicCredentialData struct {
 		Password func(childComplexity int) int
 		Username func(childComplexity int) int
+	}
+
+	BearerTokenCredentialData struct {
+		Token func(childComplexity int) int
 	}
 
 	CertificateOAuthCredentialData struct {
@@ -62,14 +65,13 @@ type ComplexityRoot struct {
 	}
 
 	Device struct {
-		Auth               func(childComplexity int) int
-		CommunicationToken func(childComplexity int) int
-		Description        func(childComplexity int) int
-		Host               func(childComplexity int) int
-		ID                 func(childComplexity int) int
-		Name               func(childComplexity int) int
-		Status             func(childComplexity int) int
-		TenantID           func(childComplexity int) int
+		Auth        func(childComplexity int) int
+		Description func(childComplexity int) int
+		Host        func(childComplexity int) int
+		ID          func(childComplexity int) int
+		Name        func(childComplexity int) int
+		Status      func(childComplexity int) int
+		TenantID    func(childComplexity int) int
 	}
 
 	DevicePage struct {
@@ -157,13 +159,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Auth.Credential(childComplexity), true
 
-	case "Auth.oneTimeToken":
-		if e.complexity.Auth.OneTimeToken == nil {
-			break
-		}
-
-		return e.complexity.Auth.OneTimeToken(childComplexity), true
-
 	case "BasicCredentialData.password":
 		if e.complexity.BasicCredentialData.Password == nil {
 			break
@@ -177,6 +172,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.BasicCredentialData.Username(childComplexity), true
+
+	case "BearerTokenCredentialData.token":
+		if e.complexity.BearerTokenCredentialData.Token == nil {
+			break
+		}
+
+		return e.complexity.BearerTokenCredentialData.Token(childComplexity), true
 
 	case "CertificateOAuthCredentialData.certificate":
 		if e.complexity.CertificateOAuthCredentialData.Certificate == nil {
@@ -205,13 +207,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Device.Auth(childComplexity), true
-
-	case "Device.communicationToken":
-		if e.complexity.Device.CommunicationToken == nil {
-			break
-		}
-
-		return e.complexity.Device.CommunicationToken(childComplexity), true
 
 	case "Device.description":
 		if e.complexity.Device.Description == nil {
@@ -500,18 +495,11 @@ var sources = []*ast.Source{
 scalar Any
 scalar Timestamp
 
-union CredentialData = BasicCredentialData | OAuthCredentialData | CertificateOAuthCredentialData
+union CredentialData = BasicCredentialData | OAuthCredentialData | CertificateOAuthCredentialData | BearerTokenCredentialData
 
 interface Pageable {
     pageInfo: PageInfo!
     totalCount: Int!
-}
-
-interface OneTimeToken {
-    token: String!
-    expiresAt: Timestamp!
-    createdAt: Timestamp
-    usedAt: Timestamp
 }
 
 enum AggregationType {
@@ -532,6 +520,10 @@ enum DeviceStatus {
     ALIVE
     UNREACHABLE
     ERROR
+}
+
+type BearerTokenCredentialData {
+    token: String!
 }
 
 type BasicCredentialData {
@@ -560,7 +552,6 @@ type PageInfo {
 type Auth {
     credential: CredentialData
     accessStrategy: String
-    oneTimeToken: OneTimeToken
 }
 
 type Device {
@@ -570,7 +561,6 @@ type Device {
     status: DeviceStatus!
     tenantId: ID!
     host: Host
-    communicationToken: String
     auth: Auth
 }
 
@@ -598,15 +588,7 @@ input DeviceInput {
     description: String
     status: DeviceStatus!
     host: HostInput!
-    communicationToken: String
     auth: AuthInput
-}
-
-input OneTimeTokenInput {
-    token: String!
-    expiresAt: Timestamp!
-    createdAt: Timestamp!
-    usedAt: Timestamp!
 }
 
 input BasicCredentialDataInput {
@@ -614,6 +596,9 @@ input BasicCredentialDataInput {
     password: String!
 }
 
+input TokenCredentialDataInput {
+    token: String!
+}
 
 input CertificateOAuthCredentialDataInput {
     clientId: ID!
@@ -632,12 +617,12 @@ input CredentialDataInput {
     basic: BasicCredentialDataInput
     oauth: OAuthCredentialDataInput
     certificateOAuth: CertificateOAuthCredentialDataInput
+    bearerToken: TokenCredentialDataInput
 }
 
 input AuthInput {
     credential: CredentialDataInput
     accessStrategy: String
-    oneTimeToken: OneTimeTokenInput
 }
 
 type Query {
@@ -890,37 +875,6 @@ func (ec *executionContext) _Auth_accessStrategy(ctx context.Context, field grap
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Auth_oneTimeToken(ctx context.Context, field graphql.CollectedField, obj *Auth) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Auth",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.OneTimeToken, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(OneTimeToken)
-	fc.Result = res
-	return ec.marshalOOneTimeToken2githubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐOneTimeToken(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _BasicCredentialData_username(ctx context.Context, field graphql.CollectedField, obj *BasicCredentialData) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -973,6 +927,40 @@ func (ec *executionContext) _BasicCredentialData_password(ctx context.Context, f
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Password, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _BearerTokenCredentialData_token(ctx context.Context, field graphql.CollectedField, obj *BearerTokenCredentialData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "BearerTokenCredentialData",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Token, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1287,37 +1275,6 @@ func (ec *executionContext) _Device_host(ctx context.Context, field graphql.Coll
 	res := resTmp.(*Host)
 	fc.Result = res
 	return ec.marshalOHost2ᚖgithubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐHost(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Device_communicationToken(ctx context.Context, field graphql.CollectedField, obj *Device) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Device",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.CommunicationToken, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Device_auth(ctx context.Context, field graphql.CollectedField, obj *Device) (ret graphql.Marshaler) {
@@ -3237,12 +3194,6 @@ func (ec *executionContext) unmarshalInputAuthInput(ctx context.Context, obj int
 			if err != nil {
 				return it, err
 			}
-		case "oneTimeToken":
-			var err error
-			it.OneTimeToken, err = ec.unmarshalOOneTimeTokenInput2ᚖgithubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐOneTimeTokenInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		}
 	}
 
@@ -3327,6 +3278,12 @@ func (ec *executionContext) unmarshalInputCredentialDataInput(ctx context.Contex
 			if err != nil {
 				return it, err
 			}
+		case "bearerToken":
+			var err error
+			it.BearerToken, err = ec.unmarshalOTokenCredentialDataInput2ᚖgithubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐTokenCredentialDataInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -3360,12 +3317,6 @@ func (ec *executionContext) unmarshalInputDeviceInput(ctx context.Context, obj i
 		case "host":
 			var err error
 			it.Host, err = ec.unmarshalNHostInput2ᚖgithubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐHostInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "communicationToken":
-			var err error
-			it.CommunicationToken, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -3441,8 +3392,8 @@ func (ec *executionContext) unmarshalInputOAuthCredentialDataInput(ctx context.C
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputOneTimeTokenInput(ctx context.Context, obj interface{}) (OneTimeTokenInput, error) {
-	var it OneTimeTokenInput
+func (ec *executionContext) unmarshalInputTokenCredentialDataInput(ctx context.Context, obj interface{}) (TokenCredentialDataInput, error) {
+	var it TokenCredentialDataInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -3450,24 +3401,6 @@ func (ec *executionContext) unmarshalInputOneTimeTokenInput(ctx context.Context,
 		case "token":
 			var err error
 			it.Token, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "expiresAt":
-			var err error
-			it.ExpiresAt, err = ec.unmarshalNTimestamp2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "createdAt":
-			var err error
-			it.CreatedAt, err = ec.unmarshalNTimestamp2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "usedAt":
-			var err error
-			it.UsedAt, err = ec.unmarshalNTimestamp2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -3506,15 +3439,13 @@ func (ec *executionContext) _CredentialData(ctx context.Context, sel ast.Selecti
 			return graphql.Null
 		}
 		return ec._CertificateOAuthCredentialData(ctx, sel, obj)
-	default:
-		panic(fmt.Errorf("unexpected type %T", obj))
-	}
-}
-
-func (ec *executionContext) _OneTimeToken(ctx context.Context, sel ast.SelectionSet, obj OneTimeToken) graphql.Marshaler {
-	switch obj := (obj).(type) {
-	case nil:
-		return graphql.Null
+	case BearerTokenCredentialData:
+		return ec._BearerTokenCredentialData(ctx, sel, &obj)
+	case *BearerTokenCredentialData:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._BearerTokenCredentialData(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -3555,8 +3486,6 @@ func (ec *executionContext) _Auth(ctx context.Context, sel ast.SelectionSet, obj
 			out.Values[i] = ec._Auth_credential(ctx, field, obj)
 		case "accessStrategy":
 			out.Values[i] = ec._Auth_accessStrategy(ctx, field, obj)
-		case "oneTimeToken":
-			out.Values[i] = ec._Auth_oneTimeToken(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -3586,6 +3515,33 @@ func (ec *executionContext) _BasicCredentialData(ctx context.Context, sel ast.Se
 			}
 		case "password":
 			out.Values[i] = ec._BasicCredentialData_password(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var bearerTokenCredentialDataImplementors = []string{"BearerTokenCredentialData", "CredentialData"}
+
+func (ec *executionContext) _BearerTokenCredentialData(ctx context.Context, sel ast.SelectionSet, obj *BearerTokenCredentialData) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, bearerTokenCredentialDataImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("BearerTokenCredentialData")
+		case "token":
+			out.Values[i] = ec._BearerTokenCredentialData_token(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -3681,8 +3637,6 @@ func (ec *executionContext) _Device(ctx context.Context, sel ast.SelectionSet, o
 				res = ec._Device_host(ctx, field, obj)
 				return res
 			})
-		case "communicationToken":
-			out.Values[i] = ec._Device_communicationToken(ctx, field, obj)
 		case "auth":
 			out.Values[i] = ec._Device_auth(ctx, field, obj)
 		default:
@@ -4443,20 +4397,6 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 	return res
 }
 
-func (ec *executionContext) unmarshalNTimestamp2string(ctx context.Context, v interface{}) (string, error) {
-	return graphql.UnmarshalString(v)
-}
-
-func (ec *executionContext) marshalNTimestamp2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
-	res := graphql.MarshalString(v)
-	if res == graphql.Null {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-	}
-	return res
-}
-
 func (ec *executionContext) unmarshalN_FieldSet2string(ctx context.Context, v interface{}) (string, error) {
 	return graphql.UnmarshalString(v)
 }
@@ -4834,25 +4774,6 @@ func (ec *executionContext) unmarshalOOAuthCredentialDataInput2ᚖgithubᚗcom�
 	return &res, err
 }
 
-func (ec *executionContext) marshalOOneTimeToken2githubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐOneTimeToken(ctx context.Context, sel ast.SelectionSet, v OneTimeToken) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._OneTimeToken(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalOOneTimeTokenInput2githubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐOneTimeTokenInput(ctx context.Context, v interface{}) (OneTimeTokenInput, error) {
-	return ec.unmarshalInputOneTimeTokenInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalOOneTimeTokenInput2ᚖgithubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐOneTimeTokenInput(ctx context.Context, v interface{}) (*OneTimeTokenInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOOneTimeTokenInput2githubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐOneTimeTokenInput(ctx, v)
-	return &res, err
-}
-
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {
 	return graphql.UnmarshalString(v)
 }
@@ -4874,6 +4795,18 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 		return graphql.Null
 	}
 	return ec.marshalOString2string(ctx, sel, *v)
+}
+
+func (ec *executionContext) unmarshalOTokenCredentialDataInput2githubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐTokenCredentialDataInput(ctx context.Context, v interface{}) (TokenCredentialDataInput, error) {
+	return ec.unmarshalInputTokenCredentialDataInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOTokenCredentialDataInput2ᚖgithubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐTokenCredentialDataInput(ctx context.Context, v interface{}) (*TokenCredentialDataInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOTokenCredentialDataInput2githubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐTokenCredentialDataInput(ctx, v)
+	return &res, err
 }
 
 func (ec *executionContext) marshalO__EnumValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValueᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.EnumValue) graphql.Marshaler {

@@ -32,6 +32,7 @@ import {DynamicDropdownBlock} from "../../../shared/blocks/dynamic-dropdown";
 import {AggregationBlock} from "../../../shared/blocks/aggregation";
 import {IOperation, OperationBlock} from "../../../shared/blocks/operation";
 import {RepeatForBlock} from "../../../shared/blocks/repeatFor";
+import { DeviceInfoFragment } from 'src/app/shared/graphql/generated';
 
 @Component({
   selector: 'app-widget-create',
@@ -112,9 +113,9 @@ export class WidgetCreateComponent implements OnInit {
 
   public detailsFormGroup: UntypedFormGroup;
 
-  public devices: IDevice[]
-  public selectedDevices: Set<IDevice> = new Set();
-  public filteredDevices: Observable<IDevice[]>;
+  public devices: DeviceInfoFragment[]
+  public selectedDevices: Set<DeviceInfoFragment> = new Set();
+  public filteredDevices: Observable<DeviceInfoFragment[]>;
 
   @ViewChild('deviceInput') public deviceInput: ElementRef<HTMLInputElement>;
 
@@ -155,13 +156,13 @@ export class WidgetCreateComponent implements OnInit {
 
   constructor(private formBuilder: UntypedFormBuilder, private deviceService: DeviceService) {}
   ngOnInit(): void {
-    this.deviceService.getDevices().subscribe((deviceList) => {
+    this.deviceService.getAllDevices().subscribe((deviceList) => {
       this.devices = deviceList;
 
       const workspace = new Blockly.WorkspaceSvg(new Blockly.Options({}));
       const toolbox: NgxBlocklyToolbox = new NgxBlocklyToolbox(workspace);
 
-      const dynamicDropdownDevices = deviceList.map((device) => [device.name, device._id])
+      const dynamicDropdownDevices = deviceList.map((device) => [device.name, device.id])
       const dropdownOutput = new DynamicDropdownBlock("deviceDropdownOutput",{ id: "selectedDeviceOutput", data: dynamicDropdownDevices, isOutput: true })
       const dropdownInput = new DynamicDropdownBlock("deviceDropdownInput",{ id: "selectedDeviceInput", data: dynamicDropdownDevices, isOutput: false })
       const deviceBlocks = [dropdownOutput, dropdownInput];
@@ -214,12 +215,12 @@ export class WidgetCreateComponent implements OnInit {
   }
 
   selected(event: MatAutocompleteSelectedEvent): void {
-    this.selectedDevices.add(event.option.value as IDevice);
+    this.selectedDevices.add(event.option.value as DeviceInfoFragment);
     this.detailsFormGroup.get('device').setValue('');
     this.deviceInput.nativeElement.value = ''
   }
 
-  private _filter(value: string): IDevice[] {
+  private _filter(value: string): DeviceInfoFragment[] {
     if (typeof value !== 'string') {
       return this.devices;
     }

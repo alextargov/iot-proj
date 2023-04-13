@@ -1,15 +1,24 @@
-import { Observable } from 'rxjs';
+import { Observable , map } from 'rxjs';
 import { Injectable } from '@angular/core';
 
 
 import { ApiService } from '../api/api.service';
 import { DeviceStatus, IDevice, IDevicePage } from './device.interface';
+import {
+    CreateDeviceGQL, CreateDeviceMutation,
+    DeviceInfoFragment,
+    GetAllDevicesDocument,
+    GetAllDevicesGQL,
+    GetAllDevicesQuery
+} from '../../graphql/generated';
+import { DeviceInput } from "../../graphql/generated";
+import {DataProxy, FetchResult} from "@apollo/client";
 // import { AuthService } from '../auth/auth.service';
 
-@Injectable()
+@Injectable({
+  providedIn: 'root',
+})
 export class DeviceService  {
-    public readonly route = '/device';
-
     private deviceList: IDevice[] = [{
       _id: "b2e8f85c-3caa-4d2e-8c0e-641385d3ddbc",
       userID: "fc43d375-9283-4a87-9510-77359800f87c",
@@ -47,60 +56,86 @@ export class DeviceService  {
 
     constructor(
         private readonly apiService: ApiService,
+        private readonly getAllDevicesGql: GetAllDevicesGQL,
+        private readonly createDeviceGql: CreateDeviceGQL,
         // private readonly authService: AuthService,
     ) {}
 
     public getDevices(): Observable<IDevice[]> {
         return new Observable((s) =>  s.next(this.deviceList))
-
-        return this.apiService.request(this.route);
     }
 
-    public getDeviceById(id: string): Observable<IDevice> {
-        return this.apiService.request(this.route, {
-            data: { id }
-        });
+    public getAllDevices(): Observable<DeviceInfoFragment[]> {
+        return this.getAllDevicesGql.watch().valueChanges.pipe(
+            map((res) => res.data.devices ?? [])
+        );
     }
 
-    public getDeviceByUserId(userId: string): Observable<IDevicePage> {
-      return new Observable((s) => {
-        s.next({
-          data: this.deviceList,
-          pageInfo: {
-            start: null,
-            cursor: null,
-          }
-        } as IDevicePage)
-      })
-        // return this.apiService.request(`${this.route}/user/${userId}`);
-    }
-
-    public createDevice(data: IDevice): Observable<{ data: IDevice, error: number }> {
-        const hydratedData: IDevice = {
+    public createDevice(data: DeviceInput): Observable<{ data: DeviceInfoFragment, error: number }> {
+        const hydratedData: DeviceInput = {
             ...data,
             // userId: this.authService.getUser()._id
         };
 
-        this.deviceList.push(data)
+        this.deviceList.push(data as any)
 
-        return new Observable((s) =>  s.next({ data ,error:0}))
-
-        return this.apiService.request(`${this.route}`, {
-            method: 'post',
-            data: hydratedData
-        });
+        return new Observable((s) =>  s.next({ data: data as any ,error:0}))
     }
 
-    public updateDevice(id: string, data: IDevice): Observable<{ data: IDevice, error: number }> {
-        return this.apiService.request(`${this.route}/${id}`, {
-            method: 'put',
-            data
-        });
-    }
+    public createMovie(input: DeviceInput): Observable<FetchResult<CreateDeviceMutation>> {
+        return this.createDeviceGql.mutate(
+            {
+                input,
+            },
+            {
+                optimisticResponse: {
+                    createDevice: {
+                        __typename: "Device",
+                        tenantId: "",
+                        id: "-1",
+                        name: input.name,
+                        description: input.description,
+                        status: input.status,
+                        host: {
+                            __typename: "Host",
+                            id: "-1",
+                            url: input.host.url,
+                            turnOffEndpoint: input.host.turnOffEndpoint,
+                            turnOnEndpoint: input.host.turnOnEndpoint,
+                        },
+                        auth: {
+                            __typename: "Auth",
+                            credential: {
+                                ...input.auth.credential,
+                            } as any,
+                        }
+                    },
+                },
+              update: (store: DataProxy, { data }) => {
+                const createdDevice = data?.createDevice as DeviceInfoFragment;
 
-    public deleteDevice(id: string): Observable<void> {
-        return this.apiService.request(`${this.route}/${id}`, {
-            method: 'delete',
-        });
-    }
+                // query movies from cache
+                const moviesQuery = store.readQuery<GetAllDevicesQuery>({
+                  query: GetAllDevicesDocument,
+                });
+
+                // movies haven't been loaded yet - no data in cache
+                if (!moviesQuery?.devices) {
+                  return;
+                }
+
+                // update cache
+                store.writeQuery<GetAllDevicesQuery>({
+                  query: GetAllDevicesDocument,
+                  data: {
+                    __typename: 'Query',
+                    devices: [
+                      ...moviesQuery.devices, createdDevice
+                    ],
+                  },
+                });
+              },
+            },
+        );
+     }
 }

@@ -2,18 +2,11 @@ scalar PageCursor
 scalar Any
 scalar Timestamp
 
-union CredentialData = BasicCredentialData | OAuthCredentialData | CertificateOAuthCredentialData
+union CredentialData = BasicCredentialData | OAuthCredentialData | CertificateOAuthCredentialData | BearerTokenCredentialData
 
 interface Pageable {
     pageInfo: PageInfo!
     totalCount: Int!
-}
-
-interface OneTimeToken {
-    token: String!
-    expiresAt: Timestamp!
-    createdAt: Timestamp
-    usedAt: Timestamp
 }
 
 enum AggregationType {
@@ -34,6 +27,10 @@ enum DeviceStatus {
     ALIVE
     UNREACHABLE
     ERROR
+}
+
+type BearerTokenCredentialData {
+    token: String!
 }
 
 type BasicCredentialData {
@@ -62,7 +59,6 @@ type PageInfo {
 type Auth {
     credential: CredentialData
     accessStrategy: String
-    oneTimeToken: OneTimeToken
 }
 
 type Device {
@@ -72,7 +68,6 @@ type Device {
     status: DeviceStatus!
     tenantId: ID!
     host: Host
-    communicationToken: String
     auth: Auth
 }
 
@@ -100,15 +95,7 @@ input DeviceInput {
     description: String
     status: DeviceStatus!
     host: HostInput!
-    communicationToken: String
     auth: AuthInput
-}
-
-input OneTimeTokenInput {
-    token: String!
-    expiresAt: Timestamp!
-    createdAt: Timestamp!
-    usedAt: Timestamp!
 }
 
 input BasicCredentialDataInput {
@@ -116,6 +103,9 @@ input BasicCredentialDataInput {
     password: String!
 }
 
+input TokenCredentialDataInput {
+    token: String!
+}
 
 input CertificateOAuthCredentialDataInput {
     clientId: ID!
@@ -134,12 +124,12 @@ input CredentialDataInput {
     basic: BasicCredentialDataInput
     oauth: OAuthCredentialDataInput
     certificateOAuth: CertificateOAuthCredentialDataInput
+    bearerToken: TokenCredentialDataInput
 }
 
 input AuthInput {
     credential: CredentialDataInput
     accessStrategy: String
-    oneTimeToken: OneTimeTokenInput
 }
 
 type Query {

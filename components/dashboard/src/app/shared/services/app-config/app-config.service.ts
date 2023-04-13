@@ -6,7 +6,7 @@ export interface IAppConfigInterface {
 }
 
 const defaultConfig: IAppConfigInterface = {
-    APP_API_URL: 'http://localhost:3200',
+    APP_API_URL: 'http://localhost:8080',
 };
 
 @Injectable()

@@ -110,6 +110,7 @@ func (a *Authenticator) parseClaimsWithRetry(ctx context.Context, bearerToken st
 
 func (a *Authenticator) getBearerToken(r *http.Request) (string, error) {
 	reqToken := r.Header.Get(AuthorizationHeaderKey)
+	fmt.Printf("AuthorizationHeaderKey: %q\n", r.Header.Get(AuthorizationHeaderKey))
 	if reqToken == "" {
 		return "", apperrors.NewUnauthorizedError("invalid bearer token")
 	}

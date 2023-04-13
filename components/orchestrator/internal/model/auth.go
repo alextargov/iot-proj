@@ -1,18 +1,9 @@
 package model
 
-import "time"
-
 // Auth missing godoc
 type Auth struct {
 	Credential     CredentialData
 	AccessStrategy *string
-	OneTimeToken   *OneTimeToken
-}
-
-// OneTimeToken missing godoc
-type OneTimeToken struct {
-	Token     string
-	CreatedAt time.Time
 }
 
 // CredentialData missing godoc
@@ -20,6 +11,7 @@ type CredentialData struct {
 	Basic            *BasicCredentialData
 	Oauth            *OAuthCredentialData
 	CertificateOAuth *CertificateOAuthCredentialData
+	BearerToken      *TokenCredentialData
 }
 
 // BasicCredentialData missing godoc
@@ -42,11 +34,14 @@ type CertificateOAuthCredentialData struct {
 	URL         string
 }
 
+type TokenCredentialData struct {
+	Token string
+}
+
 // AuthInput missing godoc
 type AuthInput struct {
 	Credential     *CredentialDataInput
 	AccessStrategy *string
-	OneTimeToken   *OneTimeToken
 }
 
 // ToAuth missing godoc
@@ -63,7 +58,6 @@ func (i *AuthInput) ToAuth() *Auth {
 	return &Auth{
 		Credential:     credential,
 		AccessStrategy: i.AccessStrategy,
-		OneTimeToken:   i.OneTimeToken,
 	}
 }
 
@@ -72,6 +66,7 @@ type CredentialDataInput struct {
 	Basic            *BasicCredentialDataInput
 	Oauth            *OAuthCredentialDataInput
 	CertificateOAuth *CertificateOAuthCredentialDataInput
+	Token            *TokenCredentialDataInput
 }
 
 // ToCredentialData missing godoc
@@ -83,6 +78,7 @@ func (i *CredentialDataInput) ToCredentialData() *CredentialData {
 	var basic *BasicCredentialData
 	var oauth *OAuthCredentialData
 	var certOAuth *CertificateOAuthCredentialData
+	var token *TokenCredentialData
 
 	if i.Basic != nil {
 		basic = i.Basic.ToBasicCredentialData()
@@ -96,10 +92,15 @@ func (i *CredentialDataInput) ToCredentialData() *CredentialData {
 		certOAuth = i.CertificateOAuth.ToCertificateOAuthCredentialData()
 	}
 
+	if i.Token != nil {
+		token = i.Token.ToTokenCredentialData()
+	}
+
 	return &CredentialData{
 		Basic:            basic,
 		Oauth:            oauth,
 		CertificateOAuth: certOAuth,
+		BearerToken:      token,
 	}
 }
 
@@ -118,6 +119,21 @@ func (i *BasicCredentialDataInput) ToBasicCredentialData() *BasicCredentialData 
 	return &BasicCredentialData{
 		Username: i.Username,
 		Password: i.Password,
+	}
+}
+
+type TokenCredentialDataInput struct {
+	Token string
+}
+
+// ToTokenCredentialData missing godoc
+func (i *TokenCredentialDataInput) ToTokenCredentialData() *TokenCredentialData {
+	if i == nil {
+		return nil
+	}
+
+	return &TokenCredentialData{
+		Token: i.Token,
 	}
 }
 

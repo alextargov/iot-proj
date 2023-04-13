@@ -9,26 +9,26 @@
         <ng-template matStepLabel>Metadata</ng-template>
         <div class="device-create__metadata-items">
           <div class="device-create__metadata-items-left">
-            <mat-form-field appearance="standard">
+            <mat-form-field appearance="fill">
               <mat-label>Name</mat-label>
               <input matInput formControlName="name" required>
             </mat-form-field>
-            <mat-form-field appearance="standard">
+            <mat-form-field appearance="fill">
               <mat-label>Description</mat-label>
               <input matInput formControlName="description" required>
             </mat-form-field>
           </div>
 
           <div class="device-create__metadata-items-right">
-            <mat-form-field appearance="standard">
+            <mat-form-field appearance="fill">
               <mat-label>Device URL</mat-label>
               <input matInput formControlName="deviceURL">
             </mat-form-field>
-            <mat-form-field appearance="standard">
+            <mat-form-field appearance="fill">
               <mat-label>Turn On Endpoint</mat-label>
               <input matInput formControlName="turnOnEndpoint">
             </mat-form-field>
-            <mat-form-field appearance="standard">
+            <mat-form-field appearance="fill">
               <mat-label>Turn Off Endpoint</mat-label>
               <input matInput formControlName="turnOffEndpoint">
             </mat-form-field>
@@ -79,7 +79,7 @@
 
               <div class="device-create__authorization-items-accordion-content">
                 <div class="device-create__authorization-items-accordion-content-left">
-                  <mat-form-field appearance="standard">
+                  <mat-form-field appearance="fill">
                     <mat-label>Choose an authorization</mat-label>
                     <mat-select [(value)]="selectedAuthorizationPolicy">
                       <mat-option *ngFor="let authPolicy of authorizationPolicies" [value]="authPolicy">{{ authPolicy }}</mat-option>
@@ -89,44 +89,44 @@
 
                 <div class="device-create__authorization-items-accordion-content-right">
                   <div class="device-create__authorization-items-form" *ngIf="selectedAuthorizationPolicy === authPolicy.Basic">
-                    <mat-form-field appearance="standard">
+                    <mat-form-field appearance="fill">
                       <mat-label>Username</mat-label>
                       <input matInput formControlName="authCredentialsBasicUsername">
                     </mat-form-field>
-                    <mat-form-field appearance="standard">
+                    <mat-form-field appearance="fill">
                       <mat-label>Password</mat-label>
                       <input matInput formControlName="authCredentialsBasicPassword">
                     </mat-form-field>
                   </div>
 
                   <div class="device-create__authorization-items-form" *ngIf="selectedAuthorizationPolicy === authPolicy.OAuth">
-                    <mat-form-field appearance="standard" >
+                    <mat-form-field appearance="fill" >
                       <mat-label>Client ID</mat-label>
                       <input matInput formControlName="authCredentialsOAuthClientID">
                     </mat-form-field>
-                    <mat-form-field appearance="standard">
+                    <mat-form-field appearance="fill">
                       <mat-label>Client Secret</mat-label>
                       <input matInput formControlName="authCredentialsOAuthClientSecret">
                     </mat-form-field>
                   </div>
 
                   <div class="device-create__authorization-items-form" *ngIf="selectedAuthorizationPolicy === authPolicy.Certificate">
-                    <mat-form-field appearance="standard">
+                    <mat-form-field appearance="fill">
                       <mat-label>Client ID</mat-label>
                       <input matInput formControlName="authCredentialsCertificateClientID">
                     </mat-form-field>
-                    <mat-form-field appearance="standard">
+                    <mat-form-field appearance="fill">
                       <mat-label>Client Secret</mat-label>
                       <input matInput formControlName="authCredentialsCertificateClientSecret">
                     </mat-form-field>
-                    <mat-form-field appearance="standard">
+                    <mat-form-field appearance="fill">
                       <mat-label>Certificate</mat-label>
                       <input matInput formControlName="authCredentialsCertificateClientCert">
                     </mat-form-field>
                   </div>
 
                   <div class="device-create__authorization-items-form" *ngIf="selectedAuthorizationPolicy === authPolicy.Bearer">
-                    <mat-form-field appearance="standard">
+                    <mat-form-field appearance="fill">
                       <mat-label>Bearer Token</mat-label>
                       <input matInput formControlName="authCredentialsBearerToken">
                     </mat-form-field>
@@ -181,18 +181,20 @@
     <div class="device-create__container-step">
       <div class="device-create__data-output">
         <form class="device-create__data-output-form" [formGroup]="deviceCreateOutputFormGroup">
+          <h4>Enter outputs for the device:</h4>
           <mat-form-field class="device-create__data-output-form-field">
             <mat-label>Data Output</mat-label>
-            <mat-chip-listbox #dataOutputList aria-label="Data output selection">
-              <mat-chip-option
+            <mat-chip-grid #dataOutputList aria-label="Data output selection">
+              <mat-chip-row
                 *ngFor="let dataOutputType of dataOutputTypes"
                 (removed)="removeDataOutputType(dataOutputType.name)">
                 {{dataOutputType.name}}
                 <button matChipRemove>
                   <mat-icon>cancel</mat-icon>
                 </button>
-              </mat-chip-option>
+              </mat-chip-row>
               <input
+                matInput
                 placeholder="New data type..."
                 #dataOutputInput
                 formControlName="dataOutput"
@@ -200,7 +202,7 @@
                 [matChipInputFor]="dataOutputList"
                 [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
               >
-            </mat-chip-listbox>
+            </mat-chip-grid>
             <mat-autocomplete #auto="matAutocomplete" (optionSelected)="selectedDataType($event)">
               <mat-option *ngFor="let dataType of filteredDataTypes | async" [value]="dataType" [disabled]="isDataTypeOptionDisabled(dataType)">
                 {{dataType}}

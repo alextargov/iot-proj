@@ -46,6 +46,7 @@ func (c *converter) credentialInputFromGraphQL(in *graphql.CredentialDataInput) 
 	var basic *model.BasicCredentialDataInput
 	var oauth *model.OAuthCredentialDataInput
 	var certOAuth *model.CertificateOAuthCredentialDataInput
+	var token *model.TokenCredentialDataInput
 
 	if in.Basic != nil {
 		basic = &model.BasicCredentialDataInput{
@@ -57,6 +58,10 @@ func (c *converter) credentialInputFromGraphQL(in *graphql.CredentialDataInput) 
 			URL:          in.Oauth.URL,
 			ClientID:     in.Oauth.ClientID,
 			ClientSecret: in.Oauth.ClientSecret,
+		}
+	} else if in.BearerToken != nil {
+		token = &model.TokenCredentialDataInput{
+			Token: in.BearerToken.Token,
 		}
 	} else if in.CertificateOAuth != nil {
 		certOAuth = &model.CertificateOAuthCredentialDataInput{
@@ -70,6 +75,7 @@ func (c *converter) credentialInputFromGraphQL(in *graphql.CredentialDataInput) 
 		Basic:            basic,
 		Oauth:            oauth,
 		CertificateOAuth: certOAuth,
+		Token:            token,
 	}
 }
 
@@ -91,6 +97,10 @@ func (c *converter) credentialToGraphQL(in model.CredentialData) graphql.Credent
 			ClientID:    in.CertificateOAuth.ClientID,
 			Certificate: in.CertificateOAuth.Certificate,
 			URL:         in.CertificateOAuth.URL,
+		}
+	} else if in.BearerToken != nil {
+		credential = graphql.BearerTokenCredentialData{
+			Token: in.BearerToken.Token,
 		}
 	}
 

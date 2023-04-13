@@ -26,7 +26,6 @@ CREATE TABLE devices (
     description text,
     status device_status,
     auth jsonb,
-    communication_token varchar(256),
     created_at timestamp
 );
 

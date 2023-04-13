@@ -38,13 +38,12 @@ func (c *converter) ToEntity(model model.Device) (*Entity, error) {
 	}
 
 	return &Entity{
-		ID:                 model.ID,
-		TenantID:           model.TenantID,
-		Name:               model.Name,
-		Description:        repo.NewNullableString(model.Description),
-		Status:             string(model.Status),
-		CommunicationToken: repo.NewNullableString(model.CommunicationToken),
-		Auth:               optionalAuth,
+		ID:          model.ID,
+		TenantID:    model.TenantID,
+		Name:        model.Name,
+		Description: repo.NewNullableString(model.Description),
+		Status:      string(model.Status),
+		Auth:        optionalAuth,
 	}, nil
 }
 
@@ -65,24 +64,22 @@ func (c *converter) FromEntity(entity *Entity) (*model.Device, error) {
 	}
 
 	return &model.Device{
-		ID:                 entity.ID,
-		Name:               entity.Name,
-		Description:        repo.StringPtrFromNullableString(entity.Description),
-		TenantID:           entity.TenantID,
-		Status:             model.DeviceStatus(entity.Status),
-		Auth:               auth,
-		CommunicationToken: repo.StringPtrFromNullableString(entity.CommunicationToken),
+		ID:          entity.ID,
+		Name:        entity.Name,
+		Description: repo.StringPtrFromNullableString(entity.Description),
+		TenantID:    entity.TenantID,
+		Status:      model.DeviceStatus(entity.Status),
+		Auth:        auth,
 	}, nil
 }
 
 func (c *converter) InputFromGraphQL(in graphql.DeviceInput) model.DeviceInput {
 	return model.DeviceInput{
-		Name:               in.Name,
-		Description:        in.Description,
-		Status:             model.DeviceStatus(in.Status),
-		Host:               c.hostConv.InputFromGraphQL(in.Host),
-		CommunicationToken: in.CommunicationToken,
-		Auth:               c.authConv.InputFromGraphQL(in.Auth),
+		Name:        in.Name,
+		Description: in.Description,
+		Status:      model.DeviceStatus(in.Status),
+		Host:        c.hostConv.InputFromGraphQL(in.Host),
+		Auth:        c.authConv.InputFromGraphQL(in.Auth),
 	}
 }
 
@@ -100,8 +97,7 @@ func (c *converter) ToGraphQL(in *model.Device) *graphql.Device {
 			TurnOnEndpoint:  in.Host.TurnOnEndpoint,
 			TurnOffEndpoint: in.Host.TurnOffEndpoint,
 		},
-		CommunicationToken: in.CommunicationToken,
-		Auth:               c.authConv.ToGraphQL(in.Auth),
+		Auth: c.authConv.ToGraphQL(in.Auth),
 	}
 }
 

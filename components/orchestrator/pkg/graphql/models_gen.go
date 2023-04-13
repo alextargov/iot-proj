@@ -12,10 +12,6 @@ type CredentialData interface {
 	IsCredentialData()
 }
 
-type OneTimeToken interface {
-	IsOneTimeToken()
-}
-
 type Pageable interface {
 	IsPageable()
 }
@@ -23,13 +19,11 @@ type Pageable interface {
 type Auth struct {
 	Credential     CredentialData `json:"credential"`
 	AccessStrategy *string        `json:"accessStrategy"`
-	OneTimeToken   OneTimeToken   `json:"oneTimeToken"`
 }
 
 type AuthInput struct {
 	Credential     *CredentialDataInput `json:"credential"`
 	AccessStrategy *string              `json:"accessStrategy"`
-	OneTimeToken   *OneTimeTokenInput   `json:"oneTimeToken"`
 }
 
 type BasicCredentialData struct {
@@ -43,6 +37,12 @@ type BasicCredentialDataInput struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
+
+type BearerTokenCredentialData struct {
+	Token string `json:"token"`
+}
+
+func (BearerTokenCredentialData) IsCredentialData() {}
 
 type CertificateOAuthCredentialData struct {
 	ClientID    string `json:"clientId"`
@@ -62,15 +62,15 @@ type CredentialDataInput struct {
 	Basic            *BasicCredentialDataInput            `json:"basic"`
 	Oauth            *OAuthCredentialDataInput            `json:"oauth"`
 	CertificateOAuth *CertificateOAuthCredentialDataInput `json:"certificateOAuth"`
+	BearerToken      *TokenCredentialDataInput            `json:"bearerToken"`
 }
 
 type DeviceInput struct {
-	Name               string       `json:"name"`
-	Description        *string      `json:"description"`
-	Status             DeviceStatus `json:"status"`
-	Host               *HostInput   `json:"host"`
-	CommunicationToken *string      `json:"communicationToken"`
-	Auth               *AuthInput   `json:"auth"`
+	Name        string       `json:"name"`
+	Description *string      `json:"description"`
+	Status      DeviceStatus `json:"status"`
+	Host        *HostInput   `json:"host"`
+	Auth        *AuthInput   `json:"auth"`
 }
 
 type DevicePage struct {
@@ -108,17 +108,14 @@ type OAuthCredentialDataInput struct {
 	URL          string `json:"url"`
 }
 
-type OneTimeTokenInput struct {
-	Token     string `json:"token"`
-	ExpiresAt string `json:"expiresAt"`
-	CreatedAt string `json:"createdAt"`
-	UsedAt    string `json:"usedAt"`
-}
-
 type PageInfo struct {
 	StartCursor string `json:"startCursor"`
 	EndCursor   string `json:"endCursor"`
 	HasNextPage bool   `json:"hasNextPage"`
+}
+
+type TokenCredentialDataInput struct {
+	Token string `json:"token"`
 }
 
 type AggregationType string
