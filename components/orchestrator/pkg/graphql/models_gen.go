@@ -165,21 +165,21 @@ type DeviceStatus string
 
 const (
 	DeviceStatusInitial     DeviceStatus = "INITIAL"
-	DeviceStatusACTIVE       DeviceStatus = "ACTIVE"
+	DeviceStatusActive      DeviceStatus = "ACTIVE"
 	DeviceStatusUnreachable DeviceStatus = "UNREACHABLE"
 	DeviceStatusError       DeviceStatus = "ERROR"
 )
 
 var AllDeviceStatus = []DeviceStatus{
 	DeviceStatusInitial,
-	DeviceStatusACTIVE,
+	DeviceStatusActive,
 	DeviceStatusUnreachable,
 	DeviceStatusError,
 }
 
 func (e DeviceStatus) IsValid() bool {
 	switch e {
-	case DeviceStatusInitial, DeviceStatusACTIVE, DeviceStatusUnreachable, DeviceStatusError:
+	case DeviceStatusInitial, DeviceStatusActive, DeviceStatusUnreachable, DeviceStatusError:
 		return true
 	}
 	return false

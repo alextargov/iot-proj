@@ -31,6 +31,8 @@ fragment DeviceInfo on Device {
         turnOnEndpoint
         turnOffEndpoint
     }
+    createdAt
+    updatedAt
 }
 
 query GetAllDevices {

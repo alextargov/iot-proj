@@ -8,4 +8,6 @@ type Device struct {
 	TenantID    string       `json:"tenantId"`
 	Host        *Host        `json:"host"`
 	Auth        *Auth        `json:"auth"`
+	CreatedAt   *Timestamp   `json:"createdAt"`
+	UpdatedAt   *Timestamp   `json:"updatedAt"`
 }

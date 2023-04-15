@@ -8,6 +8,7 @@ import (
 	"github.com/iot-proj/components/orchestrator/internal/repo"
 	"github.com/iot-proj/components/orchestrator/pkg/graphql"
 	"github.com/pkg/errors"
+	"time"
 )
 
 type hostConv interface {
@@ -45,6 +46,8 @@ func (c *converter) ToEntity(model model.Device) (*Entity, error) {
 		Description: repo.NewNullableString(model.Description),
 		Status:      string(model.Status),
 		Auth:        optionalAuth,
+		CreatedAt:   model.CreatedAt,
+		UpdatedAt:   model.UpdatedAt,
 	}, nil
 }
 
@@ -71,6 +74,8 @@ func (c *converter) FromEntity(entity *Entity) (*model.Device, error) {
 		TenantID:    entity.TenantID,
 		Status:      model.DeviceStatus(entity.Status),
 		Auth:        auth,
+		CreatedAt:   entity.CreatedAt,
+		UpdatedAt:   entity.UpdatedAt,
 	}, nil
 }
 
@@ -84,6 +89,15 @@ func (c *converter) InputFromGraphQL(in graphql.DeviceInput) model.DeviceInput {
 	}
 }
 
+func timePtrToTimestampPtr(time *time.Time) *graphql.Timestamp {
+	if time == nil {
+		return nil
+	}
+
+	t := graphql.Timestamp(*time)
+	return &t
+}
+
 func (c *converter) ToGraphQL(in *model.Device) *graphql.Device {
 	return &graphql.Device{
 		ID:          in.ID,
@@ -93,6 +107,8 @@ func (c *converter) ToGraphQL(in *model.Device) *graphql.Device {
 		Status:      graphql.DeviceStatus(in.Status),
 		Host:        c.hostConv.ToGraphQL(in.Host),
 		Auth:        c.authConv.ToGraphQL(in.Auth),
+		CreatedAt:   graphql.TimePtrToTimestampPtr(in.CreatedAt),
+		UpdatedAt:   graphql.TimePtrToTimestampPtr(in.UpdatedAt),
 	}
 }
 

@@ -261,7 +261,7 @@ export class DeviceCreateComponent implements OnInit, AfterViewInit {
                         ).value,
                         certificate:
                             this.deviceCreateAuthorizationFormGroup.get(
-                                'authCredentialsCertificateCert'
+                                'authCredentialsCertificateClientCert'
                             ).value,
                     },
                 }

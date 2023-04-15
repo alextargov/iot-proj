@@ -66,12 +66,14 @@ type ComplexityRoot struct {
 
 	Device struct {
 		Auth        func(childComplexity int) int
+		CreatedAt   func(childComplexity int) int
 		Description func(childComplexity int) int
 		Host        func(childComplexity int) int
 		ID          func(childComplexity int) int
 		Name        func(childComplexity int) int
 		Status      func(childComplexity int) int
 		TenantID    func(childComplexity int) int
+		UpdatedAt   func(childComplexity int) int
 	}
 
 	DevicePage struct {
@@ -208,6 +210,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Device.Auth(childComplexity), true
 
+	case "Device.createdAt":
+		if e.complexity.Device.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Device.CreatedAt(childComplexity), true
+
 	case "Device.description":
 		if e.complexity.Device.Description == nil {
 			break
@@ -249,6 +258,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Device.TenantID(childComplexity), true
+
+	case "Device.updatedAt":
+		if e.complexity.Device.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.Device.UpdatedAt(childComplexity), true
 
 	case "DevicePage.data":
 		if e.complexity.DevicePage.Data == nil {
@@ -562,6 +578,8 @@ type Device {
     tenantId: ID!
     host: Host
     auth: Auth
+    createdAt: Timestamp
+    updatedAt: Timestamp
 }
 
 type Host {
@@ -1306,6 +1324,68 @@ func (ec *executionContext) _Device_auth(ctx context.Context, field graphql.Coll
 	res := resTmp.(*Auth)
 	fc.Result = res
 	return ec.marshalOAuth2ᚖgithubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐAuth(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Device_createdAt(ctx context.Context, field graphql.CollectedField, obj *Device) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Device",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Timestamp)
+	fc.Result = res
+	return ec.marshalOTimestamp2ᚖgithubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Device_updatedAt(ctx context.Context, field graphql.CollectedField, obj *Device) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Device",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Timestamp)
+	fc.Result = res
+	return ec.marshalOTimestamp2ᚖgithubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _DevicePage_data(ctx context.Context, field graphql.CollectedField, obj *DevicePage) (ret graphql.Marshaler) {
@@ -3639,6 +3719,10 @@ func (ec *executionContext) _Device(ctx context.Context, sel ast.SelectionSet, o
 			})
 		case "auth":
 			out.Values[i] = ec._Device_auth(ctx, field, obj)
+		case "createdAt":
+			out.Values[i] = ec._Device_createdAt(ctx, field, obj)
+		case "updatedAt":
+			out.Values[i] = ec._Device_updatedAt(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -4795,6 +4879,30 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 		return graphql.Null
 	}
 	return ec.marshalOString2string(ctx, sel, *v)
+}
+
+func (ec *executionContext) unmarshalOTimestamp2githubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐTimestamp(ctx context.Context, v interface{}) (Timestamp, error) {
+	var res Timestamp
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalOTimestamp2githubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐTimestamp(ctx context.Context, sel ast.SelectionSet, v Timestamp) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalOTimestamp2ᚖgithubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐTimestamp(ctx context.Context, v interface{}) (*Timestamp, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOTimestamp2githubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐTimestamp(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOTimestamp2ᚖgithubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐTimestamp(ctx context.Context, sel ast.SelectionSet, v *Timestamp) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) unmarshalOTokenCredentialDataInput2githubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐTokenCredentialDataInput(ctx context.Context, v interface{}) (TokenCredentialDataInput, error) {

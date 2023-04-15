@@ -69,6 +69,8 @@ type Device {
     tenantId: ID!
     host: Host
     auth: Auth
+    createdAt: Timestamp
+    updatedAt: Timestamp
 }
 
 type Host {

@@ -1,5 +1,7 @@
 package model
 
+import "time"
+
 type DeviceStatus string
 
 const (
@@ -38,4 +40,6 @@ type Device struct {
 	Host               *Host        `json:"host"`
 	CommunicationToken *string      `json:"communicationToken"`
 	Auth               *Auth        `json:"auth"`
+	CreatedAt          *time.Time   `json:"createdAt"`
+	UpdatedAt          *time.Time   `json:"updatedAt"`
 }

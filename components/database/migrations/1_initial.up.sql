@@ -26,7 +26,8 @@ CREATE TABLE devices (
     description text,
     status device_status,
     auth jsonb,
-    created_at timestamp
+    created_at timestamp,
+    updated_at timestamp
 );
 
 CREATE TABLE hosts (

@@ -1,6 +1,9 @@
 package device
 
-import "database/sql"
+import (
+	"database/sql"
+	"time"
+)
 
 type Entity struct {
 	ID          string         `db:"id"`
@@ -9,6 +12,8 @@ type Entity struct {
 	Description sql.NullString `db:"description"`
 	Status      string         `db:"status"`
 	Auth        sql.NullString `db:"auth"`
+	CreatedAt   *time.Time     `db:"created_at"`
+	UpdatedAt   *time.Time     `db:"updated_at"`
 }
 
 type EntityCollection []Entity

@@ -6,12 +6,13 @@ import (
 	"github.com/iot-proj/components/orchestrator/internal/repo"
 	"github.com/iot-proj/components/orchestrator/pkg/resource"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"time"
 )
 
 const tableName string = `public.devices`
 
 var (
-	updatableTableColumns = []string{"name", "description", "tenant_id", "status", "auth"}
+	updatableTableColumns = []string{"name", "description", "tenant_id", "status", "auth", "created_at", "updated_at"}
 	idTableColumns        = []string{"id"}
 	tableColumns          = append(idTableColumns, updatableTableColumns...)
 )
@@ -56,6 +57,9 @@ func (r *repository) Create(ctx context.Context, item model.Device) error {
 	if err != nil {
 		return err
 	}
+
+	now := time.Now()
+	entity.CreatedAt = &now
 
 	log.C(ctx).Debugf("Persisting Application Template entity with id %s to db", item.ID)
 	return r.creator.Create(ctx, entity)
@@ -125,6 +129,9 @@ func (r *repository) Update(ctx context.Context, model model.Device) error {
 	if err != nil {
 		return err
 	}
+
+	now := time.Now()
+	entity.UpdatedAt = &now
 
 	return r.updaterGlobal.UpdateSingleGlobal(ctx, entity)
 }
