@@ -89,7 +89,7 @@ export type Device = {
 export type DeviceInput = {
   auth?: InputMaybe<AuthInput>;
   description?: InputMaybe<Scalars['String']>;
-  host: HostInput;
+  host?: InputMaybe<HostInput>;
   name: Scalars['String'];
   status: DeviceStatus;
 };
@@ -102,7 +102,7 @@ export type DevicePage = Pageable & {
 };
 
 export enum DeviceStatus {
-  Alive = 'ALIVE',
+  Active = 'ACTIVE',
   Error = 'ERROR',
   Initial = 'INITIAL',
   Unreachable = 'UNREACHABLE'
@@ -221,6 +221,13 @@ export type CreateDeviceMutationVariables = Exact<{
 
 export type CreateDeviceMutation = { __typename?: 'Mutation', createDevice: { __typename?: 'Device', id: string, name: string, description?: string | null, status: DeviceStatus, tenantId: string, auth?: { __typename?: 'Auth', credential?: { __typename?: 'BasicCredentialData', username: string, password: string } | { __typename?: 'BearerTokenCredentialData', token: string } | { __typename?: 'CertificateOAuthCredentialData', clientId: string, certificate: string, url: string } | { __typename?: 'OAuthCredentialData', clientId: string, clientSecret: string, url: string } | null } | null, host?: { __typename?: 'Host', id: string, url: string, turnOnEndpoint?: string | null, turnOffEndpoint?: string | null } | null } };
 
+export type DeleteDeviceMutationVariables = Exact<{
+  id: Scalars['String'];
+}>;
+
+
+export type DeleteDeviceMutation = { __typename?: 'Mutation', deleteDevice: string };
+
 export const DeviceInfoFragmentDoc = gql`
     fragment DeviceInfo on Device {
   id
@@ -288,6 +295,22 @@ export const CreateDeviceDocument = gql`
   })
   export class CreateDeviceGQL extends Apollo.Mutation<CreateDeviceMutation, CreateDeviceMutationVariables> {
     document = CreateDeviceDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const DeleteDeviceDocument = gql`
+    mutation DeleteDevice($id: String!) {
+  deleteDevice(id: $id)
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class DeleteDeviceGQL extends Apollo.Mutation<DeleteDeviceMutation, DeleteDeviceMutationVariables> {
+    document = DeleteDeviceDocument;
     
     constructor(apollo: Apollo.Apollo) {
       super(apollo);

@@ -24,7 +24,7 @@ enum OperationType {
 
 enum DeviceStatus {
     INITIAL
-    ALIVE
+    ACTIVE
     UNREACHABLE
     ERROR
 }
@@ -94,7 +94,7 @@ input DeviceInput {
     name: String!
     description: String
     status: DeviceStatus!
-    host: HostInput!
+    host: HostInput
     auth: AuthInput
 }
 

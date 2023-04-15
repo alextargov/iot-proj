@@ -62,6 +62,7 @@
     <div class="widget-create__step">
 
       <ngx-blockly
+        *ngIf="isLoaded"
         class="widget-create__logic-blockly"
         #blockly
         [config]="config"

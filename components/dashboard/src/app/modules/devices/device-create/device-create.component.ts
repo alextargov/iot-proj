@@ -131,8 +131,8 @@ export class DeviceCreateComponent implements OnInit, AfterViewInit {
 
   public onSaveClick(): void {
     const data = this.convertToModel();
-    this.deviceService.createDevice(data).subscribe(() => {
-      console.log('success')
+    this.deviceService.createDevice(data).subscribe((data) => {
+      console.log('success', data)
       this.toast.showSuccess("Successfully created device")
     })
   }
@@ -149,22 +149,23 @@ export class DeviceCreateComponent implements OnInit, AfterViewInit {
 
   }
 
-  private convertToModel(): DeviceInput {
-    return {
-      name: this.deviceCreateMetadataFormGroup.get("name").value,
-      description: this.deviceCreateMetadataFormGroup.get("description").value,
-      host: {
-        url:  this.deviceCreateMetadataFormGroup.get("deviceURL").value,
-        turnOffEndpoint:  this.deviceCreateMetadataFormGroup.get("turnOffEndpoint").value,
-        turnOnEndpoint: this.deviceCreateMetadataFormGroup.get("turnOnEndpoint").value
-      },
-      status: DeviceStatus.Alive,
-      auth: {
-        credential: this.getAuthorizationCredentials(this.selectedAuthorizationPolicy)
-      },
-      // dataOutput: this.dataOutputTypes
-      // dataOutputUnit: ""
-    }
+    private convertToModel(): DeviceInput {
+        const host = this.deviceCreateMetadataFormGroup.get("deviceURL").value ? {
+            url:  this.deviceCreateMetadataFormGroup.get("deviceURL").value,
+            turnOffEndpoint:  this.deviceCreateMetadataFormGroup.get("turnOffEndpoint").value,
+            turnOnEndpoint: this.deviceCreateMetadataFormGroup.get("turnOnEndpoint").value
+        } : null;
+        return {
+            name: this.deviceCreateMetadataFormGroup.get("name").value,
+            description: this.deviceCreateMetadataFormGroup.get("description").value,
+            host,
+            status: DeviceStatus.Active,
+            auth: {
+                credential: this.getAuthorizationCredentials(this.selectedAuthorizationPolicy)
+            },
+              // dataOutput: this.dataOutputTypes
+              // dataOutputUnit: ""
+        }
   }
 
   private getAuthorizationCredentials(policy: AuthPolicy): CredentialDataInput {

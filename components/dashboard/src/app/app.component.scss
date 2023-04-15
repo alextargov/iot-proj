@@ -10,15 +10,16 @@
 }
 
 .menu-button {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  font-size: 1rem;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    font-size: 1rem;
+    color: #FFF !important;
 
-  mat-icon {
-    margin-right: 8px;
-  }
+    mat-icon {
+        margin-right: 8px;
+    }
 }
 
 .avatar {

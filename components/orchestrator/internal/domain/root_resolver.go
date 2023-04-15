@@ -27,7 +27,7 @@ func NewRootResolver(persistence persistence.Transactioner) *RootResolver {
 
 	deviceConv := device.NewConverter(hostConv, authConv)
 	deviceRepo := device.NewRepository(deviceConv)
-	deviceSvc := device.NewService(deviceRepo, uuidService)
+	deviceSvc := device.NewService(deviceRepo, uuidService, hostSvc)
 	deviceResolver := device.NewResolver(persistence, deviceSvc, hostSvc, deviceConv, hostConv)
 
 	return &RootResolver{

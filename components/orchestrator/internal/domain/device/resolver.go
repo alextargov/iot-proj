@@ -26,6 +26,7 @@ type DeviceSvc interface {
 
 type HostSvc interface {
 	GetByDeviceID(ctx context.Context, id string) (*model.Host, error)
+	DeleteByDeviceID(ctx context.Context, deviceID string) error
 }
 
 type HostConv interface {
@@ -137,6 +138,10 @@ func (r *Resolver) DeleteDevice(ctx context.Context, id string) (string, error) 
 	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
+
+	if err := r.hostSvc.DeleteByDeviceID(ctx, id); err != nil {
+		return "", err
+	}
 
 	if err := r.deviceSvc.Delete(ctx, id); err != nil {
 		return "", err

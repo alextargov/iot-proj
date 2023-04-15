@@ -13,12 +13,12 @@ func NewConverter() *converter {
 	return &converter{}
 }
 
-func (c *converter) InputFromGraphQL(in *graphql.HostInput) model.HostInput {
+func (c *converter) InputFromGraphQL(in *graphql.HostInput) *model.HostInput {
 	if in == nil {
-		return model.HostInput{}
+		return nil
 	}
 
-	return model.HostInput{
+	return &model.HostInput{
 		Url:             in.URL,
 		TurnOnEndpoint:  in.TurnOnEndpoint,
 		TurnOffEndpoint: in.TurnOnEndpoint,
@@ -36,6 +36,17 @@ func (c *converter) FromEntity(entity *Entity) *model.Host {
 		Url:             entity.Url,
 		TurnOffEndpoint: repo.StringPtrFromNullableString(entity.TurnOffEndpoint),
 		TurnOnEndpoint:  repo.StringPtrFromNullableString(entity.TurnOnEndpoint),
+	}
+}
+
+// ToEntity missing godoc
+func (c *converter) ToEntity(host model.Host) *Entity {
+	return &Entity{
+		ID:              host.ID,
+		DeviceID:        host.DeviceID,
+		Url:             host.Url,
+		TurnOnEndpoint:  repo.NewNullableString(host.TurnOnEndpoint),
+		TurnOffEndpoint: repo.NewNullableString(host.TurnOffEndpoint),
 	}
 }
 

@@ -10,6 +10,8 @@ import (
 
 type HostRepository interface {
 	GetByDeviceID(ctx context.Context, id, tnt string) (*model.Host, error)
+	CreateForDevice(ctx context.Context, item model.Host) error
+	DeleteAllForDevice(ctx context.Context, id string) error
 }
 
 type EncryptionService interface {
@@ -39,7 +41,36 @@ func (s *service) GetByDeviceID(ctx context.Context, id string) (*model.Host, er
 		return nil, errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	log.C(ctx).Debugf("Getting device by id %s for tenant %s", id, tnt)
+	log.C(ctx).Debugf("Getting host by id %s for tenant %s", id, tnt)
 
 	return s.hostRepo.GetByDeviceID(ctx, id, tnt)
+}
+
+func (s *service) Create(ctx context.Context, deviceID string, hostInput model.HostInput) (*model.Host, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	log.C(ctx).Debugf("Creating host for tenant %s", tnt)
+
+	id := s.uuidService.Generate()
+	host := hostInput.ToHost(id, deviceID)
+
+	if err := s.hostRepo.CreateForDevice(ctx, host); err != nil {
+		return nil, errors.Wrapf(err, "while creating host")
+	}
+
+	return &host, err
+}
+
+func (s *service) DeleteByDeviceID(ctx context.Context, deviceID string) error {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	log.C(ctx).Debugf("Deleting host for tenant %s", tnt)
+
+	return s.hostRepo.DeleteAllForDevice(ctx, deviceID)
 }

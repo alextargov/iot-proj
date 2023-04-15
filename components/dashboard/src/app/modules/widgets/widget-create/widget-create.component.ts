@@ -49,7 +49,7 @@ export class WidgetCreateComponent implements OnInit {
   public readonly NAME_MAX_LENGTH = 64;
   public readonly DESCRIPTION_MAX_LENGTH = 256;
   public readonly separatorKeysCodes: number[] = [ENTER, COMMA];
-
+  public isLoaded = false;
   private readonly aggregationOperations: any[] = [
     {
       id: 'sum',
@@ -156,8 +156,19 @@ export class WidgetCreateComponent implements OnInit {
 
   constructor(private formBuilder: UntypedFormBuilder, private deviceService: DeviceService) {}
   ngOnInit(): void {
+      this.detailsFormGroup = this.formBuilder.group({
+          name: ['', [Validators.required, Validators.maxLength(this.NAME_MAX_LENGTH)]],
+          description: ['', Validators.maxLength(this.DESCRIPTION_MAX_LENGTH)],
+          isActive: [true],
+          device: [''],
+      });
+
+      const workspace = new Blockly.WorkspaceSvg(new Blockly.Options({}));
+      const toolbox: NgxBlocklyToolbox = new NgxBlocklyToolbox(workspace);
+
     this.deviceService.getAllDevices().subscribe((deviceList) => {
       this.devices = deviceList;
+      console.log(deviceList)
 
       const workspace = new Blockly.WorkspaceSvg(new Blockly.Options({}));
       const toolbox: NgxBlocklyToolbox = new NgxBlocklyToolbox(workspace);
@@ -191,18 +202,12 @@ export class WidgetCreateComponent implements OnInit {
       ];
 
       this.config.toolbox = toolbox.toXML();
-    });
 
-    this.detailsFormGroup = this.formBuilder.group({
-      name: ['', [Validators.required, Validators.maxLength(this.NAME_MAX_LENGTH)]],
-      description: ['', Validators.maxLength(this.DESCRIPTION_MAX_LENGTH)],
-      isActive: [true],
-      device: [''],
-    });
+      this.isLoaded = true;
 
-    this.filteredDevices = this.detailsFormGroup.get('device').valueChanges.pipe(
-      startWith(null),
-      map((fruit: string | null) => fruit ? this._filter(fruit) : this.devices.slice()));
+      this.filteredDevices = this.detailsFormGroup.get('device').valueChanges.pipe(
+          startWith(null), map((fruit: string | null) => fruit ? this._filter(fruit) : this.devices.slice()));
+    });
   }
 
   onCode(code: string) {
@@ -252,9 +257,11 @@ export class WidgetCreateComponent implements OnInit {
     }, 100)
   }
 
-  public workspaceChange(e) {
+  public workspaceChange(event) {
+      if (!event || !event.workspaceId) {
+          return
+      }
     this.workspaceXML = this.blocklyComponent.toXml();
-    // console.log(this.workspaceXML)
   }
 
   public onSelectionChange(event: StepperSelectionEvent) {

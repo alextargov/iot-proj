@@ -6,6 +6,6 @@ type Device struct {
 	Description *string      `json:"description"`
 	Status      DeviceStatus `json:"status"`
 	TenantID    string       `json:"tenantId"`
-	Host        Host         `json:"host"`
+	Host        *Host        `json:"host"`
 	Auth        *Auth        `json:"auth"`
 }

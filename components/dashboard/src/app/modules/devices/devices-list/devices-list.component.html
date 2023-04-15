@@ -44,7 +44,7 @@
       <td class="device-list__table-definition" mat-cell *matCellDef="let element">
         <div class="device-list__table-definition-actions">
           <mat-icon class="device-list__table-definition-actions-edit" tooltip="Edit">edit</mat-icon>
-          <mat-icon class="device-list__table-definition-actions-delete" tooltip="Delete">delete</mat-icon>
+          <mat-icon class="device-list__table-definition-actions-delete" tooltip="Delete" (click)="onDelete(element)">delete</mat-icon>
         </div>
       </td>
     </ng-container>

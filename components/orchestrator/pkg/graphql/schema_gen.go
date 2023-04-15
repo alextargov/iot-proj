@@ -517,7 +517,7 @@ enum OperationType {
 
 enum DeviceStatus {
     INITIAL
-    ALIVE
+    ACTIVE
     UNREACHABLE
     ERROR
 }
@@ -587,7 +587,7 @@ input DeviceInput {
     name: String!
     description: String
     status: DeviceStatus!
-    host: HostInput!
+    host: HostInput
     auth: AuthInput
 }
 
@@ -3316,7 +3316,7 @@ func (ec *executionContext) unmarshalInputDeviceInput(ctx context.Context, obj i
 			}
 		case "host":
 			var err error
-			it.Host, err = ec.unmarshalNHostInput2ᚖgithubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐHostInput(ctx, v)
+			it.Host, err = ec.unmarshalOHostInput2ᚖgithubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐHostInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4306,18 +4306,6 @@ func (ec *executionContext) marshalNDeviceStatus2githubᚗcomᚋiotᚑprojᚋcom
 	return v
 }
 
-func (ec *executionContext) unmarshalNHostInput2githubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐHostInput(ctx context.Context, v interface{}) (HostInput, error) {
-	return ec.unmarshalInputHostInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalNHostInput2ᚖgithubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐHostInput(ctx context.Context, v interface{}) (*HostInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalNHostInput2githubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐHostInput(ctx, v)
-	return &res, err
-}
-
 func (ec *executionContext) unmarshalNID2string(ctx context.Context, v interface{}) (string, error) {
 	return graphql.UnmarshalID(v)
 }
@@ -4760,6 +4748,18 @@ func (ec *executionContext) marshalOHost2ᚖgithubᚗcomᚋiotᚑprojᚋcomponen
 		return graphql.Null
 	}
 	return ec._Host(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOHostInput2githubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐHostInput(ctx context.Context, v interface{}) (HostInput, error) {
+	return ec.unmarshalInputHostInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOHostInput2ᚖgithubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐHostInput(ctx context.Context, v interface{}) (*HostInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOHostInput2githubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐHostInput(ctx, v)
+	return &res, err
 }
 
 func (ec *executionContext) unmarshalOOAuthCredentialDataInput2githubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐOAuthCredentialDataInput(ctx context.Context, v interface{}) (OAuthCredentialDataInput, error) {

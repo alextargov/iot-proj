@@ -28,6 +28,7 @@ type repository struct {
 	pageableQuerierGlobal repo.PageableQuerierGlobal
 	updaterGlobal         repo.UpdaterGlobal
 	deleterGlobal         repo.DeleterGlobal
+	deleter               repo.Deleter
 	listerGlobal          repo.ListerGlobal
 	lister                repo.Lister
 	conv                  EntityConverter
@@ -41,6 +42,7 @@ func NewRepository(converter EntityConverter) *repository {
 		pageableQuerierGlobal: repo.NewPageableQuerierGlobal(resource.Device, tableName, tableColumns),
 		updaterGlobal:         repo.NewUpdaterGlobal(resource.Device, tableName, updatableTableColumns, idTableColumns),
 		deleterGlobal:         repo.NewDeleterGlobal(resource.Device, tableName),
+		deleter:               repo.NewDeleter(tableName),
 		listerGlobal:          repo.NewListerGlobal(resource.Device, tableName, tableColumns),
 		lister:                repo.NewLister(tableName, tableColumns),
 		conv:                  converter,
@@ -128,8 +130,8 @@ func (r *repository) Update(ctx context.Context, model model.Device) error {
 }
 
 // Delete missing godoc
-func (r *repository) Delete(ctx context.Context, id string) error {
-	return r.deleterGlobal.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)})
+func (r *repository) Delete(ctx context.Context, id, tenantID string) error {
+	return r.deleter.DeleteOne(ctx, resource.Device, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
 func (r *repository) multipleFromEntities(entities EntityCollection) ([]*model.Device, error) {

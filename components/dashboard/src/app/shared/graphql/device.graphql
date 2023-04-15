@@ -44,3 +44,7 @@ mutation CreateDevice($input: DeviceInput!) {
 		...DeviceInfo
 	}
 }
+
+mutation DeleteDevice($id: String!) {
+    deleteDevice(id: $id)
+}

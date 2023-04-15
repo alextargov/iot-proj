@@ -5,14 +5,16 @@ import { Injectable } from '@angular/core';
 import { ApiService } from '../api/api.service';
 import { DeviceStatus, IDevice, IDevicePage } from './device.interface';
 import {
-    CreateDeviceGQL, CreateDeviceMutation,
+    CreateDeviceDocument,
+    CreateDeviceGQL, CreateDeviceMutation, DeleteDeviceDocument, DeleteDeviceMutation,
     DeviceInfoFragment,
     GetAllDevicesDocument,
     GetAllDevicesGQL,
     GetAllDevicesQuery
 } from '../../graphql/generated';
 import { DeviceInput } from "../../graphql/generated";
-import {DataProxy, FetchResult} from "@apollo/client";
+import {DataProxy, FetchResult} from "@apollo/client/core";
+import {Apollo} from "apollo-angular";
 // import { AuthService } from '../auth/auth.service';
 
 @Injectable({
@@ -59,6 +61,7 @@ export class DeviceService  {
         private readonly getAllDevicesGql: GetAllDevicesGQL,
         private readonly createDeviceGql: CreateDeviceGQL,
         // private readonly authService: AuthService,
+        private readonly apollo: Apollo,
     ) {}
 
     public getDevices(): Observable<IDevice[]> {
@@ -71,71 +74,78 @@ export class DeviceService  {
         );
     }
 
-    public createDevice(data: DeviceInput): Observable<{ data: DeviceInfoFragment, error: number }> {
-        const hydratedData: DeviceInput = {
-            ...data,
-            // userId: this.authService.getUser()._id
-        };
-
-        this.deviceList.push(data as any)
-
-        return new Observable((s) =>  s.next({ data: data as any ,error:0}))
+    public createDevice(data: DeviceInput): Observable<FetchResult<CreateDeviceMutation>> {
+        return this.apollo.mutate<CreateDeviceMutation>({
+            mutation: CreateDeviceDocument,
+            variables: {
+                input: data
+            },
+        })
     }
 
-    public createMovie(input: DeviceInput): Observable<FetchResult<CreateDeviceMutation>> {
-        return this.createDeviceGql.mutate(
-            {
-                input,
+    public deleteDevice(id: string): Observable<FetchResult<DeleteDeviceMutation>> {
+        return this.apollo.mutate<DeleteDeviceMutation>({
+            mutation: DeleteDeviceDocument,
+            variables: {
+                id,
             },
-            {
-                optimisticResponse: {
-                    createDevice: {
-                        __typename: "Device",
-                        tenantId: "",
-                        id: "-1",
-                        name: input.name,
-                        description: input.description,
-                        status: input.status,
-                        host: {
-                            __typename: "Host",
-                            id: "-1",
-                            url: input.host.url,
-                            turnOffEndpoint: input.host.turnOffEndpoint,
-                            turnOnEndpoint: input.host.turnOnEndpoint,
-                        },
-                        auth: {
-                            __typename: "Auth",
-                            credential: {
-                                ...input.auth.credential,
-                            } as any,
-                        }
-                    },
-                },
-              update: (store: DataProxy, { data }) => {
-                const createdDevice = data?.createDevice as DeviceInfoFragment;
+        })
+    }
 
-                // query movies from cache
-                const moviesQuery = store.readQuery<GetAllDevicesQuery>({
-                  query: GetAllDevicesDocument,
-                });
-
-                // movies haven't been loaded yet - no data in cache
-                if (!moviesQuery?.devices) {
-                  return;
-                }
-
-                // update cache
-                store.writeQuery<GetAllDevicesQuery>({
-                  query: GetAllDevicesDocument,
-                  data: {
-                    __typename: 'Query',
-                    devices: [
-                      ...moviesQuery.devices, createdDevice
-                    ],
-                  },
-                });
-              },
-            },
-        );
-     }
+    // public createMovie(input: DeviceInput): Observable<FetchResult<CreateDeviceMutation>> {
+    //     return this.createDeviceGql.mutate(
+    //         {
+    //             input,
+    //         },
+    //         {
+    //             optimisticResponse: {
+    //                 createDevice: {
+    //                     __typename: "Device",
+    //                     tenantId: "",
+    //                     id: "-1",
+    //                     name: input.name,
+    //                     description: input.description,
+    //                     status: input.status,
+    //                     host: {
+    //                         __typename: "Host",
+    //                         id: "-1",
+    //                         url: input.host.url,
+    //                         turnOffEndpoint: input.host.turnOffEndpoint,
+    //                         turnOnEndpoint: input.host.turnOnEndpoint,
+    //                     },
+    //                     auth: {
+    //                         __typename: "Auth",
+    //                         credential: {
+    //                             ...input.auth.credential,
+    //                         } as any,
+    //                     }
+    //                 },
+    //             },
+    //           update: (store: DataProxy, { data }) => {
+    //             const createdDevice = data?.createDevice as DeviceInfoFragment;
+    //
+    //             // query movies from cache
+    //             const moviesQuery = store.readQuery<GetAllDevicesQuery>({
+    //               query: GetAllDevicesDocument,
+    //             });
+    //
+    //             // movies haven't been loaded yet - no data in cache
+    //             if (!moviesQuery?.devices) {
+    //               return;
+    //             }
+    //
+    //             // update cache
+    //             store.writeQuery<GetAllDevicesQuery>({
+    //               query: GetAllDevicesDocument,
+    //               data: {
+    //                 __typename: 'Query',
+    //                 devices: [
+    //                   ...moviesQuery.devices, createdDevice
+    //                 ],
+    //               },
+    //             });
+    //           },
+    //         },
+    //     );
+    //  }
 }

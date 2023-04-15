@@ -16,7 +16,7 @@ type DeviceRepository interface {
 	ListAll(ctx context.Context, tenantID string) ([]*model.Device, error)
 	ListAllGlobal(ctx context.Context) ([]*model.Device, error)
 	Update(ctx context.Context, model model.Device) error
-	Delete(ctx context.Context, id string) error
+	Delete(ctx context.Context, id, tenantID string) error
 }
 
 type EncryptionService interface {
@@ -28,15 +28,21 @@ type UUIDService interface {
 	Generate() string
 }
 
+type HostService interface {
+	Create(ctx context.Context, deviceID string, hostInput model.HostInput) (*model.Host, error)
+}
+
 type service struct {
 	deviceRepo  DeviceRepository
 	uuidService UUIDService
+	hostService HostService
 }
 
-func NewService(repo DeviceRepository, uuidService UUIDService) *service {
+func NewService(repo DeviceRepository, uuidService UUIDService, hostService HostService) *service {
 	return &service{
 		deviceRepo:  repo,
 		uuidService: uuidService,
+		hostService: hostService,
 	}
 }
 
@@ -73,7 +79,15 @@ func (s *service) Create(ctx context.Context, device model.DeviceInput) (string,
 	deviceModel := device.ToDevice(id)
 	deviceModel.TenantID = tnt
 
-	return id, s.deviceRepo.Create(ctx, deviceModel)
+	if err := s.deviceRepo.Create(ctx, deviceModel); err != nil {
+		return "", errors.Wrapf(err, "while creating device")
+	}
+
+	if err := s.createRelatedResources(ctx, id, device); err != nil {
+		return "", err
+	}
+
+	return id, err
 }
 
 func (s *service) Update(ctx context.Context, device model.DeviceInput) error {
@@ -96,5 +110,15 @@ func (s *service) Delete(ctx context.Context, id string) error {
 		return errors.Wrapf(err, "does not exist or tenant does not have access")
 	}
 
-	return s.deviceRepo.Delete(ctx, id)
+	return s.deviceRepo.Delete(ctx, id, tnt)
+}
+
+func (s *service) createRelatedResources(ctx context.Context, deviceID string, device model.DeviceInput) error {
+	if device.Host != nil {
+		if _, err := s.hostService.Create(ctx, deviceID, *device.Host); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

@@ -11,7 +11,8 @@ import (
 )
 
 type hostConv interface {
-	InputFromGraphQL(in *graphql.HostInput) model.HostInput
+	InputFromGraphQL(in *graphql.HostInput) *model.HostInput
+	ToGraphQL(in *model.Host) *graphql.Host
 }
 
 type authConv interface {
@@ -84,20 +85,14 @@ func (c *converter) InputFromGraphQL(in graphql.DeviceInput) model.DeviceInput {
 }
 
 func (c *converter) ToGraphQL(in *model.Device) *graphql.Device {
-	c.authConv.ToGraphQL(in.Auth)
 	return &graphql.Device{
 		ID:          in.ID,
 		TenantID:    in.TenantID,
 		Name:        in.Name,
 		Description: in.Description,
 		Status:      graphql.DeviceStatus(in.Status),
-		Host: graphql.Host{
-			ID:              in.Host.ID,
-			URL:             in.Host.Url,
-			TurnOnEndpoint:  in.Host.TurnOnEndpoint,
-			TurnOffEndpoint: in.Host.TurnOffEndpoint,
-		},
-		Auth: c.authConv.ToGraphQL(in.Auth),
+		Host:        c.hostConv.ToGraphQL(in.Host),
+		Auth:        c.authConv.ToGraphQL(in.Auth),
 	}
 }
 

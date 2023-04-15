@@ -6,12 +6,13 @@ type HostInput struct {
 	TurnOffEndpoint *string
 }
 
-func (hi *HostInput) ToHost(id string) Host {
+func (hi *HostInput) ToHost(id, deviceID string) Host {
 	return Host{
 		ID:              id,
 		Url:             hi.Url,
 		TurnOnEndpoint:  hi.TurnOnEndpoint,
 		TurnOffEndpoint: hi.TurnOffEndpoint,
+		DeviceID:        deviceID,
 	}
 }
 
@@ -20,4 +21,5 @@ type Host struct {
 	Url             string  `json:"url"`
 	TurnOnEndpoint  *string `json:"turnOnEndpoint"`
 	TurnOffEndpoint *string `json:"turnOffEndpoint"`
+	DeviceID        string  `json:"deviceID"`
 }
