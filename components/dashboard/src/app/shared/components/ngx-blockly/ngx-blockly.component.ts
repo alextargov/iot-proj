@@ -1,43 +1,50 @@
-import { Component, ComponentFactoryResolver, ComponentRef, ElementRef, OnInit, ViewChild, ViewContainerRef } from '@angular/core';
-import { STEPPER_GLOBAL_OPTIONS  } from '@angular/cdk/stepper';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import {
-  Button,
-  Category,
-  COLOUR_CATEGORY,
-  CustomBlock,
-  FUNCTIONS_CATEGORY,
-  Label,
-  LISTS_CATEGORY,
-  LOGIC_CATEGORY,
-  LOOP_CATEGORY,
-  MATH_CATEGORY,
-  NgxBlocklyConfig,
-  NgxBlocklyGenerator, NgxBlocklyToolbox,
-  Separator,
-  TEXT_CATEGORY,
-  VARIABLES_CATEGORY,
-  Blockly,
-  NgxBlocklyComponent
-} from 'ngx-blockly';
+    Component,
+    ComponentFactoryResolver,
+    ComponentRef,
+    ElementRef,
+    OnInit,
+    ViewChild,
+    ViewContainerRef,
+} from '@angular/core'
+import { STEPPER_GLOBAL_OPTIONS } from '@angular/cdk/stepper'
+import { FormBuilder, FormGroup, Validators } from '@angular/forms'
+import {
+    Button,
+    Category,
+    COLOUR_CATEGORY,
+    CustomBlock,
+    FUNCTIONS_CATEGORY,
+    Label,
+    LISTS_CATEGORY,
+    LOGIC_CATEGORY,
+    LOOP_CATEGORY,
+    MATH_CATEGORY,
+    NgxBlocklyConfig,
+    NgxBlocklyGenerator,
+    NgxBlocklyToolbox,
+    Separator,
+    TEXT_CATEGORY,
+    VARIABLES_CATEGORY,
+    Blockly,
+    NgxBlocklyComponent,
+} from 'ngx-blockly'
 
 @Component({
     selector: 'ngx-blockly--',
     templateUrl: './ngx-blockly.component.html',
-    styleUrls: ['./ngx-blockly.component.css']
+    styleUrls: ['./ngx-blockly.component.css'],
 })
 export class NgxBlocklyComponent1 {
+    public readOnly = false
 
-  public readOnly = false;
-
-    public customBlocks: CustomBlock[] = [
-
-    ];
-    public button: Button = new Button('asd', 'asdasd');
-    public label: Label = new Label('asd', 'asdasd');
+    public customBlocks: CustomBlock[] = []
+    public button: Button = new Button('asd', 'asdasd')
+    public label: Label = new Label('asd', 'asdasd')
 
     public config: NgxBlocklyConfig = {
-        toolbox: '<xml id="toolbox" style="display: none">' +
+        toolbox:
+            '<xml id="toolbox" style="display: none">' +
             '<category name="Logic" colour="%{BKY_LOGIC_HUE}">' +
             '<block type="controls_if"></block>' +
             '<block type="controls_repeat_ext"></block>' +
@@ -51,27 +58,29 @@ export class NgxBlocklyComponent1 {
             '</category>' +
             '</xml>',
         trashcan: true,
-        generators: [
-            NgxBlocklyGenerator.JAVASCRIPT,
-        ],
+        generators: [NgxBlocklyGenerator.JAVASCRIPT],
         defaultBlocks: true,
         move: {
             scrollbars: true,
-            wheel: true
+            wheel: true,
         },
         plugins: {
-            'toolbox': NgxBlocklyToolbox
+            toolbox: NgxBlocklyToolbox,
         },
-    };
+    }
 
-    @ViewChild('blockly1') blocklyComponent: NgxBlocklyComponent;
+    @ViewChild('blockly1') blocklyComponent: NgxBlocklyComponent
 
-  constructor() {
-    const workspace = new Blockly.WorkspaceSvg(new Blockly.Options({}));
-        const toolbox: NgxBlocklyToolbox = new NgxBlocklyToolbox(workspace);
+    constructor() {
+        const workspace = new Blockly.WorkspaceSvg(new Blockly.Options({}))
+        const toolbox: NgxBlocklyToolbox = new NgxBlocklyToolbox(workspace)
         toolbox.nodes = [
             LOGIC_CATEGORY,
-            new Category('bla', '#ff0000', [...this.customBlocks, this.button, this.label]),
+            new Category('bla', '#ff0000', [
+                ...this.customBlocks,
+                this.button,
+                this.label,
+            ]),
             LOOP_CATEGORY,
             MATH_CATEGORY,
             TEXT_CATEGORY,
@@ -80,13 +89,13 @@ export class NgxBlocklyComponent1 {
             new Separator(),
             VARIABLES_CATEGORY,
             FUNCTIONS_CATEGORY,
-        ];
-        this.config.toolbox = toolbox.toXML();
-  }
+        ]
+        this.config.toolbox = toolbox.toXML()
+    }
 
-  onCode(code: string) {
-    console.log(code);
-  }
+    onCode(code: string) {
+        console.log(code)
+    }
     // @Input() public config: NgxBlocklyConfig = {};
     // @Input() public customBlocks: CustomBlock[] = [];
     // @Input() public readOnly = false;

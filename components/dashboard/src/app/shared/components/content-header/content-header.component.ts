@@ -1,24 +1,22 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core'
 
 export interface ContentHeaderButton {
-  action?: Function,
-  text?: string,
-  icon?: string,
-  color?: string
+    action?: Function
+    text?: string
+    icon?: string
+    color?: string
 }
 
 @Component({
-  selector: 'app-content-header',
-  templateUrl: './content-header.component.html',
-  styleUrls: ['./content-header.component.scss']
+    selector: 'app-content-header',
+    templateUrl: './content-header.component.html',
+    styleUrls: ['./content-header.component.scss'],
 })
 export class ContentHeaderComponent implements OnInit {
-  @Input() public buttons: ContentHeaderButton;
-  @Input() public title: string;
+    @Input() public buttons: ContentHeaderButton
+    @Input() public title: string
 
-  constructor() { }
+    constructor() {}
 
-  ngOnInit(): void {
-  }
-
+    ngOnInit(): void {}
 }

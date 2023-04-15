@@ -1,61 +1,145 @@
 <app-content-header title="Devices" [buttons]="buttons"></app-content-header>
 
 <div class="device-list__container">
-  <table class="device-list__table" mat-table [dataSource]="dataSource">
+    <table class="device-list__table" mat-table [dataSource]="dataSource">
+        <!-- Position Column -->
+        <ng-container matColumnDef="name">
+            <th
+                class="device-list__table-header device-list__table-header-name"
+                mat-header-cell
+                *matHeaderCellDef
+            >
+                Name
+            </th>
+            <td
+                class="device-list__table-definition"
+                mat-cell
+                *matCellDef="let element"
+            >
+                {{ element.name }}
+            </td>
+        </ng-container>
 
-    <!-- Position Column -->
-    <ng-container matColumnDef="name">
-      <th class="device-list__table-header  device-list__table-header-name" mat-header-cell *matHeaderCellDef> Name </th>
-      <td class="device-list__table-definition" mat-cell *matCellDef="let element"> {{element.name}} </td>
-    </ng-container>
+        <!-- Name Column -->
+        <ng-container matColumnDef="description">
+            <th
+                class="device-list__table-header device-list__table-header-description"
+                mat-header-cell
+                *matHeaderCellDef
+            >
+                Description
+            </th>
+            <td
+                class="device-list__table-definition"
+                mat-cell
+                *matCellDef="let element"
+            >
+                {{ element.description }}
+            </td>
+        </ng-container>
 
-    <!-- Name Column -->
-    <ng-container matColumnDef="description">
-      <th class="device-list__table-header  device-list__table-header-description" mat-header-cell *matHeaderCellDef> Description </th>
-      <td class="device-list__table-definition" mat-cell *matCellDef="let element"> {{element.description}} </td>
-    </ng-container>
+        <!-- Weight Column -->
+        <ng-container matColumnDef="url">
+            <th
+                class="device-list__table-header device-list__table-header-url"
+                mat-header-cell
+                *matHeaderCellDef
+            >
+                URL
+            </th>
+            <td
+                class="device-list__table-definition"
+                mat-cell
+                *matCellDef="let element"
+            >
+                {{ element.url }}
+            </td>
+        </ng-container>
 
-    <!-- Weight Column -->
-    <ng-container matColumnDef="url">
-      <th class="device-list__table-header device-list__table-header-url" mat-header-cell *matHeaderCellDef> URL </th>
-      <td class="device-list__table-definition" mat-cell *matCellDef="let element"> {{element.url}} </td>
-    </ng-container>
+        <!-- Symbol Column -->
+        <ng-container matColumnDef="isRunning">
+            <th
+                class="device-list__table-header device-list__table-header-status"
+                mat-header-cell
+                *matHeaderCellDef
+            >
+                Status
+            </th>
+            <td
+                class="device-list__table-definition"
+                mat-cell
+                *matCellDef="let element"
+            >
+                <mat-icon
+                    [ngClass]="{
+                        'device-list__table-status-okay':
+                            element.status === 'ACTIVE',
+                        'device-list__table-status-initial':
+                            element.status === 'INITIAL',
+                        'device-list__table-status-error':
+                            element.status === 'ERROR' ||
+                            element.status === 'UNREACHABLE'
+                    }"
+                    >{{ getStatus(element.status) }}</mat-icon
+                >
+            </td>
+        </ng-container>
 
-    <!-- Symbol Column -->
-    <ng-container matColumnDef="isRunning">
-      <th class="device-list__table-header device-list__table-header-status" mat-header-cell *matHeaderCellDef> Status </th>
-      <td class="device-list__table-definition"  mat-cell *matCellDef="let element">
-        <mat-icon [ngClass]="{
-          'device-list__table-status-okay': element.status === 'ACTIVE',
-          'device-list__table-status-initial': element.status === 'INITIAL',
-          'device-list__table-status-error': element.status === 'ERROR' || element.status === 'UNREACHABLE' }"
-        >{{ getStatus(element.status) }}</mat-icon>
-      </td>
-    </ng-container>
+        <!-- Symbol Column -->
+        <ng-container matColumnDef="createdAt">
+            <th
+                class="device-list__table-header device-list__table-header-createdAt"
+                mat-header-cell
+                *matHeaderCellDef
+            >
+                Created At
+            </th>
+            <td
+                class="device-list__table-definition"
+                mat-cell
+                *matCellDef="let element"
+            >
+                {{ element.createdAt | date : 'medium' }}
+            </td>
+        </ng-container>
 
-      <!-- Symbol Column -->
-      <ng-container matColumnDef="createdAt" >
-        <th class="device-list__table-header device-list__table-header-createdAt" mat-header-cell *matHeaderCellDef> Created At </th>
-        <td class="device-list__table-definition" mat-cell *matCellDef="let element"> {{element.createdAt | date:'medium'}} </td>
-      </ng-container>
+        <ng-container matColumnDef="actions">
+            <th
+                class="device-list__table-header device-list__table-header-actions"
+                mat-header-cell
+                *matHeaderCellDef
+            >
+                Actions
+            </th>
+            <td
+                class="device-list__table-definition"
+                mat-cell
+                *matCellDef="let element"
+            >
+                <div class="device-list__table-definition-actions">
+                    <mat-icon
+                        class="device-list__table-definition-actions-edit"
+                        tooltip="Edit"
+                        >edit</mat-icon
+                    >
+                    <mat-icon
+                        class="device-list__table-definition-actions-delete"
+                        tooltip="Delete"
+                        (click)="onDelete(element)"
+                        >delete</mat-icon
+                    >
+                </div>
+            </td>
+        </ng-container>
 
-    <ng-container matColumnDef="actions" >
-      <th class="device-list__table-header device-list__table-header-actions" mat-header-cell *matHeaderCellDef> Actions </th>
-      <td class="device-list__table-definition" mat-cell *matCellDef="let element">
-        <div class="device-list__table-definition-actions">
-          <mat-icon class="device-list__table-definition-actions-edit" tooltip="Edit">edit</mat-icon>
-          <mat-icon class="device-list__table-definition-actions-delete" tooltip="Delete" (click)="onDelete(element)">delete</mat-icon>
-        </div>
-      </td>
-    </ng-container>
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+    </table>
 
-    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-  </table>
-
-  <mat-paginator [pageSizeOptions]="[5, 10, 20]"
-                 showFirstLastButtons
-                 aria-label="Select a page">
-  </mat-paginator>
-
+    <mat-paginator
+        [pageSizeOptions]="[5, 10, 20]"
+        showFirstLastButtons
+        aria-label="Select a page"
+    >
+    </mat-paginator>
 </div>

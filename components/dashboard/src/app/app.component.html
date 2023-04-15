@@ -48,53 +48,51 @@
 <!--  </mat-sidenav-content>-->
 <!--</mat-sidenav-container>-->
 
-
-
 <div class="app__wrapper">
-  <div class="app__left-panel">
-<!--    <img-->
-<!--      class="avatar mat-elevation-z8"-->
-<!--      src="https://source.unsplash.com/c_GmwfHBDzk/200x200"-->
-<!--    />-->
+    <div class="app__left-panel">
+        <!--    <img-->
+        <!--      class="avatar mat-elevation-z8"-->
+        <!--      src="https://source.unsplash.com/c_GmwfHBDzk/200x200"-->
+        <!--    />-->
 
-    <h4 class="name">John Smith</h4>
-    <p class="designation">Software Engineer</p>
+        <h4 class="name">John Smith</h4>
+        <p class="designation">Software Engineer</p>
 
-    <mat-divider></mat-divider>
+        <mat-divider></mat-divider>
 
-    <button mat-button class="menu-button" routerLink="/profile">
-      <mat-icon>person</mat-icon>
-      <span>Profile</span>
-    </button>
-    <button mat-button class="menu-button" routerLink="/notifications">
-      <mat-icon>notifications</mat-icon>
-      <span>Notifications</span>
-    </button>
+        <button mat-button class="menu-button" routerLink="/profile">
+            <mat-icon>person</mat-icon>
+            <span>Profile</span>
+        </button>
+        <button mat-button class="menu-button" routerLink="/notifications">
+            <mat-icon>notifications</mat-icon>
+            <span>Notifications</span>
+        </button>
 
-    <mat-divider></mat-divider>
+        <mat-divider></mat-divider>
 
-    <button mat-button class="menu-button" routerLink="/dashboard">
-      <mat-icon>home</mat-icon>
-      <span>Dashboard</span>
-    </button>
-    <button mat-button class="menu-button" routerLink="/widgets">
-      <mat-icon>widgets</mat-icon>
-      <span>Widgets</span>
-    </button>
+        <button mat-button class="menu-button" routerLink="/dashboard">
+            <mat-icon>home</mat-icon>
+            <span>Dashboard</span>
+        </button>
+        <button mat-button class="menu-button" routerLink="/widgets">
+            <mat-icon>widgets</mat-icon>
+            <span>Widgets</span>
+        </button>
 
-    <mat-divider></mat-divider>
+        <mat-divider></mat-divider>
 
-    <button mat-button class="menu-button" routerLink="/devices">
-      <mat-icon>memory</mat-icon>
-      <span>Devices</span>
-    </button>
-    <button mat-button class="menu-button" routerLink="/datamodel">
-      <mat-icon>analytics</mat-icon>
-      <span>Data model</span>
-    </button>
-  </div>
+        <button mat-button class="menu-button" routerLink="/devices">
+            <mat-icon>memory</mat-icon>
+            <span>Devices</span>
+        </button>
+        <button mat-button class="menu-button" routerLink="/datamodel">
+            <mat-icon>analytics</mat-icon>
+            <span>Data model</span>
+        </button>
+    </div>
 
-  <div class="app__right-panel">
-    <router-outlet></router-outlet>
-  </div>
+    <div class="app__right-panel">
+        <router-outlet></router-outlet>
+    </div>
 </div>

@@ -1,48 +1,48 @@
 fragment DeviceInfo on Device {
-	id
-  name
-  description
-  status
-  tenantId
-  auth {
-      credential {
-        ... on BasicCredentialData {
-          username
-          password
-        }
-        ... on OAuthCredentialData {
-          clientId
-          clientSecret
-          url
-        }
-        ... on CertificateOAuthCredentialData {
-          clientId
-          certificate
-          url
-        }
-        ... on BearerTokenCredentialData {
-          token
-        }
-      }
-  }
-  host {
     id
-    url
-    turnOnEndpoint
-    turnOffEndpoint
-  }
+    name
+    description
+    status
+    tenantId
+    auth {
+        credential {
+            ... on BasicCredentialData {
+                username
+                password
+            }
+            ... on OAuthCredentialData {
+                clientId
+                clientSecret
+                url
+            }
+            ... on CertificateOAuthCredentialData {
+                clientId
+                certificate
+                url
+            }
+            ... on BearerTokenCredentialData {
+                token
+            }
+        }
+    }
+    host {
+        id
+        url
+        turnOnEndpoint
+        turnOffEndpoint
+    }
 }
 
 query GetAllDevices {
-	devices {
-		...DeviceInfo
-	}
+    devices {
+        ...DeviceInfo
+    }
 }
 
 mutation CreateDevice($input: DeviceInput!) {
-   createDevice(input: $input) {
-		...DeviceInfo
-	}
+    createDevice(input: $input) {
+        ...DeviceInfo
+    }
 }
 
 mutation DeleteDevice($id: String!) {

@@ -1,87 +1,87 @@
 :host {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
 }
 
 :host ::ng-deep .mat-horizontal-content-container {
-  padding-bottom: 0;
+    padding-bottom: 0;
 }
 
 :host ::ng-deep .mat-horizontal-stepper-wrapper {
-  height: 100%;
+    height: 100%;
 }
 
 .widget-create {
-
-  &__step {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-  }
-
-  &__content-header {
-    display: flex;
-  }
-  &__container {
-    background: none;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-
-    &-navigations {
-      align-self: end;
-    }
-  }
-
-  &__details {
-    display: flex;
-    height: 100%;
-
-    &-form {
-      display: flex;
-      flex-direction: column;
-      width: 100%;
-
-      &-field {
-        margin-bottom: 1rem;
-      }
+    &__step {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
     }
 
-    &-devices {
-      width: 100%;
-      margin-left: 5rem;
-
-      &-select {
-        width: 100%;
-      }
-
-      &-tree {
+    &__content-header {
+        display: flex;
+    }
+    &__container {
         background: none;
-      }
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+
+        &-navigations {
+            align-self: end;
+        }
     }
-  }
 
-  &__logic {
-    //overflow: hidden;
-    //display: flex;
+    &__details {
+        display: flex;
+        height: 100%;
 
-    //
-    //height: 50vh !important;
+        &-form {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
 
-    &-blockly {
-      height:100%;
-      display: block;
-      position: relative;
-      box-shadow: 0px 5px 5px -3px rgb(0 0 0 / 20%), 0px 8px 10px 1px rgb(0 0 0 / 14%), 0px 3px 14px 2px rgb(0 0 0 / 12%);
-      border-radius: 10px;
-      overflow: hidden;
-      margin-bottom: 2rem;
-      .blockly-wrapper {
-        // position: relative;
+            &-field {
+                margin-bottom: 1rem;
+            }
+        }
+
+        &-devices {
+            width: 100%;
+            margin-left: 5rem;
+
+            &-select {
+                width: 100%;
+            }
+
+            &-tree {
+                background: none;
+            }
+        }
+    }
+
+    &__logic {
+        //overflow: hidden;
+        //display: flex;
+
+        //
         //height: 50vh !important;
-      }
-    }
 
-  }
+        &-blockly {
+            height: 100%;
+            display: block;
+            position: relative;
+            box-shadow: 0px 5px 5px -3px rgb(0 0 0 / 20%),
+                0px 8px 10px 1px rgb(0 0 0 / 14%),
+                0px 3px 14px 2px rgb(0 0 0 / 12%);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 2rem;
+            .blockly-wrapper {
+                // position: relative;
+                //height: 50vh !important;
+            }
+        }
+    }
 }
