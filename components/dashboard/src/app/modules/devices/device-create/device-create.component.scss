@@ -3,6 +3,10 @@
     display: flex;
     flex-direction: column;
     overflow: scroll;
+
+    ::ng-deep .mat-horizontal-stepper-wrapper {
+        height: 100%;
+    }
 }
 
 .device-create {
