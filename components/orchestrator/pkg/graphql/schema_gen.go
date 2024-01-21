@@ -45,8 +45,9 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	Auth struct {
-		AccessStrategy func(childComplexity int) int
-		Credential     func(childComplexity int) int
+		AccessStrategy       func(childComplexity int) int
+		CredentialForDevice  func(childComplexity int) int
+		CredentialForService func(childComplexity int) int
 	}
 
 	BasicCredentialData struct {
@@ -91,7 +92,9 @@ type ComplexityRoot struct {
 
 	Mutation struct {
 		CreateDevice       func(childComplexity int, input DeviceInput) int
+		CreateWidget       func(childComplexity int, input WidgetInput) int
 		DeleteDevice       func(childComplexity int, id string) int
+		DeleteWidget       func(childComplexity int, id string) int
 		SetDeviceOperation func(childComplexity int, id string, op OperationType) int
 		SetOperation       func(childComplexity int, op OperationType, data interface{}) int
 	}
@@ -112,7 +115,21 @@ type ComplexityRoot struct {
 		Device                   func(childComplexity int, id string) int
 		DeviceByIDAndAggregation func(childComplexity int, id string, aggregation AggregationType) int
 		Devices                  func(childComplexity int) int
-		DevicesForTenant         func(childComplexity int) int
+		Widget                   func(childComplexity int, id string) int
+		Widgets                  func(childComplexity int) int
+	}
+
+	Widget struct {
+		Code        func(childComplexity int) int
+		CreatedAt   func(childComplexity int) int
+		Description func(childComplexity int) int
+		DeviceIds   func(childComplexity int) int
+		ID          func(childComplexity int) int
+		Name        func(childComplexity int) int
+		Status      func(childComplexity int) int
+		TenantID    func(childComplexity int) int
+		UpdatedAt   func(childComplexity int) int
+		Workspace   func(childComplexity int) int
 	}
 }
 
@@ -124,12 +141,15 @@ type MutationResolver interface {
 	SetDeviceOperation(ctx context.Context, id string, op OperationType) (*Device, error)
 	SetOperation(ctx context.Context, op OperationType, data interface{}) (bool, error)
 	DeleteDevice(ctx context.Context, id string) (string, error)
+	CreateWidget(ctx context.Context, input WidgetInput) (*Widget, error)
+	DeleteWidget(ctx context.Context, id string) (string, error)
 }
 type QueryResolver interface {
 	Devices(ctx context.Context) ([]*Device, error)
-	DevicesForTenant(ctx context.Context) (*DevicePage, error)
 	Device(ctx context.Context, id string) (*Device, error)
 	DeviceByIDAndAggregation(ctx context.Context, id string, aggregation AggregationType) (*Device, error)
+	Widgets(ctx context.Context) ([]*Widget, error)
+	Widget(ctx context.Context, id string) (*Widget, error)
 }
 
 type executableSchema struct {
@@ -154,12 +174,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Auth.AccessStrategy(childComplexity), true
 
-	case "Auth.credential":
-		if e.complexity.Auth.Credential == nil {
+	case "Auth.credentialForDevice":
+		if e.complexity.Auth.CredentialForDevice == nil {
 			break
 		}
 
-		return e.complexity.Auth.Credential(childComplexity), true
+		return e.complexity.Auth.CredentialForDevice(childComplexity), true
+
+	case "Auth.credentialForService":
+		if e.complexity.Auth.CredentialForService == nil {
+			break
+		}
+
+		return e.complexity.Auth.CredentialForService(childComplexity), true
 
 	case "BasicCredentialData.password":
 		if e.complexity.BasicCredentialData.Password == nil {
@@ -327,6 +354,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.CreateDevice(childComplexity, args["input"].(DeviceInput)), true
 
+	case "Mutation.createWidget":
+		if e.complexity.Mutation.CreateWidget == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createWidget_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateWidget(childComplexity, args["input"].(WidgetInput)), true
+
 	case "Mutation.deleteDevice":
 		if e.complexity.Mutation.DeleteDevice == nil {
 			break
@@ -338,6 +377,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.DeleteDevice(childComplexity, args["id"].(string)), true
+
+	case "Mutation.deleteWidget":
+		if e.complexity.Mutation.DeleteWidget == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteWidget_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteWidget(childComplexity, args["id"].(string)), true
 
 	case "Mutation.setDeviceOperation":
 		if e.complexity.Mutation.SetDeviceOperation == nil {
@@ -436,12 +487,94 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Devices(childComplexity), true
 
-	case "Query.devicesForTenant":
-		if e.complexity.Query.DevicesForTenant == nil {
+	case "Query.widget":
+		if e.complexity.Query.Widget == nil {
 			break
 		}
 
-		return e.complexity.Query.DevicesForTenant(childComplexity), true
+		args, err := ec.field_Query_widget_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Widget(childComplexity, args["id"].(string)), true
+
+	case "Query.widgets":
+		if e.complexity.Query.Widgets == nil {
+			break
+		}
+
+		return e.complexity.Query.Widgets(childComplexity), true
+
+	case "Widget.code":
+		if e.complexity.Widget.Code == nil {
+			break
+		}
+
+		return e.complexity.Widget.Code(childComplexity), true
+
+	case "Widget.createdAt":
+		if e.complexity.Widget.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Widget.CreatedAt(childComplexity), true
+
+	case "Widget.description":
+		if e.complexity.Widget.Description == nil {
+			break
+		}
+
+		return e.complexity.Widget.Description(childComplexity), true
+
+	case "Widget.deviceIds":
+		if e.complexity.Widget.DeviceIds == nil {
+			break
+		}
+
+		return e.complexity.Widget.DeviceIds(childComplexity), true
+
+	case "Widget.id":
+		if e.complexity.Widget.ID == nil {
+			break
+		}
+
+		return e.complexity.Widget.ID(childComplexity), true
+
+	case "Widget.name":
+		if e.complexity.Widget.Name == nil {
+			break
+		}
+
+		return e.complexity.Widget.Name(childComplexity), true
+
+	case "Widget.status":
+		if e.complexity.Widget.Status == nil {
+			break
+		}
+
+		return e.complexity.Widget.Status(childComplexity), true
+
+	case "Widget.tenantId":
+		if e.complexity.Widget.TenantID == nil {
+			break
+		}
+
+		return e.complexity.Widget.TenantID(childComplexity), true
+
+	case "Widget.updatedAt":
+		if e.complexity.Widget.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.Widget.UpdatedAt(childComplexity), true
+
+	case "Widget.workspace":
+		if e.complexity.Widget.Workspace == nil {
+			break
+		}
+
+		return e.complexity.Widget.Workspace(childComplexity), true
 
 	}
 	return 0, false
@@ -538,6 +671,11 @@ enum DeviceStatus {
     ERROR
 }
 
+enum WidgetStatus {
+    INACTIVE
+    ACTIVE
+}
+
 type BearerTokenCredentialData {
     token: String!
 }
@@ -566,7 +704,8 @@ type PageInfo {
 }
 
 type Auth {
-    credential: CredentialData
+    credentialForDevice: CredentialData
+    credentialForService: String
     accessStrategy: String
 }
 
@@ -595,6 +734,19 @@ type DevicePage implements Pageable {
     totalCount: Int!
 }
 
+type Widget {
+    id: ID!
+    name: String!
+    description: String
+    status: WidgetStatus!
+    tenantId: ID!
+    code: String!
+    workspace: String!
+    deviceIds: [String!]
+    createdAt: Timestamp
+    updatedAt: Timestamp
+}
+
 input HostInput {
     url: String!
     turnOnEndpoint: String
@@ -608,6 +760,16 @@ input DeviceInput {
     host: HostInput
     auth: AuthInput
 }
+
+input WidgetInput {
+    name: String!
+    description: String
+    status: WidgetStatus!
+    code: String!
+    workspace: String!
+    deviceIds: [String!]
+}
+
 
 input BasicCredentialDataInput {
     username: String!
@@ -639,15 +801,17 @@ input CredentialDataInput {
 }
 
 input AuthInput {
-    credential: CredentialDataInput
+    credentialForDevice: CredentialDataInput
+    credentialForService: String
     accessStrategy: String
 }
 
 type Query {
     devices: [Device]!
-    devicesForTenant: DevicePage!
     device(id: ID!): Device
     deviceByIdAndAggregation(id: ID!, aggregation: AggregationType!): Device
+    widgets: [Widget]!
+    widget(id: ID!): Widget
 }
 
 type Mutation {
@@ -655,6 +819,8 @@ type Mutation {
     setDeviceOperation(id: ID!, op: OperationType!): Device!
     setOperation(op: OperationType!, data: Any): Boolean!
     deleteDevice(id: String!): String!
+    createWidget(input: WidgetInput!): Widget!
+    deleteWidget(id: ID!): String!
 }`, BuiltIn: false},
 	&ast.Source{Name: "federation/directives.graphql", Input: `
 scalar _Any
@@ -687,12 +853,40 @@ func (ec *executionContext) field_Mutation_createDevice_args(ctx context.Context
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_createWidget_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 WidgetInput
+	if tmp, ok := rawArgs["input"]; ok {
+		arg0, err = ec.unmarshalNWidgetInput2githubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐWidgetInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_deleteDevice_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
 	if tmp, ok := rawArgs["id"]; ok {
 		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteWidget_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -795,6 +989,20 @@ func (ec *executionContext) field_Query_device_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_widget_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field___Type_enumValues_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -831,7 +1039,7 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 
 // region    **************************** field.gotpl *****************************
 
-func (ec *executionContext) _Auth_credential(ctx context.Context, field graphql.CollectedField, obj *Auth) (ret graphql.Marshaler) {
+func (ec *executionContext) _Auth_credentialForDevice(ctx context.Context, field graphql.CollectedField, obj *Auth) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -848,7 +1056,7 @@ func (ec *executionContext) _Auth_credential(ctx context.Context, field graphql.
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Credential, nil
+		return obj.CredentialForDevice, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -860,6 +1068,37 @@ func (ec *executionContext) _Auth_credential(ctx context.Context, field graphql.
 	res := resTmp.(CredentialData)
 	fc.Result = res
 	return ec.marshalOCredentialData2githubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐCredentialData(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Auth_credentialForService(ctx context.Context, field graphql.CollectedField, obj *Auth) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Auth",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CredentialForService, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Auth_accessStrategy(ctx context.Context, field graphql.CollectedField, obj *Auth) (ret graphql.Marshaler) {
@@ -1784,6 +2023,88 @@ func (ec *executionContext) _Mutation_deleteDevice(ctx context.Context, field gr
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Mutation_createWidget(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_createWidget_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().CreateWidget(rctx, args["input"].(WidgetInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*Widget)
+	fc.Result = res
+	return ec.marshalNWidget2ᚖgithubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐWidget(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_deleteWidget(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_deleteWidget_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DeleteWidget(rctx, args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _OAuthCredentialData_clientId(ctx context.Context, field graphql.CollectedField, obj *OAuthCredentialData) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -2022,40 +2343,6 @@ func (ec *executionContext) _Query_devices(ctx context.Context, field graphql.Co
 	return ec.marshalNDevice2ᚕᚖgithubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDevice(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Query_devicesForTenant(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Query",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().DevicesForTenant(rctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*DevicePage)
-	fc.Result = res
-	return ec.marshalNDevicePage2ᚖgithubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDevicePage(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _Query_device(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -2132,6 +2419,78 @@ func (ec *executionContext) _Query_deviceByIdAndAggregation(ctx context.Context,
 	return ec.marshalODevice2ᚖgithubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDevice(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_widgets(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Widgets(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*Widget)
+	fc.Result = res
+	return ec.marshalNWidget2ᚕᚖgithubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐWidget(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_widget(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_widget_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Widget(rctx, args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Widget)
+	fc.Result = res
+	return ec.marshalOWidget2ᚖgithubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐWidget(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -2199,6 +2558,334 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	res := resTmp.(*introspection.Schema)
 	fc.Result = res
 	return ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Widget_id(ctx context.Context, field graphql.CollectedField, obj *Widget) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Widget",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Widget_name(ctx context.Context, field graphql.CollectedField, obj *Widget) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Widget",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Widget_description(ctx context.Context, field graphql.CollectedField, obj *Widget) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Widget",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Description, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Widget_status(ctx context.Context, field graphql.CollectedField, obj *Widget) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Widget",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Status, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(WidgetStatus)
+	fc.Result = res
+	return ec.marshalNWidgetStatus2githubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐWidgetStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Widget_tenantId(ctx context.Context, field graphql.CollectedField, obj *Widget) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Widget",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TenantID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Widget_code(ctx context.Context, field graphql.CollectedField, obj *Widget) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Widget",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Code, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Widget_workspace(ctx context.Context, field graphql.CollectedField, obj *Widget) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Widget",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Workspace, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Widget_deviceIds(ctx context.Context, field graphql.CollectedField, obj *Widget) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Widget",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DeviceIds, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Widget_createdAt(ctx context.Context, field graphql.CollectedField, obj *Widget) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Widget",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Timestamp)
+	fc.Result = res
+	return ec.marshalOTimestamp2ᚖgithubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Widget_updatedAt(ctx context.Context, field graphql.CollectedField, obj *Widget) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Widget",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Timestamp)
+	fc.Result = res
+	return ec.marshalOTimestamp2ᚖgithubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
@@ -3262,9 +3949,15 @@ func (ec *executionContext) unmarshalInputAuthInput(ctx context.Context, obj int
 
 	for k, v := range asMap {
 		switch k {
-		case "credential":
+		case "credentialForDevice":
 			var err error
-			it.Credential, err = ec.unmarshalOCredentialDataInput2ᚖgithubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐCredentialDataInput(ctx, v)
+			it.CredentialForDevice, err = ec.unmarshalOCredentialDataInput2ᚖgithubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐCredentialDataInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "credentialForService":
+			var err error
+			it.CredentialForService, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -3490,6 +4183,54 @@ func (ec *executionContext) unmarshalInputTokenCredentialDataInput(ctx context.C
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputWidgetInput(ctx context.Context, obj interface{}) (WidgetInput, error) {
+	var it WidgetInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "name":
+			var err error
+			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "description":
+			var err error
+			it.Description, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "status":
+			var err error
+			it.Status, err = ec.unmarshalNWidgetStatus2githubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐWidgetStatus(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "code":
+			var err error
+			it.Code, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "workspace":
+			var err error
+			it.Workspace, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "deviceIds":
+			var err error
+			it.DeviceIds, err = ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
@@ -3562,8 +4303,10 @@ func (ec *executionContext) _Auth(ctx context.Context, sel ast.SelectionSet, obj
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Auth")
-		case "credential":
-			out.Values[i] = ec._Auth_credential(ctx, field, obj)
+		case "credentialForDevice":
+			out.Values[i] = ec._Auth_credentialForDevice(ctx, field, obj)
+		case "credentialForService":
+			out.Values[i] = ec._Auth_credentialForService(ctx, field, obj)
 		case "accessStrategy":
 			out.Values[i] = ec._Auth_accessStrategy(ctx, field, obj)
 		default:
@@ -3842,6 +4585,16 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "createWidget":
+			out.Values[i] = ec._Mutation_createWidget(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "deleteWidget":
+			out.Values[i] = ec._Mutation_deleteWidget(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -3956,20 +4709,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
-		case "devicesForTenant":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_devicesForTenant(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
 		case "device":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -3992,10 +4731,95 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				res = ec._Query_deviceByIdAndAggregation(ctx, field)
 				return res
 			})
+		case "widgets":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_widgets(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "widget":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_widget(ctx, field)
+				return res
+			})
 		case "__type":
 			out.Values[i] = ec._Query___type(ctx, field)
 		case "__schema":
 			out.Values[i] = ec._Query___schema(ctx, field)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var widgetImplementors = []string{"Widget"}
+
+func (ec *executionContext) _Widget(ctx context.Context, sel ast.SelectionSet, obj *Widget) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, widgetImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Widget")
+		case "id":
+			out.Values[i] = ec._Widget_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "name":
+			out.Values[i] = ec._Widget_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "description":
+			out.Values[i] = ec._Widget_description(ctx, field, obj)
+		case "status":
+			out.Values[i] = ec._Widget_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "tenantId":
+			out.Values[i] = ec._Widget_tenantId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "code":
+			out.Values[i] = ec._Widget_code(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "workspace":
+			out.Values[i] = ec._Widget_workspace(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "deviceIds":
+			out.Values[i] = ec._Widget_deviceIds(ctx, field, obj)
+		case "createdAt":
+			out.Values[i] = ec._Widget_createdAt(ctx, field, obj)
+		case "updatedAt":
+			out.Values[i] = ec._Widget_updatedAt(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -4367,20 +5191,6 @@ func (ec *executionContext) unmarshalNDeviceInput2githubᚗcomᚋiotᚑprojᚋco
 	return ec.unmarshalInputDeviceInput(ctx, v)
 }
 
-func (ec *executionContext) marshalNDevicePage2githubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDevicePage(ctx context.Context, sel ast.SelectionSet, v DevicePage) graphql.Marshaler {
-	return ec._DevicePage(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNDevicePage2ᚖgithubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDevicePage(ctx context.Context, sel ast.SelectionSet, v *DevicePage) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._DevicePage(ctx, sel, v)
-}
-
 func (ec *executionContext) unmarshalNDeviceStatus2githubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDeviceStatus(ctx context.Context, v interface{}) (DeviceStatus, error) {
 	var res DeviceStatus
 	return res, res.UnmarshalGQL(v)
@@ -4467,6 +5277,70 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNWidget2githubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐWidget(ctx context.Context, sel ast.SelectionSet, v Widget) graphql.Marshaler {
+	return ec._Widget(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNWidget2ᚕᚖgithubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐWidget(ctx context.Context, sel ast.SelectionSet, v []*Widget) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOWidget2ᚖgithubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐWidget(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalNWidget2ᚖgithubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐWidget(ctx context.Context, sel ast.SelectionSet, v *Widget) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Widget(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNWidgetInput2githubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐWidgetInput(ctx context.Context, v interface{}) (WidgetInput, error) {
+	return ec.unmarshalInputWidgetInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNWidgetStatus2githubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐWidgetStatus(ctx context.Context, v interface{}) (WidgetStatus, error) {
+	var res WidgetStatus
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalNWidgetStatus2githubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐWidgetStatus(ctx context.Context, sel ast.SelectionSet, v WidgetStatus) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) unmarshalN_FieldSet2string(ctx context.Context, v interface{}) (string, error) {
@@ -4866,6 +5740,38 @@ func (ec *executionContext) marshalOString2string(ctx context.Context, sel ast.S
 	return graphql.MarshalString(v)
 }
 
+func (ec *executionContext) unmarshalOString2ᚕstringᚄ(ctx context.Context, v interface{}) ([]string, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOString2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
+	}
+
+	return ret
+}
+
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v interface{}) (*string, error) {
 	if v == nil {
 		return nil, nil
@@ -4915,6 +5821,17 @@ func (ec *executionContext) unmarshalOTokenCredentialDataInput2ᚖgithubᚗcom�
 	}
 	res, err := ec.unmarshalOTokenCredentialDataInput2githubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐTokenCredentialDataInput(ctx, v)
 	return &res, err
+}
+
+func (ec *executionContext) marshalOWidget2githubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐWidget(ctx context.Context, sel ast.SelectionSet, v Widget) graphql.Marshaler {
+	return ec._Widget(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOWidget2ᚖgithubᚗcomᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐWidget(ctx context.Context, sel ast.SelectionSet, v *Widget) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Widget(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalO__EnumValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValueᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.EnumValue) graphql.Marshaler {

@@ -5,6 +5,7 @@ import (
 	"github.com/iot-proj/components/orchestrator/internal/domain/auth"
 	"github.com/iot-proj/components/orchestrator/internal/domain/device"
 	"github.com/iot-proj/components/orchestrator/internal/domain/host"
+	"github.com/iot-proj/components/orchestrator/internal/domain/widget"
 	"github.com/iot-proj/components/orchestrator/internal/uuid"
 	"github.com/iot-proj/components/orchestrator/pkg/graphql"
 	"github.com/iot-proj/components/orchestrator/pkg/persistence"
@@ -15,6 +16,7 @@ var _ graphql.ResolverRoot = &RootResolver{}
 type RootResolver struct {
 	persistence persistence.Transactioner
 	device      *device.Resolver
+	widget      *widget.Resolver
 }
 
 func NewRootResolver(persistence persistence.Transactioner) *RootResolver {
@@ -28,11 +30,18 @@ func NewRootResolver(persistence persistence.Transactioner) *RootResolver {
 	deviceConv := device.NewConverter(hostConv, authConv)
 	deviceRepo := device.NewRepository(deviceConv)
 	deviceSvc := device.NewService(deviceRepo, uuidService, hostSvc)
-	deviceResolver := device.NewResolver(persistence, deviceSvc, hostSvc, deviceConv, hostConv)
+
+	widgetConv := widget.NewConverter()
+	widgetRepo := widget.NewRepository(widgetConv)
+	widgetSvc := widget.NewService(widgetRepo, uuidService)
+
+	deviceRes := device.NewResolver(persistence, deviceSvc, hostSvc, deviceConv, hostConv)
+	widgetRes := widget.NewResolver(persistence, widgetSvc, widgetConv)
 
 	return &RootResolver{
 		persistence: persistence,
-		device:      deviceResolver,
+		device:      deviceRes,
+		widget:      widgetRes,
 	}
 }
 
@@ -50,7 +59,6 @@ type queryResolver struct {
 	*RootResolver
 }
 
-// ApplicationTemplate missing godoc
 func (r *RootResolver) Device() graphql.DeviceResolver {
 	return &deviceResolver{r}
 }
@@ -59,16 +67,20 @@ func (r *queryResolver) Devices(ctx context.Context) ([]*graphql.Device, error) 
 	return r.device.Devices(ctx)
 }
 
-func (r *queryResolver) DevicesForTenant(ctx context.Context) (*graphql.DevicePage, error) {
-	return nil, nil
-}
-
 func (r *queryResolver) Device(ctx context.Context, id string) (*graphql.Device, error) {
 	return r.device.Device(ctx, id)
 }
 
 func (r *queryResolver) DeviceByIDAndAggregation(ctx context.Context, id string, aggregation graphql.AggregationType) (*graphql.Device, error) {
 	return r.device.DeviceByIDAndAggregation(ctx, id, aggregation)
+}
+
+func (r *queryResolver) Widget(ctx context.Context, id string) (*graphql.Widget, error) {
+	return r.widget.Widget(ctx, id)
+}
+
+func (r *queryResolver) Widgets(ctx context.Context) ([]*graphql.Widget, error) {
+	return r.widget.Widgets(ctx)
 }
 
 type mutationResolver struct {
@@ -89,6 +101,14 @@ func (r *mutationResolver) SetOperation(ctx context.Context, op graphql.Operatio
 
 func (r *mutationResolver) DeleteDevice(ctx context.Context, id string) (string, error) {
 	return r.device.DeleteDevice(ctx, id)
+}
+
+func (r *mutationResolver) CreateWidget(ctx context.Context, in graphql.WidgetInput) (*graphql.Widget, error) {
+	return r.widget.CreateWidget(ctx, in)
+}
+
+func (r *mutationResolver) DeleteWidget(ctx context.Context, id string) (string, error) {
+	return r.widget.DeleteWidget(ctx, id)
 }
 
 type deviceResolver struct {

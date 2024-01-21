@@ -6,6 +6,7 @@ type Type string
 const (
 	// Device type represents device resource.
 	Device Type = "device"
+	Widget Type = "widget"
 	// Schema type represents schema resource.
 	Schema Type = "schemaMigration"
 )

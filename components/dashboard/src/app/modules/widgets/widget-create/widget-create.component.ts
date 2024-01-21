@@ -1,14 +1,7 @@
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core'
-import {
-    STEPPER_GLOBAL_OPTIONS,
-    StepperSelectionEvent,
-} from '@angular/cdk/stepper'
-import {
-    UntypedFormBuilder,
-    UntypedFormGroup,
-    Validators,
-} from '@angular/forms'
-import { COMMA, ENTER } from '@angular/cdk/keycodes'
+import {Component, ElementRef, OnInit, ViewChild} from '@angular/core'
+import {STEPPER_GLOBAL_OPTIONS, StepperSelectionEvent,} from '@angular/cdk/stepper'
+import {UntypedFormBuilder, UntypedFormGroup, Validators,} from '@angular/forms'
+import {COMMA, ENTER} from '@angular/cdk/keycodes'
 
 import {
     Blockly,
@@ -30,16 +23,17 @@ import {
     TEXT_CATEGORY,
     VARIABLES_CATEGORY,
 } from 'ngx-blockly'
-import { DeviceService } from 'src/app/shared/services/device/device.service'
-import { IDevice } from 'src/app/shared/services/device/device.interface'
-import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete'
-import { Observable } from 'rxjs'
-import { map, startWith } from 'rxjs/operators'
-import { DynamicDropdownBlock } from '../../../shared/blocks/dynamic-dropdown'
-import { AggregationBlock } from '../../../shared/blocks/aggregation'
-import { IOperation, OperationBlock } from '../../../shared/blocks/operation'
-import { RepeatForBlock } from '../../../shared/blocks/repeatFor'
-import { DeviceInfoFragment } from 'src/app/shared/graphql/generated'
+import {DeviceService} from 'src/app/shared/services/device/device.service'
+import {MatAutocompleteSelectedEvent} from '@angular/material/autocomplete'
+import {Observable} from 'rxjs'
+import {map, startWith} from 'rxjs/operators'
+import {DynamicDropdownBlock} from '../../../shared/blocks/dynamic-dropdown'
+import {AggregationBlock} from '../../../shared/blocks/aggregation'
+import {IOperation, OperationBlock} from '../../../shared/blocks/operation'
+import {RepeatForBlock} from '../../../shared/blocks/repeatFor'
+import {DeviceInfoFragment, WidgetInput, WidgetStatus} from 'src/app/shared/graphql/generated'
+import {ToastrService} from "../../../shared/services/toastr/toastr.service";
+import {WidgetService} from "../../../shared/services/widget/widget.service";
 
 @Component({
     selector: 'app-widget-create',
@@ -156,12 +150,22 @@ export class WidgetCreateComponent implements OnInit {
         css: true,
     }
 
-    @ViewChild('blockly') blocklyComponent: NgxBlocklyComponent
+    private blocklyComponent: NgxBlocklyComponent;
+
+    // @ViewChild('blockly', { static: false }) blocklyComponent: NgxBlocklyComponent
+    @ViewChild('blockly', { static: false }) set blockly(content: NgxBlocklyComponent) {
+        if (content) {
+            this.blocklyComponent = content
+        }
+    }
 
     constructor(
         private formBuilder: UntypedFormBuilder,
-        private deviceService: DeviceService
+        private deviceService: DeviceService,
+        private widgetService: WidgetService,
+        private toast: ToastrService
     ) {}
+
     ngOnInit(): void {
         this.detailsFormGroup = this.formBuilder.group({
             name: [
@@ -180,7 +184,7 @@ export class WidgetCreateComponent implements OnInit {
         })
 
         const workspace = new Blockly.WorkspaceSvg(new Blockly.Options({}))
-        const toolbox: NgxBlocklyToolbox = new NgxBlocklyToolbox(workspace)
+        const toolbox: NgxBlocklyToolbox = new NgxBlocklyToolbox(workspace);
 
         this.deviceService.getAllDevices().subscribe((deviceList) => {
             this.devices = deviceList
@@ -276,6 +280,25 @@ export class WidgetCreateComponent implements OnInit {
         this.deviceInput.nativeElement.value = ''
     }
 
+    public onSaveClick(): void {
+        const model = this.convertToModel()
+        this.widgetService.create(model).subscribe((data) => {
+            console.log('success', data)
+            this.toast.showSuccess('Successfully created widget')
+        })
+    }
+
+    private convertToModel(): WidgetInput {
+        return {
+            name: this.detailsFormGroup.get('name').value,
+            description: this.detailsFormGroup.get('description').value,
+            status: this.detailsFormGroup.get('isActive').value ? WidgetStatus.Active : WidgetStatus.Inactive,
+            code: this.workspaceCode,
+            workspace:  this.workspaceXML,
+            deviceIds: Array.from(this.selectedDevices.values()).map((device) => device.id)
+        }
+    }
+
     private _filter(value: string): DeviceInfoFragment[] {
         if (typeof value !== 'string') {
             return this.devices
@@ -289,6 +312,7 @@ export class WidgetCreateComponent implements OnInit {
 
     public onNavigateToBlockly(): void {
         setTimeout(() => {
+            console.log(this.blocklyComponent)
             this.blocklyComponent.resize()
             //       this.blocklyComponent.fromXml(`<xml xmlns="https://developers.google.com/blockly/xml">
             //   <block type="controls_if" id="aWfzI?F$qXe8;y,6=j[V" x="29" y="8"></block>

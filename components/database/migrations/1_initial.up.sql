@@ -10,6 +10,10 @@ CREATE TYPE device_status AS ENUM (
     'ERROR'
 );
 
+CREATE TYPE widget_status AS ENUM (
+    'INACTIVE',
+    'ACTIVE'
+);
 
 CREATE TABLE tenants (
     id uuid PRIMARY KEY NOT NULL CHECK (id <> '00000000-0000-0000-0000-000000000000'),
@@ -37,4 +41,16 @@ CREATE TABLE hosts (
     url               varchar(256)     NOT NULL,
     turn_on_endpoint  varchar(256),
     turn_off_endpoint varchar(256)
+);
+
+CREATE TABLE widgets (
+    id uuid PRIMARY KEY NOT NULL CHECK (id <> '00000000-0000-0000-0000-000000000000'),
+    tenant_id uuid NOT NULL,
+    CONSTRAINT tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
+    name varchar(256) NOT NULL,
+    description text,
+    status widget_status,
+    device_ids jsonb,
+    created_at timestamp,
+    updated_at timestamp
 );

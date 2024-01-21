@@ -29,12 +29,14 @@ export enum AggregationType {
 export type Auth = {
   __typename?: 'Auth';
   accessStrategy?: Maybe<Scalars['String']>;
-  credential?: Maybe<CredentialData>;
+  credentialForDevice?: Maybe<CredentialData>;
+  credentialForService?: Maybe<Scalars['String']>;
 };
 
 export type AuthInput = {
   accessStrategy?: InputMaybe<Scalars['String']>;
-  credential?: InputMaybe<CredentialDataInput>;
+  credentialForDevice?: InputMaybe<CredentialDataInput>;
+  credentialForService?: InputMaybe<Scalars['String']>;
 };
 
 export type BasicCredentialData = {
@@ -127,7 +129,9 @@ export type HostInput = {
 export type Mutation = {
   __typename?: 'Mutation';
   createDevice: Device;
+  createWidget: Widget;
   deleteDevice: Scalars['String'];
+  deleteWidget: Scalars['String'];
   setDeviceOperation: Device;
   setOperation: Scalars['Boolean'];
 };
@@ -138,8 +142,18 @@ export type MutationCreateDeviceArgs = {
 };
 
 
+export type MutationCreateWidgetArgs = {
+  input: WidgetInput;
+};
+
+
 export type MutationDeleteDeviceArgs = {
   id: Scalars['String'];
+};
+
+
+export type MutationDeleteWidgetArgs = {
+  id: Scalars['ID'];
 };
 
 
@@ -191,7 +205,8 @@ export type Query = {
   device?: Maybe<Device>;
   deviceByIdAndAggregation?: Maybe<Device>;
   devices: Array<Maybe<Device>>;
-  devicesForTenant: DevicePage;
+  widget?: Maybe<Widget>;
+  widgets: Array<Maybe<Widget>>;
 };
 
 
@@ -205,23 +220,56 @@ export type QueryDeviceByIdAndAggregationArgs = {
   id: Scalars['ID'];
 };
 
+
+export type QueryWidgetArgs = {
+  id: Scalars['ID'];
+};
+
 export type TokenCredentialDataInput = {
   token: Scalars['String'];
 };
 
-export type DeviceInfoFragment = { __typename?: 'Device', id: string, name: string, description?: string | null, status: DeviceStatus, tenantId: string, createdAt?: any | null, updatedAt?: any | null, auth?: { __typename?: 'Auth', credential?: { __typename?: 'BasicCredentialData', username: string, password: string } | { __typename?: 'BearerTokenCredentialData', token: string } | { __typename?: 'CertificateOAuthCredentialData', clientId: string, certificate: string, url: string } | { __typename?: 'OAuthCredentialData', clientId: string, clientSecret: string, url: string } | null } | null, host?: { __typename?: 'Host', id: string, url: string, turnOnEndpoint?: string | null, turnOffEndpoint?: string | null } | null };
+export type Widget = {
+  __typename?: 'Widget';
+  code: Scalars['String'];
+  createdAt?: Maybe<Scalars['Timestamp']>;
+  description?: Maybe<Scalars['String']>;
+  deviceIds?: Maybe<Array<Scalars['String']>>;
+  id: Scalars['ID'];
+  name: Scalars['String'];
+  status: WidgetStatus;
+  tenantId: Scalars['ID'];
+  updatedAt?: Maybe<Scalars['Timestamp']>;
+  workspace: Scalars['String'];
+};
+
+export type WidgetInput = {
+  code: Scalars['String'];
+  description?: InputMaybe<Scalars['String']>;
+  deviceIds?: InputMaybe<Array<Scalars['String']>>;
+  name: Scalars['String'];
+  status: WidgetStatus;
+  workspace: Scalars['String'];
+};
+
+export enum WidgetStatus {
+  Active = 'ACTIVE',
+  Inactive = 'INACTIVE'
+}
+
+export type DeviceInfoFragment = { __typename?: 'Device', id: string, name: string, description?: string | null, status: DeviceStatus, tenantId: string, createdAt?: any | null, updatedAt?: any | null, auth?: { __typename?: 'Auth', credentialForService?: string | null, credentialForDevice?: { __typename?: 'BasicCredentialData', username: string, password: string } | { __typename?: 'BearerTokenCredentialData', token: string } | { __typename?: 'CertificateOAuthCredentialData', clientId: string, certificate: string, url: string } | { __typename?: 'OAuthCredentialData', clientId: string, clientSecret: string, url: string } | null } | null, host?: { __typename?: 'Host', id: string, url: string, turnOnEndpoint?: string | null, turnOffEndpoint?: string | null } | null };
 
 export type GetAllDevicesQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetAllDevicesQuery = { __typename?: 'Query', devices: Array<{ __typename?: 'Device', id: string, name: string, description?: string | null, status: DeviceStatus, tenantId: string, createdAt?: any | null, updatedAt?: any | null, auth?: { __typename?: 'Auth', credential?: { __typename?: 'BasicCredentialData', username: string, password: string } | { __typename?: 'BearerTokenCredentialData', token: string } | { __typename?: 'CertificateOAuthCredentialData', clientId: string, certificate: string, url: string } | { __typename?: 'OAuthCredentialData', clientId: string, clientSecret: string, url: string } | null } | null, host?: { __typename?: 'Host', id: string, url: string, turnOnEndpoint?: string | null, turnOffEndpoint?: string | null } | null } | null> };
+export type GetAllDevicesQuery = { __typename?: 'Query', devices: Array<{ __typename?: 'Device', id: string, name: string, description?: string | null, status: DeviceStatus, tenantId: string, createdAt?: any | null, updatedAt?: any | null, auth?: { __typename?: 'Auth', credentialForService?: string | null, credentialForDevice?: { __typename?: 'BasicCredentialData', username: string, password: string } | { __typename?: 'BearerTokenCredentialData', token: string } | { __typename?: 'CertificateOAuthCredentialData', clientId: string, certificate: string, url: string } | { __typename?: 'OAuthCredentialData', clientId: string, clientSecret: string, url: string } | null } | null, host?: { __typename?: 'Host', id: string, url: string, turnOnEndpoint?: string | null, turnOffEndpoint?: string | null } | null } | null> };
 
 export type CreateDeviceMutationVariables = Exact<{
   input: DeviceInput;
 }>;
 
 
-export type CreateDeviceMutation = { __typename?: 'Mutation', createDevice: { __typename?: 'Device', id: string, name: string, description?: string | null, status: DeviceStatus, tenantId: string, createdAt?: any | null, updatedAt?: any | null, auth?: { __typename?: 'Auth', credential?: { __typename?: 'BasicCredentialData', username: string, password: string } | { __typename?: 'BearerTokenCredentialData', token: string } | { __typename?: 'CertificateOAuthCredentialData', clientId: string, certificate: string, url: string } | { __typename?: 'OAuthCredentialData', clientId: string, clientSecret: string, url: string } | null } | null, host?: { __typename?: 'Host', id: string, url: string, turnOnEndpoint?: string | null, turnOffEndpoint?: string | null } | null } };
+export type CreateDeviceMutation = { __typename?: 'Mutation', createDevice: { __typename?: 'Device', id: string, name: string, description?: string | null, status: DeviceStatus, tenantId: string, createdAt?: any | null, updatedAt?: any | null, auth?: { __typename?: 'Auth', credentialForService?: string | null, credentialForDevice?: { __typename?: 'BasicCredentialData', username: string, password: string } | { __typename?: 'BearerTokenCredentialData', token: string } | { __typename?: 'CertificateOAuthCredentialData', clientId: string, certificate: string, url: string } | { __typename?: 'OAuthCredentialData', clientId: string, clientSecret: string, url: string } | null } | null, host?: { __typename?: 'Host', id: string, url: string, turnOnEndpoint?: string | null, turnOffEndpoint?: string | null } | null } };
 
 export type DeleteDeviceMutationVariables = Exact<{
   id: Scalars['String'];
@@ -229,6 +277,27 @@ export type DeleteDeviceMutationVariables = Exact<{
 
 
 export type DeleteDeviceMutation = { __typename?: 'Mutation', deleteDevice: string };
+
+export type WidgetInfoFragment = { __typename?: 'Widget', id: string, name: string, description?: string | null, status: WidgetStatus, tenantId: string, code: string, workspace: string, deviceIds?: Array<string> | null, createdAt?: any | null, updatedAt?: any | null };
+
+export type GetAllWidgetsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetAllWidgetsQuery = { __typename?: 'Query', widgets: Array<{ __typename?: 'Widget', id: string, name: string, description?: string | null, status: WidgetStatus, tenantId: string, code: string, workspace: string, deviceIds?: Array<string> | null, createdAt?: any | null, updatedAt?: any | null } | null> };
+
+export type CreateWidgetMutationVariables = Exact<{
+  input: WidgetInput;
+}>;
+
+
+export type CreateWidgetMutation = { __typename?: 'Mutation', createWidget: { __typename?: 'Widget', id: string, name: string, description?: string | null, status: WidgetStatus, tenantId: string, code: string, workspace: string, deviceIds?: Array<string> | null, createdAt?: any | null, updatedAt?: any | null } };
+
+export type DeleteWidgetMutationVariables = Exact<{
+  id: Scalars['ID'];
+}>;
+
+
+export type DeleteWidgetMutation = { __typename?: 'Mutation', deleteWidget: string };
 
 export const DeviceInfoFragmentDoc = gql`
     fragment DeviceInfo on Device {
@@ -238,7 +307,7 @@ export const DeviceInfoFragmentDoc = gql`
   status
   tenantId
   auth {
-    credential {
+    credentialForDevice {
       ... on BasicCredentialData {
         username
         password
@@ -257,6 +326,7 @@ export const DeviceInfoFragmentDoc = gql`
         token
       }
     }
+    credentialForService
   }
   host {
     id
@@ -264,6 +334,20 @@ export const DeviceInfoFragmentDoc = gql`
     turnOnEndpoint
     turnOffEndpoint
   }
+  createdAt
+  updatedAt
+}
+    `;
+export const WidgetInfoFragmentDoc = gql`
+    fragment WidgetInfo on Widget {
+  id
+  name
+  description
+  status
+  tenantId
+  code
+  workspace
+  deviceIds
   createdAt
   updatedAt
 }
@@ -315,6 +399,58 @@ export const DeleteDeviceDocument = gql`
   })
   export class DeleteDeviceGQL extends Apollo.Mutation<DeleteDeviceMutation, DeleteDeviceMutationVariables> {
     document = DeleteDeviceDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const GetAllWidgetsDocument = gql`
+    query GetAllWidgets {
+  widgets {
+    ...WidgetInfo
+  }
+}
+    ${WidgetInfoFragmentDoc}`;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class GetAllWidgetsGQL extends Apollo.Query<GetAllWidgetsQuery, GetAllWidgetsQueryVariables> {
+    document = GetAllWidgetsDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const CreateWidgetDocument = gql`
+    mutation CreateWidget($input: WidgetInput!) {
+  createWidget(input: $input) {
+    ...WidgetInfo
+  }
+}
+    ${WidgetInfoFragmentDoc}`;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class CreateWidgetGQL extends Apollo.Mutation<CreateWidgetMutation, CreateWidgetMutationVariables> {
+    document = CreateWidgetDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const DeleteWidgetDocument = gql`
+    mutation DeleteWidget($id: ID!) {
+  deleteWidget(id: $id)
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class DeleteWidgetGQL extends Apollo.Mutation<DeleteWidgetMutation, DeleteWidgetMutationVariables> {
+    document = DeleteWidgetDocument;
     
     constructor(apollo: Apollo.Apollo) {
       super(apollo);

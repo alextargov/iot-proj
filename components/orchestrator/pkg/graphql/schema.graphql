@@ -29,6 +29,11 @@ enum DeviceStatus {
     ERROR
 }
 
+enum WidgetStatus {
+    INACTIVE
+    ACTIVE
+}
+
 type BearerTokenCredentialData {
     token: String!
 }
@@ -57,7 +62,8 @@ type PageInfo {
 }
 
 type Auth {
-    credential: CredentialData
+    credentialForDevice: CredentialData
+    credentialForService: String
     accessStrategy: String
 }
 
@@ -86,6 +92,19 @@ type DevicePage implements Pageable {
     totalCount: Int!
 }
 
+type Widget {
+    id: ID!
+    name: String!
+    description: String
+    status: WidgetStatus!
+    tenantId: ID!
+    code: String!
+    workspace: String!
+    deviceIds: [String!]
+    createdAt: Timestamp
+    updatedAt: Timestamp
+}
+
 input HostInput {
     url: String!
     turnOnEndpoint: String
@@ -99,6 +118,16 @@ input DeviceInput {
     host: HostInput
     auth: AuthInput
 }
+
+input WidgetInput {
+    name: String!
+    description: String
+    status: WidgetStatus!
+    code: String!
+    workspace: String!
+    deviceIds: [String!]
+}
+
 
 input BasicCredentialDataInput {
     username: String!
@@ -130,15 +159,17 @@ input CredentialDataInput {
 }
 
 input AuthInput {
-    credential: CredentialDataInput
+    credentialForDevice: CredentialDataInput
+    credentialForService: String
     accessStrategy: String
 }
 
 type Query {
     devices: [Device]!
-    devicesForTenant: DevicePage!
     device(id: ID!): Device
     deviceByIdAndAggregation(id: ID!, aggregation: AggregationType!): Device
+    widgets: [Widget]!
+    widget(id: ID!): Widget
 }
 
 type Mutation {
@@ -146,4 +177,6 @@ type Mutation {
     setDeviceOperation(id: ID!, op: OperationType!): Device!
     setOperation(op: OperationType!, data: Any): Boolean!
     deleteDevice(id: String!): String!
+    createWidget(input: WidgetInput!): Widget!
+    deleteWidget(id: ID!): String!
 }

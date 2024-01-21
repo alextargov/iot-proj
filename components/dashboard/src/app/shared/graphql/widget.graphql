@@ -1,0 +1,28 @@
+fragment WidgetInfo on Widget {
+    id
+    name
+    description
+    status
+    tenantId
+    code
+    workspace
+    deviceIds
+    createdAt
+    updatedAt
+}
+
+query GetAllWidgets {
+    widgets {
+        ...WidgetInfo
+    }
+}
+
+mutation CreateWidget($input: WidgetInput!) {
+    createWidget(input: $input) {
+        ...WidgetInfo
+    }
+}
+
+mutation DeleteWidget($id: ID!) {
+    deleteWidget(id: $id)
+}

@@ -12,14 +12,16 @@ import { WidgetDetailsComponent } from './widget-details/widget-details.componen
 import 'blockly/blocks'
 import { NgxBlocklyModule } from 'ngx-blockly'
 import { MatInputModule } from '@angular/material/input'
+import {WidgetDeleteComponent} from "./widget-delete/widget-delete.component";
 
 @NgModule({
     declarations: [
         WidgetsComponent,
         WidgetCreateComponent,
         WidgetDetailsComponent,
+        WidgetDeleteComponent
     ],
-    exports: [WidgetsComponent, WidgetCreateComponent, WidgetDetailsComponent],
+    exports: [WidgetsComponent, WidgetCreateComponent, WidgetDetailsComponent, WidgetDeleteComponent],
     imports: [
         CoreModule,
         MaterialModule,

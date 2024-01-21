@@ -31,6 +31,8 @@ const errorLink = onError(({ graphQLErrors, networkError, response }) => {
     if (networkError) {
         console.error(`[Network error]: ${networkError.message}`)
     }
+
+    console.log("response", response)
 })
 
 const basicContext = setContext((_, { headers }) => {

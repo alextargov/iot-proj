@@ -1,0 +1,70 @@
+.widget-list {
+    &__table {
+        width: 100%;
+
+        tr:hover {
+            background: whitesmoke;
+            cursor: pointer;
+        }
+
+        &-header,
+        &-definition {
+            vertical-align: middle;
+        }
+
+        &-definition {
+            &-actions {
+                display: flex;
+                justify-content: space-between;
+
+                &-edit:hover {
+                    color: blue;
+                }
+
+                &-delete:hover {
+                    color: red;
+                }
+            }
+        }
+
+        &-header {
+            &-name {
+                width: 20%;
+            }
+
+            &-description {
+                width: 40%;
+            }
+
+            &-status {
+                width: 5%;
+            }
+
+            &-url {
+                width: 15%;
+            }
+
+            &-createdAt {
+                width: 14%;
+            }
+
+            &-actions {
+                width: 6%;
+            }
+        }
+
+        &-status {
+            &-error {
+                color: red;
+            }
+
+            &-okay {
+                color: green;
+            }
+
+            &-initial {
+                color: gray;
+            }
+        }
+    }
+}
