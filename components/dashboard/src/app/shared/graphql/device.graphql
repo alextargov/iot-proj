@@ -5,7 +5,7 @@ fragment DeviceInfo on Device {
     status
     tenantId
     auth {
-        credential {
+        credentialForDevice {
             ... on BasicCredentialData {
                 username
                 password
@@ -24,6 +24,7 @@ fragment DeviceInfo on Device {
                 token
             }
         }
+        credentialForService
     }
     host {
         id

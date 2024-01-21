@@ -3,7 +3,6 @@ package device
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"github.com/iot-proj/components/orchestrator/internal/model"
 	"github.com/iot-proj/components/orchestrator/internal/repo"
 	"github.com/iot-proj/components/orchestrator/pkg/graphql"
@@ -60,11 +59,6 @@ func (c *converter) FromEntity(entity *Entity) (*model.Device, error) {
 	auth, err := c.fromEntityAuth(*entity)
 	if err != nil {
 		return nil, err
-	}
-
-	if auth != nil {
-		fmt.Printf("ALEX %+v", auth.Credential.Basic)
-
 	}
 
 	return &model.Device{

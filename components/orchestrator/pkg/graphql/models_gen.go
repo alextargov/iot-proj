@@ -17,13 +17,15 @@ type Pageable interface {
 }
 
 type Auth struct {
-	Credential     CredentialData `json:"credential"`
-	AccessStrategy *string        `json:"accessStrategy"`
+	CredentialForDevice  CredentialData `json:"credentialForDevice"`
+	CredentialForService *string        `json:"credentialForService"`
+	AccessStrategy       *string        `json:"accessStrategy"`
 }
 
 type AuthInput struct {
-	Credential     *CredentialDataInput `json:"credential"`
-	AccessStrategy *string              `json:"accessStrategy"`
+	CredentialForDevice  *CredentialDataInput `json:"credentialForDevice"`
+	CredentialForService *string              `json:"credentialForService"`
+	AccessStrategy       *string              `json:"accessStrategy"`
 }
 
 type BasicCredentialData struct {
@@ -116,6 +118,28 @@ type PageInfo struct {
 
 type TokenCredentialDataInput struct {
 	Token string `json:"token"`
+}
+
+type Widget struct {
+	ID          string       `json:"id"`
+	Name        string       `json:"name"`
+	Description *string      `json:"description"`
+	Status      WidgetStatus `json:"status"`
+	TenantID    string       `json:"tenantId"`
+	Code        string       `json:"code"`
+	Workspace   string       `json:"workspace"`
+	DeviceIds   []string     `json:"deviceIds"`
+	CreatedAt   *Timestamp   `json:"createdAt"`
+	UpdatedAt   *Timestamp   `json:"updatedAt"`
+}
+
+type WidgetInput struct {
+	Name        string       `json:"name"`
+	Description *string      `json:"description"`
+	Status      WidgetStatus `json:"status"`
+	Code        string       `json:"code"`
+	Workspace   string       `json:"workspace"`
+	DeviceIds   []string     `json:"deviceIds"`
 }
 
 type AggregationType string
@@ -248,5 +272,46 @@ func (e *OperationType) UnmarshalGQL(v interface{}) error {
 }
 
 func (e OperationType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type WidgetStatus string
+
+const (
+	WidgetStatusInactive WidgetStatus = "INACTIVE"
+	WidgetStatusActive   WidgetStatus = "ACTIVE"
+)
+
+var AllWidgetStatus = []WidgetStatus{
+	WidgetStatusInactive,
+	WidgetStatusActive,
+}
+
+func (e WidgetStatus) IsValid() bool {
+	switch e {
+	case WidgetStatusInactive, WidgetStatusActive:
+		return true
+	}
+	return false
+}
+
+func (e WidgetStatus) String() string {
+	return string(e)
+}
+
+func (e *WidgetStatus) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = WidgetStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid WidgetStatus", str)
+	}
+	return nil
+}
+
+func (e WidgetStatus) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }

@@ -19,8 +19,9 @@ func (c *converter) ToGraphQL(in *model.Auth) *graphql.Auth {
 	}
 
 	return &graphql.Auth{
-		Credential:     c.credentialToGraphQL(in.Credential),
-		AccessStrategy: in.AccessStrategy,
+		CredentialForDevice:  c.credentialToGraphQL(in.CredentialForDevice),
+		CredentialForService: in.CredentialForService,
+		AccessStrategy:       in.AccessStrategy,
 	}
 }
 
@@ -30,11 +31,12 @@ func (c *converter) InputFromGraphQL(in *graphql.AuthInput) *model.AuthInput {
 		return nil
 	}
 
-	credential := c.credentialInputFromGraphQL(in.Credential)
+	credentialForDevice := c.credentialInputFromGraphQL(in.CredentialForDevice)
 
 	return &model.AuthInput{
-		Credential:     credential,
-		AccessStrategy: in.AccessStrategy,
+		CredentialForDevice:  credentialForDevice,
+		CredentialForService: in.CredentialForService,
+		AccessStrategy:       in.AccessStrategy,
 	}
 }
 

@@ -60,6 +60,7 @@ func (r *repository) Create(ctx context.Context, item model.Device) error {
 
 	now := time.Now()
 	entity.CreatedAt = &now
+	entity.UpdatedAt = &now
 
 	log.C(ctx).Debugf("Persisting Application Template entity with id %s to db", item.ID)
 	return r.creator.Create(ctx, entity)

@@ -2,8 +2,9 @@ package model
 
 // Auth missing godoc
 type Auth struct {
-	Credential     CredentialData
-	AccessStrategy *string
+	CredentialForDevice  CredentialData
+	CredentialForService *string
+	AccessStrategy       *string
 }
 
 // CredentialData missing godoc
@@ -40,8 +41,9 @@ type TokenCredentialData struct {
 
 // AuthInput missing godoc
 type AuthInput struct {
-	Credential     *CredentialDataInput
-	AccessStrategy *string
+	CredentialForDevice  *CredentialDataInput
+	CredentialForService *string
+	AccessStrategy       *string
 }
 
 // ToAuth missing godoc
@@ -50,14 +52,15 @@ func (i *AuthInput) ToAuth() *Auth {
 		return nil
 	}
 
-	var credential CredentialData
-	if i.Credential != nil {
-		credential = *i.Credential.ToCredentialData()
+	var credentialForDevice CredentialData
+	if i.CredentialForDevice != nil {
+		credentialForDevice = *i.CredentialForDevice.ToCredentialData()
 	}
 
 	return &Auth{
-		Credential:     credential,
-		AccessStrategy: i.AccessStrategy,
+		CredentialForDevice:  credentialForDevice,
+		CredentialForService: i.CredentialForService,
+		AccessStrategy:       i.AccessStrategy,
 	}
 }
 

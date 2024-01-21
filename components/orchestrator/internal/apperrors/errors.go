@@ -356,15 +356,6 @@ func NewCustomErrorWithCode(code int, msg string) error {
 	}
 }
 
-// NewCannotUnassignObjectComingFromASAError returns CannotUnassignRuntimeContextComingFromASAError error
-func NewCannotUnassignObjectComingFromASAError(objectID string) error {
-	return Error{
-		errorCode: InvalidOperation,
-		Message:   CannotUnassignObjectFromASA,
-		arguments: map[string]string{"ID": objectID},
-	}
-}
-
 // IsValueNotFoundInConfiguration missing godoc
 func IsValueNotFoundInConfiguration(err error) bool {
 	if customErr, ok := err.(Error); ok {
@@ -440,14 +431,6 @@ func IsInvalidStatusCondition(err error) bool {
 // IsCannotUpdateObjectInManyBundlesError missing godoc
 func IsCannotUpdateObjectInManyBundlesError(err error) bool {
 	return ErrorCode(err) == CannotUpdateObjectInManyBundles
-}
-
-// IsCannotUnassignObjectComingFromASAError missing godoc
-func IsCannotUnassignObjectComingFromASAError(err error) bool {
-	if customErr, ok := err.(Error); ok {
-		return customErr.errorCode == InvalidOperation && customErr.Message == CannotUnassignObjectFromASA
-	}
-	return false
 }
 
 func sortMapKey(m map[string]string) []string {

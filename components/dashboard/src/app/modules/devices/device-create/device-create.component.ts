@@ -20,21 +20,13 @@ import slugify from 'slugify'
 import { DeviceService } from '../../../shared/services/device/device.service'
 import {
     AuthPolicy,
-    IDevice,
-    IDeviceCredentialsBasic,
-    IDeviceCredentialsBearer,
-    IDeviceCredentialsCertificate,
-    IDeviceCredentialsOAuth,
 } from '../../../shared/services/device/device.interface'
 import { ToastrService } from '../../../shared/services/toastr/toastr.service'
 import { v4 as uuidv4 } from 'uuid'
 import {
-    AuthInput,
-    BasicCredentialDataInput,
     CredentialDataInput,
     DeviceInput,
     DeviceStatus,
-    InputMaybe,
 } from '../../../shared/graphql/generated'
 
 @Component({
@@ -58,8 +50,6 @@ export class DeviceCreateComponent implements OnInit, AfterViewInit {
     public filteredDataTypes: Observable<string[]>
     public readonly separatorKeysCodes: number[] = [ENTER, COMMA]
     public dataOutputTypes: { key: string; name: string }[] = []
-    public communicationToDeviceEnabled: boolean = false
-    public communicationToServerEnabled: boolean = false
 
     private readonly allDataOutputTypes: string[] = [
         'Degrees Celsius',
@@ -138,7 +128,6 @@ export class DeviceCreateComponent implements OnInit, AfterViewInit {
     }
 
     public selectedDataType(event: MatAutocompleteSelectedEvent): void {
-        console.log(this.dataOutputInput.nativeElement.blur())
         this.dataOutputTypes.push({
             name: event.option.viewValue,
             key: slugify(event.option.viewValue, { lower: true }),
@@ -151,6 +140,7 @@ export class DeviceCreateComponent implements OnInit, AfterViewInit {
         this.deviceCreateMetadataFormGroup.reset()
         this.deviceCreateAuthorizationFormGroup.reset()
         this.selectedAuthorizationPolicy = AuthPolicy.None
+        this.tokenInput.nativeElement.value = "";
         this.dataOutputTypes = []
         stepper.reset()
     }
@@ -209,12 +199,11 @@ export class DeviceCreateComponent implements OnInit, AfterViewInit {
             host,
             status: DeviceStatus.Active,
             auth: {
-                credential: this.getAuthorizationCredentials(
+                credentialForDevice: this.getAuthorizationCredentials(
                     this.selectedAuthorizationPolicy
                 ),
+                credentialForService: this.tokenInput.nativeElement.value,
             },
-            // dataOutput: this.dataOutputTypes
-            // dataOutputUnit: ""
         }
     }
 
