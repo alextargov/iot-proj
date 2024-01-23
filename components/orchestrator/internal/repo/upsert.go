@@ -3,15 +3,15 @@ package repo
 import (
 	"context"
 	"fmt"
-	"github.com/iot-proj/components/orchestrator/pkg/persistence"
+	"github.com/alextargov/iot-proj/components/orchestrator/pkg/persistence"
 	"strings"
 
 	"github.com/jmoiron/sqlx"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
-	"github.com/iot-proj/components/orchestrator/internal/apperrors"
-	"github.com/iot-proj/components/orchestrator/pkg/resource"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/apperrors"
+	"github.com/alextargov/iot-proj/components/orchestrator/pkg/resource"
 )
 
 // UpserterGlobal is an interface for upserting global entities without tenant or entities with tenant embedded in them.

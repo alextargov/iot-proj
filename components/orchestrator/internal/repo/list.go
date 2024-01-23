@@ -2,16 +2,16 @@ package repo
 
 import (
 	"context"
-	"github.com/iot-proj/components/orchestrator/pkg/persistence"
+	"github.com/alextargov/iot-proj/components/orchestrator/pkg/persistence"
 	"strings"
 
-	"github.com/iot-proj/components/orchestrator/internal/apperrors"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/pkg/errors"
 
-	"github.com/iot-proj/components/orchestrator/pkg/resource"
+	"github.com/alextargov/iot-proj/components/orchestrator/pkg/resource"
 )
 
 // Lister is an interface for listing tenant scoped entities with either externally managed tenant accesses (m2m table or view) or embedded tenant in them.

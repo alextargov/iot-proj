@@ -3,7 +3,7 @@ package k8s
 import (
 	"context"
 	"fmt"
-	"github.com/iot-proj/components/controller/api/v1alpha1"
+	"github.com/alextargov/iot-proj/components/controller/api/v1alpha1"
 	"github.com/kyma-incubator/compass/components/director/pkg/operation"
 	"github.com/kyma-incubator/compass/components/director/pkg/operation/k8s"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"

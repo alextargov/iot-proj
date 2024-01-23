@@ -2,9 +2,9 @@ package widget
 
 import (
 	"context"
-	"github.com/iot-proj/components/orchestrator/internal/apperrors"
-	"github.com/iot-proj/components/orchestrator/internal/model"
-	"github.com/iot-proj/components/orchestrator/internal/tenant"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/apperrors"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/model"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/tenant"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
 )

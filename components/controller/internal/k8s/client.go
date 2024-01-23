@@ -2,7 +2,7 @@ package k8s
 
 import (
 	"context"
-	"github.com/iot-proj/components/controller/internal/log"
+	"github.com/alextargov/iot-proj/components/controller/internal/log"
 	"path/filepath"
 	"time"
 

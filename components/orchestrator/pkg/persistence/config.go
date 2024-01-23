@@ -12,7 +12,7 @@ type DatabaseConfig struct {
 	User               string        `envconfig:"default=postgres,APP_DB_USER"`
 	Password           string        `envconfig:"default=pgsql@12345,APP_DB_PASSWORD"`
 	Host               string        `envconfig:"default=localhost,APP_DB_HOST"`
-	Port               string        `envconfig:"default=5432,APP_DB_PORT"`
+	Port               string        `envconfig:"default=5431,APP_DB_PORT"`
 	Name               string        `envconfig:"default=postgres,APP_DB_NAME"`
 	SSLMode            string        `envconfig:"default=disable,APP_DB_SSL"`
 	MaxOpenConnections int           `envconfig:"default=2,APP_DB_MAX_OPEN_CONNECTIONS"`

@@ -3,13 +3,13 @@ package repo
 import (
 	"context"
 	"fmt"
-	"github.com/iot-proj/components/orchestrator/internal/pagination"
-	"github.com/iot-proj/components/orchestrator/pkg/persistence"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/pagination"
+	"github.com/alextargov/iot-proj/components/orchestrator/pkg/persistence"
 	"strings"
 
-	"github.com/iot-proj/components/orchestrator/internal/apperrors"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/apperrors"
 
-	"github.com/iot-proj/components/orchestrator/pkg/resource"
+	"github.com/alextargov/iot-proj/components/orchestrator/pkg/resource"
 
 	"github.com/pkg/errors"
 )

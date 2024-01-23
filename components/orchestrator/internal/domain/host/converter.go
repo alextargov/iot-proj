@@ -1,9 +1,9 @@
 package host
 
 import (
-	"github.com/iot-proj/components/orchestrator/internal/model"
-	"github.com/iot-proj/components/orchestrator/internal/repo"
-	"github.com/iot-proj/components/orchestrator/pkg/graphql"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/model"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/repo"
+	"github.com/alextargov/iot-proj/components/orchestrator/pkg/graphql"
 )
 
 type converter struct {

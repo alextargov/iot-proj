@@ -3,13 +3,13 @@ package repo
 import (
 	"context"
 	"fmt"
-	"github.com/iot-proj/components/orchestrator/pkg/persistence"
+	"github.com/alextargov/iot-proj/components/orchestrator/pkg/persistence"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
-	"github.com/iot-proj/components/orchestrator/internal/apperrors"
-	"github.com/iot-proj/components/orchestrator/pkg/resource"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/apperrors"
+	"github.com/alextargov/iot-proj/components/orchestrator/pkg/resource"
 )
 
 // UnsafeCreator is used to create new entities in case they do not exist.

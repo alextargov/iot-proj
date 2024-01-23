@@ -1,4 +1,4 @@
-module github.com/iot-proj/components/orchestrator
+module github.com/alextargov/iot-proj/components/orchestrator
 
 go 1.20
 

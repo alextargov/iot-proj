@@ -3,8 +3,8 @@ package controllers
 import (
 	"context"
 	"fmt"
-	opv1alpha1 "github.com/iot-proj/components/controller/api/v1alpha1"
-	"github.com/iot-proj/components/controller/internal/log"
+	opv1alpha1 "github.com/alextargov/iot-proj/components/controller/api/v1alpha1"
+	"github.com/alextargov/iot-proj/components/controller/internal/log"
 	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"

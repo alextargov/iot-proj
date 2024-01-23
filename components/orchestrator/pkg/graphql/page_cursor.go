@@ -1,7 +1,7 @@
 package graphql
 
 import (
-	"github.com/iot-proj/components/orchestrator/pkg/scalar"
+	"github.com/alextargov/iot-proj/components/orchestrator/pkg/scalar"
 	"io"
 	"strconv"
 )

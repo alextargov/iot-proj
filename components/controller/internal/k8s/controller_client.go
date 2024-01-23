@@ -2,7 +2,7 @@ package k8s
 
 import (
 	"context"
-	"github.com/iot-proj/components/controller/api/v1alpha1"
+	"github.com/alextargov/iot-proj/components/controller/api/v1alpha1"
 
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )

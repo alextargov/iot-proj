@@ -3,10 +3,10 @@ package device
 import (
 	"context"
 	"fmt"
-	"github.com/iot-proj/components/orchestrator/internal/apperrors"
-	"github.com/iot-proj/components/orchestrator/internal/model"
-	"github.com/iot-proj/components/orchestrator/pkg/graphql"
-	"github.com/iot-proj/components/orchestrator/pkg/persistence"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/apperrors"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/model"
+	"github.com/alextargov/iot-proj/components/orchestrator/pkg/graphql"
+	"github.com/alextargov/iot-proj/components/orchestrator/pkg/persistence"
 )
 
 type DeviceConverter interface {

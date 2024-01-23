@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/iot-proj/components/orchestrator/pkg/resource"
+	"github.com/alextargov/iot-proj/components/orchestrator/pkg/resource"
 )
 
 // ChildEntity is an interface for a child entity that can be used to obtain its parent ID.

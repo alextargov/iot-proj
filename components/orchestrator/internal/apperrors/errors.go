@@ -3,7 +3,7 @@ package apperrors
 import (
 	"errors"
 	"fmt"
-	"github.com/iot-proj/components/orchestrator/pkg/resource"
+	"github.com/alextargov/iot-proj/components/orchestrator/pkg/resource"
 	"sort"
 	"strings"
 )

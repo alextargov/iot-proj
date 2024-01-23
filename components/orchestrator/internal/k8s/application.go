@@ -2,9 +2,9 @@ package k8s
 
 import (
 	"context"
+	"github.com/alextargov/iot-proj/components/orchestrator/pkg/persistence"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
-	"github.com/iot-proj/components/orchestrator/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
 	"time"

@@ -19,7 +19,7 @@ POSTGRES_VERSION="${POSTGRES_VERSION:-"11"}"
 DB_USER="${DB_USER:-"postgres"}"
 DB_PWD="${DB_PWD:-"pgsql@12345"}"
 DB_NAME="${DB_NAME:-"compass"}"
-DB_PORT="${DB_PORT:-"5432"}"
+DB_PORT="${DB_PORT:-"5431"}"
 DB_HOST="${DB_HOST:-"127.0.0.1"}"
 
 read -r INTERNAL_TENANT_ID <<< "$(get_internal_tenant)"

@@ -19,7 +19,7 @@ package tenant
 import (
 	"context"
 
-	"github.com/iot-proj/components/orchestrator/internal/apperrors"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/apperrors"
 )
 
 type contextKey string

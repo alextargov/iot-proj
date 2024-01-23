@@ -19,9 +19,9 @@ package main
 import (
 	"context"
 	"flag"
-	"github.com/iot-proj/components/controller/internal/k8s"
-	"github.com/iot-proj/components/controller/internal/k8s/function"
-	"github.com/iot-proj/components/controller/internal/k8s/status"
+	"github.com/alextargov/iot-proj/components/controller/internal/k8s"
+	"github.com/alextargov/iot-proj/components/controller/internal/k8s/function"
+	"github.com/alextargov/iot-proj/components/controller/internal/k8s/status"
 	"os"
 	"time"
 
@@ -36,8 +36,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	opv1alpha1 "github.com/iot-proj/components/controller/api/v1alpha1"
-	"github.com/iot-proj/components/controller/controllers"
+	opv1alpha1 "github.com/alextargov/iot-proj/components/controller/api/v1alpha1"
+	"github.com/alextargov/iot-proj/components/controller/controllers"
 	//+kubebuilder:scaffold:imports
 )
 

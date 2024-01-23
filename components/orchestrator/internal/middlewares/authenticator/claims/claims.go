@@ -3,7 +3,7 @@ package claims
 import (
 	"context"
 	"encoding/json"
-	"github.com/iot-proj/components/orchestrator/internal/tenant"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/tenant"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"

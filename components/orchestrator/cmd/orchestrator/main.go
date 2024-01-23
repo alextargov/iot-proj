@@ -5,13 +5,13 @@ import (
 	"encoding/json"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/auth"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/middlewares/authenticator"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/middlewares/cors"
+	"github.com/alextargov/iot-proj/components/orchestrator/pkg/graphql"
+	"github.com/alextargov/iot-proj/components/orchestrator/pkg/persistence"
 	"github.com/gorilla/mux"
-	"github.com/iot-proj/components/orchestrator/internal/auth"
-	"github.com/iot-proj/components/orchestrator/internal/domain"
-	"github.com/iot-proj/components/orchestrator/internal/middlewares/authenticator"
-	"github.com/iot-proj/components/orchestrator/internal/middlewares/cors"
-	"github.com/iot-proj/components/orchestrator/pkg/graphql"
-	"github.com/iot-proj/components/orchestrator/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/executor"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
@@ -36,7 +36,7 @@ type config struct {
 
 	JWKSEndpoint          string        `envconfig:"default=file://hack/default-jwks.json"`
 	JWKSSyncPeriod        time.Duration `envconfig:"default=5m"`
-	AllowJWTSigningNone   bool          `envconfig:"default=false"`
+	AllowJWTSigningNone   bool          `envconfig:"default=true"`
 	ClientIDHTTPHeaderKey string        `envconfig:"default=client_user,APP_CLIENT_ID_HTTP_HEADER"`
 
 	Database persistence.DatabaseConfig

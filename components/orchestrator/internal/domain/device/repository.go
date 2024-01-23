@@ -2,9 +2,9 @@ package device
 
 import (
 	"context"
-	"github.com/iot-proj/components/orchestrator/internal/model"
-	"github.com/iot-proj/components/orchestrator/internal/repo"
-	"github.com/iot-proj/components/orchestrator/pkg/resource"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/model"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/repo"
+	"github.com/alextargov/iot-proj/components/orchestrator/pkg/resource"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"time"
 )

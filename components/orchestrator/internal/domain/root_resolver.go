@@ -2,13 +2,13 @@ package domain
 
 import (
 	"context"
-	"github.com/iot-proj/components/orchestrator/internal/domain/auth"
-	"github.com/iot-proj/components/orchestrator/internal/domain/device"
-	"github.com/iot-proj/components/orchestrator/internal/domain/host"
-	"github.com/iot-proj/components/orchestrator/internal/domain/widget"
-	"github.com/iot-proj/components/orchestrator/internal/uuid"
-	"github.com/iot-proj/components/orchestrator/pkg/graphql"
-	"github.com/iot-proj/components/orchestrator/pkg/persistence"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/auth"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/device"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/host"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/widget"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/uuid"
+	"github.com/alextargov/iot-proj/components/orchestrator/pkg/graphql"
+	"github.com/alextargov/iot-proj/components/orchestrator/pkg/persistence"
 )
 
 var _ graphql.ResolverRoot = &RootResolver{}

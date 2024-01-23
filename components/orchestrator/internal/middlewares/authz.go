@@ -1,8 +1,8 @@
 package middlewares
 
 import (
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/auth"
 	"github.com/gin-gonic/gin"
-	"github.com/iot-proj/components/orchestrator/internal/auth"
 	"net/http"
 	"strings"
 )
