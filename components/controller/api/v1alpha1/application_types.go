@@ -1,19 +1,3 @@
-/*
-Copyright 2022.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
 package v1alpha1
 
 import (
@@ -22,9 +6,11 @@ import (
 
 // ApplicationSpec defines the desired state of Application
 type ApplicationSpec struct {
-	SourceCode    string `json:"sourceCode,omitempty"`
-	NodeVersion   string `json:"nodeVersion,omitempty"`
-	ReplicasCount int    `json:"replicasCount,omitempty"`
+	ApplicationID string `json:"application_id,omitempty"`
+	WidgetID      string `json:"widget_id,omitempty"`
+	SourceCode    string `json:"source_code,omitempty"`
+	NodeVersion   string `json:"node_version,omitempty"`
+	ReplicasCount int    `json:"replicas_count,omitempty"`
 }
 
 // +kubebuilder:validation:Enum=Initial;Code Obtained;Build Ready;Image Ready;Deployment Ready;Deployment Started;
