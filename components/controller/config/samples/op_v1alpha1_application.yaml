@@ -5,7 +5,7 @@ metadata:
   namespace: system
 spec:
   # TODO(user): Add fields here
-  sourceCode: |
+  source_code: |
     'use strict';
 
     const express = require('express');
@@ -23,5 +23,5 @@ spec:
     console.log("Running on " + HOST + ":" + PORT);
 
     app.listen(PORT, HOST);
-  nodeVersion: 15.0.0
-  replicasCount: 1
+  node_version: 15.0.0
+  replicas_count: 1
