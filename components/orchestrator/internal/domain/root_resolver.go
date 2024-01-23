@@ -6,6 +6,7 @@ import (
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/device"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/host"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/widget"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/k8s"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/uuid"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/graphql"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/persistence"
@@ -19,7 +20,7 @@ type RootResolver struct {
 	widget      *widget.Resolver
 }
 
-func NewRootResolver(persistence persistence.Transactioner) *RootResolver {
+func NewRootResolver(persistence persistence.Transactioner, scheduler k8s.Scheduler) *RootResolver {
 	uuidService := uuid.NewService()
 	authConv := auth.NewConverter()
 
@@ -36,7 +37,7 @@ func NewRootResolver(persistence persistence.Transactioner) *RootResolver {
 	widgetSvc := widget.NewService(widgetRepo, uuidService)
 
 	deviceRes := device.NewResolver(persistence, deviceSvc, hostSvc, deviceConv, hostConv)
-	widgetRes := widget.NewResolver(persistence, widgetSvc, widgetConv)
+	widgetRes := widget.NewResolver(persistence, widgetSvc, widgetConv, scheduler)
 
 	return &RootResolver{
 		persistence: persistence,

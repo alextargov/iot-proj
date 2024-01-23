@@ -21,6 +21,7 @@ type Application struct {
 	ApplicationID string    `json:"application_id,omitempty"`
 	WidgetID      string    `json:"widget_id,omitempty"`
 	SourceCode    string    `json:"source_code,omitempty"`
+	Workspace     string    `json:"workspace,omitempty"`
 	NodeVersion   string    `json:"node_version,omitempty"`
 	ReplicasCount int       `json:"replicas_count,omitempty"`
 	CreationTime  time.Time `json:"creation_time,omitempty"`

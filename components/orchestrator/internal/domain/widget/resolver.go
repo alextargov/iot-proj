@@ -2,6 +2,7 @@ package widget
 
 import (
 	"context"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/k8s"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/model"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/graphql"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/persistence"
@@ -34,13 +35,15 @@ type Resolver struct {
 	widgetSvc       WidgetSvc
 	hostSvc         HostSvc
 	widgetConverter WidgetConverter
+	scheduler       k8s.Scheduler
 }
 
-func NewResolver(transact persistence.Transactioner, widgetSvc WidgetSvc, widgetConverter WidgetConverter) *Resolver {
+func NewResolver(transact persistence.Transactioner, widgetSvc WidgetSvc, widgetConverter WidgetConverter, scheduler k8s.Scheduler) *Resolver {
 	return &Resolver{
 		transact:        transact,
 		widgetSvc:       widgetSvc,
 		widgetConverter: widgetConverter,
+		scheduler:       scheduler,
 	}
 }
 
@@ -111,6 +114,16 @@ func (r *Resolver) CreateWidget(ctx context.Context, input graphql.WidgetInput) 
 
 	err = tx.Commit()
 	if err != nil {
+		return nil, err
+	}
+
+	application := &k8s.Application{
+		WidgetID:   id,
+		SourceCode: convertedIn.Code,
+		Workspace:  convertedIn.Workspace,
+	}
+
+	if _, err = r.scheduler.Schedule(ctx, application); err != nil {
 		return nil, err
 	}
 

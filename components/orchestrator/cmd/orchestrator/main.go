@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/alextargov/iot-proj/components/controller/client"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/auth"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/k8s"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/middlewares/authenticator"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/middlewares/cors"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/graphql"
@@ -19,6 +21,7 @@ import (
 	"github.com/vrischmann/envconfig"
 	"net/http"
 	"os/signal"
+	cr "sigs.k8s.io/controller-runtime"
 	"syscall"
 	"time"
 )
@@ -41,6 +44,8 @@ type config struct {
 
 	Database persistence.DatabaseConfig
 	Config   auth.Config
+
+	ApplicationsNamespace string
 
 	Log log.Config
 }
@@ -133,10 +138,14 @@ func initAPIHandler(ctx context.Context, cfg config, db persistence.Transactione
 		})
 		go periodicExecutor.Run(ctx)
 	}
+	applicationsScheduler, err := buildScheduler(cfg)
+	if err != nil {
+		return nil, err
+	}
 
 	healthCheckRouter := mainRouter.PathPrefix(cfg.DefaultAPI).Subrouter()
 
-	rootResolver := domain.NewRootResolver(db)
+	rootResolver := domain.NewRootResolver(db, applicationsScheduler)
 	srv := handler.NewDefaultServer(graphql.NewExecutableSchema(graphql.Config{Resolvers: rootResolver}))
 	//mainRouter.Handle("/", playground.Handler("GraphQL playground", cfg.APIEndpoint))
 	mainRouter.Use(cors.New().Handler())
@@ -161,4 +170,18 @@ func initAPIHandler(ctx context.Context, cfg config, db persistence.Transactione
 
 func newReadinessHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]bool{"ok": true})
+}
+
+func buildScheduler(config config) (k8s.Scheduler, error) {
+	cfg, err := cr.GetConfig()
+	exitOnError(err, "Failed to get cluster config for operations k8s client")
+
+	cfg.Timeout = config.ClientTimeout
+	k8sClient, err := client.NewForConfig(cfg)
+	if err != nil {
+		return nil, err
+	}
+	operationsK8sClient := k8sClient.Applications(config.ApplicationsNamespace)
+
+	return k8s.NewScheduler(operationsK8sClient), nil
 }

@@ -4,9 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/alextargov/iot-proj/components/controller/api/v1alpha1"
-	"github.com/kyma-incubator/compass/components/director/pkg/operation"
-	"github.com/kyma-incubator/compass/components/director/pkg/operation/k8s"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -18,24 +15,22 @@ type K8SClient interface {
 }
 
 type scheduler struct {
-	client k8s.K8SClient
+	client K8SClient
 }
 
-func NewScheduler() *scheduler {
-	return &scheduler{}
+func NewScheduler(kcli K8SClient) *scheduler {
+	return &scheduler{
+		client: kcli,
+	}
 }
 
-func (s *scheduler) name() {
-
-}
-
-func (s *Scheduler) Schedule(ctx context.Context, op *operation.Operation) (string, error) {
-	operationName := fmt.Sprintf("%s-%s", op.ResourceType, op.ResourceID)
-	getOp, err := s.kcli.Get(ctx, operationName, metav1.GetOptions{})
+func (s *scheduler) Schedule(ctx context.Context, app *Application) (string, error) {
+	operationName := fmt.Sprintf("%s", app.WidgetID)
+	getApp, err := s.client.Get(ctx, operationName, metav1.GetOptions{})
 	if err != nil {
 		if errors.IsNotFound(err) {
-			k8sOp := toK8SOperation(op)
-			createdOperation, err := s.kcli.Create(ctx, k8sOp)
+			k8sOp := toK8SOperation(app)
+			createdOperation, err := s.client.Create(ctx, k8sOp)
 			if err != nil {
 				return "", err
 			}
@@ -43,48 +38,33 @@ func (s *Scheduler) Schedule(ctx context.Context, op *operation.Operation) (stri
 		}
 		return "", err
 	}
-	if isOpInProgress(getOp) {
-		return "", fmt.Errorf("another operation is in progress for resource with ID %q", op.ResourceID)
-	}
-	getOp = updateOperationSpec(op, getOp)
-	updatedOperation, err := s.kcli.Update(ctx, getOp)
+	getApp = updateOperationSpec(app, getApp)
+	updatedOperation, err := s.client.Update(ctx, getApp)
 	if err != nil {
 		if errors.IsConflict(err) {
-			return "", fmt.Errorf("another operation is in progress for resource with ID %q", op.ResourceID)
+			return "", fmt.Errorf("another Application is in progress for resource with ID %q", app.WidgetID)
 		}
 		return "", err
 	}
 	return string(updatedOperation.UID), err
 }
 
-func isOpInProgress(op *v1alpha1.Application) bool {
-	for _, cond := range op.Status.Conditions {
-		if cond.Status == v1.ConditionTrue {
-			return false
-		}
-	}
-	return true
-}
-
-func toK8SOperation(op *operation.Operation) *v1alpha1.Application {
-	operationName := fmt.Sprintf("%s-%s", op.ResourceType, op.ResourceID)
+func toK8SOperation(op *Application) *v1alpha1.Application {
 	result := &v1alpha1.Application{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: operationName,
+			Name: op.WidgetID,
 		},
 	}
 	return updateOperationSpec(op, result)
 }
 
-func updateOperationSpec(op *operation.Operation, k8sOp *v1alpha1.Application) *v1alpha1.Application {
-	k8sOp.Spec = v1alpha1.ApplicationSpec{
-		OperationCategory: op.OperationCategory,
-		OperationType:     v1alpha1.ApplicationType(str.Title(string(op.OperationType))),
-		ResourceType:      string(op.ResourceType),
-		ResourceID:        op.ResourceID,
-		CorrelationID:     op.CorrelationID,
-		WebhookIDs:        op.WebhookIDs,
-		RequestObject:     op.RequestObject,
+func updateOperationSpec(app *Application, k8sApp *v1alpha1.Application) *v1alpha1.Application {
+	k8sApp.Spec = v1alpha1.ApplicationSpec{
+		ApplicationID: app.ApplicationID,
+		WidgetID:      app.WidgetID,
+		SourceCode:    app.SourceCode,
+		NodeVersion:   app.NodeVersion,
+		ReplicasCount: app.ReplicasCount,
 	}
-	return k8sOp
+	return k8sApp
 }
