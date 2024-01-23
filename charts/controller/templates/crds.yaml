@@ -36,11 +36,15 @@ spec:
             spec:
               description: ApplicationSpec defines the desired state of Application
               properties:
-                nodeVersion:
+                node_version:
                   type: string
-                replicasCount:
+                replicas_count:
                   type: integer
-                sourceCode:
+                source_code:
+                  type: string
+                widget_id:
+                  type: string
+                workspace:
                   type: string
               type: object
             status:

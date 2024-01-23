@@ -15,8 +15,8 @@ limitations under the License.
 */
 
 // Package v1alpha1 contains API Schema definitions for the op v1alpha1 API group
-//+kubebuilder:object:generate=true
-//+groupName=func.controller
+// +kubebuilder:object:generate=true
+// +groupName=func.controller
 package v1alpha1
 
 import (
