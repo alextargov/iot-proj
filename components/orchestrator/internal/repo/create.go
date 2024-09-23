@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/apperrors"
+	"github.com/alextargov/iot-proj/components/orchestrator/pkg/logger"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/resource"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
 // Creator is an interface for creating entities with externally managed tenant accesses (m2m table or view)
@@ -101,7 +101,7 @@ func (c *universalCreator) createChildEntity(ctx context.Context, tenant string,
 
 	insertStmt := fmt.Sprintf("INSERT INTO %s ( %s ) VALUES ( %s )", c.tableName, strings.Join(c.columns, ", "), strings.Join(values, ", "))
 
-	log.C(ctx).Debugf("Executing DB query: %s", insertStmt)
+	logger.C(ctx).Debugf("Executing DB query: %s", insertStmt)
 	_, err = persist.NamedExecContext(ctx, insertStmt, dbEntity)
 
 	return persistence.MapSQLError(ctx, err, resourceType, resource.Create, "while inserting row to '%s' table", c.tableName)
@@ -131,7 +131,7 @@ func (c *globalCreator) Create(ctx context.Context, dbEntity interface{}) error 
 
 	stmt := fmt.Sprintf("INSERT INTO %s ( %s ) VALUES ( %s )", c.tableName, strings.Join(c.columns, ", "), strings.Join(values, ", "))
 
-	log.C(ctx).Debugf("Executing DB query: %s with %+v", stmt, dbEntity)
+	logger.C(ctx).Debugf("Executing DB query: %s with %+v", stmt, dbEntity)
 	_, err = persist.NamedExecContext(ctx, stmt, dbEntity)
 
 	return persistence.MapSQLError(ctx, err, c.resourceType, resource.Create, "while inserting row to '%s' table", c.tableName)

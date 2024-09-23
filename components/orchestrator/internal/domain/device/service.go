@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/model"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/tenant"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/alextargov/iot-proj/components/orchestrator/pkg/logger"
 	"github.com/pkg/errors"
 )
 
@@ -52,7 +52,7 @@ func (s *service) GetByID(ctx context.Context, id string) (*model.Device, error)
 		return nil, errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	log.C(ctx).Debugf("Getting device by id %s for tenant %s", id, tnt)
+	logger.C(ctx).Debugf("Getting device by id %s for tenant %s", id, tnt)
 
 	return s.deviceRepo.Get(ctx, id, tnt)
 }

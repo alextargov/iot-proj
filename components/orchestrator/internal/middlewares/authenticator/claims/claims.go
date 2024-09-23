@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/tenant"
+	"github.com/alextargov/iot-proj/components/orchestrator/pkg/logger"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
@@ -14,7 +15,6 @@ import (
 
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/scope"
 )
 
@@ -63,7 +63,7 @@ func (c *Claims) UnmarshalJSON(b []byte) error {
 	c.StandardClaims = tokenClaims.StandardClaims
 
 	if err := json.Unmarshal([]byte(tokenClaims.TenantString), &c.Tenant); err != nil {
-		log.D().Warnf("While unmarshaling tenants: %+v", err)
+		logger.C(context.Background()).Warnf("While unmarshaling tenants: %+v", err)
 		c.Tenant = make(map[string]string)
 	}
 

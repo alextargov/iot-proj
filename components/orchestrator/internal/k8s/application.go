@@ -2,10 +2,10 @@ package k8s
 
 import (
 	"context"
+	"github.com/alextargov/iot-proj/components/orchestrator/pkg/logger"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/persistence"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
 	"time"
 )
@@ -56,7 +56,7 @@ func (s *svc) Handle(ctx context.Context, application *Application) error {
 
 	applicationID, err := s.scheduler.Schedule(ctx, application)
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("An error occurred while scheduling operation for Application: %s", err.Error())
+		logger.C(ctx).WithError(err).Errorf("An error occurred while scheduling operation for Application: %s", err.Error())
 		return errors.Wrap(err, "Unable to schedule operation")
 	}
 

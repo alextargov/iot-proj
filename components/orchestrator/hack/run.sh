@@ -71,14 +71,14 @@ POSTGRES_VERSION="12"
 DB_USER="postgres"
 DB_PWD="pgsql@12345"
 DB_NAME="postgres"
-DB_PORT="5432"
+DB_PORT="5431"
 DB_HOST="127.0.0.1"
 
 function cleanup() {
 
     if [[ ${DEBUG} == true ]]; then
        echo -e "${GREEN}Cleanup binary${NC}"
-       rm  $GOPATH/src/github.com/iot-proj/components/orchestrator/main || true
+       rm  $GOPATH/src/github.com/alextargov/iot-proj/components/orchestrator/main || true
     fi
 
     if [[ ${SKIP_DB_CLEANUP} = false ]]; then
@@ -170,7 +170,7 @@ export APP_ALLOW_JWT_SIGNING_NONE=true
 
 if [[  ${DEBUG} == true ]]; then
     echo -e "${GREEN}Debug mode activated on port $DEBUG_PORT${NC}"
-    cd $GOPATH/src/github.com/iot-proj/components/orchestrator
+    cd $GOPATH/src/github.com/alextargov/iot-proj/components/orchestrator
     CGO_ENABLED=0 go build -gcflags="all=-N -l" ./cmd/${COMPONENT}
     dlv --listen=:$DEBUG_PORT --headless=true --api-version=2 exec ./${COMPONENT}
 else

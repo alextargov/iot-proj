@@ -6,7 +6,7 @@ import (
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/persistence"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/alextargov/iot-proj/components/orchestrator/pkg/logger"
 
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/apperrors"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/resource"
@@ -56,7 +56,7 @@ func (u *unsafeCreator) UnsafeCreate(ctx context.Context, dbEntity interface{}) 
 	insertStmt := fmt.Sprintf("INSERT INTO %s ( %s ) VALUES ( %s )", u.tableName, strings.Join(u.insertColumns, ", "), strings.Join(values, ", "))
 	stmt := fmt.Sprintf("%s ON CONFLICT ( %s ) DO NOTHING", insertStmt, strings.Join(u.conflictingColumns, ", "))
 
-	log.C(ctx).Debugf("Executing DB query: %s", stmt)
+	logger.C(ctx).Debugf("Executing DB query: %s", stmt)
 	_, err = persist.NamedExecContext(ctx, stmt, dbEntity)
 	return persistence.MapSQLError(ctx, err, u.resourceType, resource.Upsert, "while unsafe inserting row to '%s' table", u.tableName)
 }

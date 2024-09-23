@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/alextargov/iot-proj/components/orchestrator/pkg/logger"
 
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/apperrors"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/resource"
@@ -145,7 +145,7 @@ func (u *updater) updateSingleWithFields(ctx context.Context, dbEntity interface
 		dbEntity = entityWithExternalTenant.DecorateWithTenantID(tenant)
 	}
 
-	log.C(ctx).Debugf("Executing DB query: %s", query)
+	logger.C(ctx).Debugf("Executing DB query: %s", query)
 	res, err := persist.NamedExecContext(ctx, query, dbEntity)
 	if err = persistence.MapSQLError(ctx, err, resourceType, resource.Update, "while updating single entity from '%s' table", u.tableName); err != nil {
 		return err
@@ -245,7 +245,7 @@ func (u *updaterGlobal) updateSingleWithFields(ctx context.Context, dbEntity int
 
 	query := u.buildQuery(fieldsToSet)
 
-	log.C(ctx).Debugf("Executing DB query: %s", query)
+	logger.C(ctx).Debugf("Executing DB query: %s", query)
 	res, err := persist.NamedExecContext(ctx, query, dbEntity)
 	if err = persistence.MapSQLError(ctx, err, u.resourceType, resource.Update, "while updating single entity from '%s' table", u.tableName); err != nil {
 		return err

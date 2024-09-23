@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/alextargov/iot-proj/components/orchestrator/pkg/logger"
 
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/pkg/errors"
@@ -59,7 +59,7 @@ func FetchJWK(ctx context.Context, urlstring string, options ...jwk.FetchOption)
 		defer func() {
 			err := f.Close()
 			if err != nil {
-				log.C(ctx).WithError(err).Errorf("An error has occurred while closing file: %v", err)
+				logger.C(ctx).WithError(err).Errorf("An error has occurred while closing file: %v", err)
 			}
 		}()
 

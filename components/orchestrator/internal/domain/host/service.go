@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/model"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/tenant"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/alextargov/iot-proj/components/orchestrator/pkg/logger"
 	"github.com/pkg/errors"
 )
 
@@ -41,7 +41,7 @@ func (s *service) GetByDeviceID(ctx context.Context, id string) (*model.Host, er
 		return nil, errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	log.C(ctx).Debugf("Getting host by id %s for tenant %s", id, tnt)
+	logger.C(ctx).Debugf("Getting host by id %s for tenant %s", id, tnt)
 
 	return s.hostRepo.GetByDeviceID(ctx, id, tnt)
 }
@@ -52,7 +52,7 @@ func (s *service) Create(ctx context.Context, deviceID string, hostInput model.H
 		return nil, errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	log.C(ctx).Debugf("Creating host for tenant %s", tnt)
+	logger.C(ctx).Debugf("Creating host for tenant %s", tnt)
 
 	id := s.uuidService.Generate()
 	host := hostInput.ToHost(id, deviceID)
@@ -70,7 +70,7 @@ func (s *service) DeleteByDeviceID(ctx context.Context, deviceID string) error {
 		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	log.C(ctx).Debugf("Deleting host for tenant %s", tnt)
+	logger.C(ctx).Debugf("Deleting host for tenant %s", tnt)
 
 	return s.hostRepo.DeleteAllForDevice(ctx, deviceID)
 }

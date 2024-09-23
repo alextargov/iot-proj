@@ -8,7 +8,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/alextargov/iot-proj/components/orchestrator/pkg/logger"
 
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/apperrors"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/resource"
@@ -114,7 +114,7 @@ func (u *upserter) unsafeUpsert(ctx context.Context, resourceType resource.Type,
 	preparedQuery = sqlx.Rebind(sqlx.DOLLAR, preparedQuery)
 	upsertedID := ""
 
-	log.C(ctx).Debugf("Executing DB query: %s", preparedQuery)
+	logger.C(ctx).Debugf("Executing DB query: %s", preparedQuery)
 	err = persist.GetContext(ctx, &upsertedID, preparedQuery, args...)
 	if err = persistence.MapSQLError(ctx, err, resourceType, resource.Upsert, "while upserting row to '%s' table", u.tableName); err != nil {
 		return "", err
@@ -154,7 +154,7 @@ func (u *upserterGlobal) unsafeUpsert(ctx context.Context, resourceType resource
 		query = u.addTenantIsolation(query)
 	}
 
-	log.C(ctx).Warnf("Executing DB query: %s", query)
+	logger.C(ctx).Warnf("Executing DB query: %s", query)
 	_, err = persist.NamedExecContext(ctx, query, dbEntity)
 	err = persistence.MapSQLError(ctx, err, resourceType, resource.Upsert, "while upserting row to '%s' table", u.tableName)
 	return err

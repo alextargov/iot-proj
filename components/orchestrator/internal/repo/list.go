@@ -7,7 +7,7 @@ import (
 
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/apperrors"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/alextargov/iot-proj/components/orchestrator/pkg/logger"
 
 	"github.com/pkg/errors"
 
@@ -227,7 +227,7 @@ func (l *universalLister) list(ctx context.Context, resourceType resource.Type, 
 		return errors.Wrap(err, "while building list query")
 	}
 
-	log.C(ctx).Debugf("Executing DB query: %s", query)
+	logger.C(ctx).Debugf("Executing DB query: %s", query)
 	err = persist.SelectContext(ctx, dest, query, args...)
 
 	return persistence.MapSQLError(ctx, err, resourceType, resource.List, "while fetching list of objects from '%s' table", l.tableName)
@@ -244,7 +244,7 @@ func (l *universalLister) listWithConditionTree(ctx context.Context, resourceTyp
 		return errors.Wrap(err, "while building list query")
 	}
 
-	log.C(ctx).Debugf("Executing DB query: %s", query)
+	logger.C(ctx).Debugf("Executing DB query: %s", query)
 	err = persist.SelectContext(ctx, dest, query, args...)
 
 	return persistence.MapSQLError(ctx, err, resourceType, resource.List, "while fetching list of objects from '%s' table", l.tableName)

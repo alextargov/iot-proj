@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/apperrors"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/middlewares/authenticator/claims"
+	"github.com/alextargov/iot-proj/components/orchestrator/pkg/logger"
 	"github.com/form3tech-oss/jwt-go"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/authenticator"
 	"github.com/lestrrat-go/iter/arrayiter"
 	"github.com/lestrrat-go/jwx/jwk"
@@ -48,14 +48,14 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 			ctx := r.Context()
 			bearerToken, err := a.getBearerToken(r)
 			if err != nil {
-				log.C(ctx).WithError(err).Errorf("An error has occurred while getting token from header. Error code: %d: %v", http.StatusBadRequest, err)
+				logger.C(ctx).WithError(err).Errorf("An error has occurred while getting token from header. Error code: %d: %v", http.StatusBadRequest, err)
 				apperrors.WriteAppError(ctx, w, err, http.StatusBadRequest)
 				return
 			}
 
 			tokenClaims, err := a.parseClaimsWithRetry(ctx, bearerToken)
 			if err != nil {
-				log.C(ctx).WithError(err).Errorf("An error has occurred while parsing claims: %v", err)
+				logger.C(ctx).WithError(err).Errorf("An error has occurred while parsing claims: %v", err)
 				apperrors.WriteAppError(ctx, w, err, http.StatusUnauthorized)
 				return
 			}
@@ -68,7 +68,7 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 }
 
 func (a *Authenticator) SynchronizeJWKS(ctx context.Context) error {
-	log.C(ctx).Info("Synchronizing JWKS...")
+	logger.C(ctx).Info("Synchronizing JWKS...")
 	a.mux.Lock()
 	defer a.mux.Unlock()
 
@@ -78,7 +78,7 @@ func (a *Authenticator) SynchronizeJWKS(ctx context.Context) error {
 	}
 
 	a.cachedJWKS = jwks
-	log.C(ctx).Info("Successfully synchronized JWKS")
+	logger.C(ctx).Info("Successfully synchronized JWKS")
 
 	return nil
 }
@@ -88,19 +88,19 @@ func (a *Authenticator) parseClaimsWithRetry(ctx context.Context, bearerToken st
 	if err != nil {
 		validationErr, ok := err.(*jwt.ValidationError)
 		if !ok || (validationErr.Inner != rsa.ErrVerification && !apperrors.IsKeyDoesNotExist(validationErr.Inner)) {
-			log.C(ctx).WithError(err).Errorf("Failed to parse: %v", err)
+			logger.C(ctx).WithError(err).Errorf("Failed to parse: %v", err)
 
 			return nil, apperrors.NewUnauthorizedError(err.Error())
 		}
 
 		if err := a.SynchronizeJWKS(ctx); err != nil {
-			log.C(ctx).WithError(err).Errorf("Failed to synchronize: %v", err)
+			logger.C(ctx).WithError(err).Errorf("Failed to synchronize: %v", err)
 			return nil, apperrors.InternalErrorFrom(err, "while synchronizing JWKS during parsing token")
 		}
 
 		parsedClaims, err = a.parseClaims(ctx, bearerToken)
 		if err != nil {
-			log.C(ctx).WithError(err).Errorf("Failed to parse claims: %v", err)
+			logger.C(ctx).WithError(err).Errorf("Failed to parse claims: %v", err)
 			return nil, apperrors.NewUnauthorizedError(err.Error())
 		}
 	}
@@ -123,7 +123,7 @@ func (a *Authenticator) parseClaims(ctx context.Context, bearerToken string) (*c
 	parsed := claims.Claims{}
 
 	if _, err := jwt.ParseWithClaims(bearerToken, &parsed, a.getKeyFunc(ctx)); err != nil {
-		log.C(ctx).WithError(err).Errorf("Failed to parse jwt claims: %v", err)
+		logger.C(ctx).WithError(err).Errorf("Failed to parse jwt claims: %v", err)
 
 		return &parsed, err
 	}
@@ -142,12 +142,12 @@ func (a *Authenticator) getKeyFunc(ctx context.Context) func(token *jwt.Token) (
 		case jwt.SigningMethodRS256.Name:
 			keyID, err := a.getKeyID(*token)
 			if err != nil {
-				log.C(ctx).WithError(err).Errorf("An error occurred while getting the token signing key ID: %v", err)
+				logger.C(ctx).WithError(err).Errorf("An error occurred while getting the token signing key ID: %v", err)
 				return nil, errors.Wrap(err, "while getting the key ID")
 			}
 
 			if a.cachedJWKS == nil {
-				log.C(ctx).Debugf("Empty JWKS cache... Signing key %s is not found", keyID)
+				logger.C(ctx).Debugf("Empty JWKS cache... Signing key %s is not found", keyID)
 				return nil, apperrors.NewKeyDoesNotExistError(keyID)
 			}
 
@@ -161,12 +161,12 @@ func (a *Authenticator) getKeyFunc(ctx context.Context) func(token *jwt.Token) (
 			}
 
 			if err := arrayiter.Walk(ctx, a.cachedJWKS, keyIterator); err != nil {
-				log.C(ctx).WithError(err).Errorf("An error occurred while walking through the JWKS: %v", err)
+				logger.C(ctx).WithError(err).Errorf("An error occurred while walking through the JWKS: %v", err)
 				return nil, err
 			}
 
 			if keyIterator.ResultingKey == nil {
-				log.C(ctx).Debugf("Signing key %s is not found", keyID)
+				logger.C(ctx).Debugf("Signing key %s is not found", keyID)
 				return nil, apperrors.NewKeyDoesNotExistError(keyID)
 			}
 

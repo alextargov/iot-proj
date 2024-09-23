@@ -5,7 +5,7 @@ import (
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/persistence"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/alextargov/iot-proj/components/orchestrator/pkg/logger"
 
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/resource"
 
@@ -104,7 +104,7 @@ func (g *universalSingleGetter) get(ctx context.Context, resourceType resource.T
 		return errors.Wrap(err, "while building list query")
 	}
 
-	log.C(ctx).Debugf("Executing DB query: %s", query)
+	logger.C(ctx).Debugf("Executing DB query: %s", query)
 	err = persist.GetContext(ctx, dest, query, args...)
 
 	return persistence.MapSQLError(ctx, err, resourceType, resource.Get, "while getting object from '%s' table", g.tableName)

@@ -6,7 +6,7 @@ import (
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/persistence"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/alextargov/iot-proj/components/orchestrator/pkg/logger"
 
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/resource"
 
@@ -133,7 +133,7 @@ func (g *universalDeleter) deleteWithConditionTree(ctx context.Context, resource
 
 	query, args := buildDeleteQueryFromTree(g.tableName, conditionTree, lockClause, true)
 
-	log.C(ctx).Debugf("Executing DB query: %s", query)
+	logger.C(ctx).Debugf("Executing DB query: %s", query)
 	_, err = persist.ExecContext(ctx, query, args...)
 
 	return persistence.MapSQLError(ctx, err, resourceType, resource.List, "while fetching list of objects from '%s' table", g.tableName)
@@ -180,7 +180,7 @@ func (g *universalDeleter) delete(ctx context.Context, resourceType resource.Typ
 	allArgs := getAllArgs(conditions)
 
 	query := getQueryFromBuilder(stmtBuilder)
-	log.C(ctx).Debugf("Executing DB query: %s", query)
+	logger.C(ctx).Debugf("Executing DB query: %s", query)
 	res, err := persist.ExecContext(ctx, query, allArgs...)
 	if err = persistence.MapSQLError(ctx, err, resourceType, resource.Delete, "while deleting object from '%s' table", g.tableName); err != nil {
 		return err

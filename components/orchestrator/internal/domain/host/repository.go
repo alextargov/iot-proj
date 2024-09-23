@@ -4,8 +4,8 @@ import (
 	"context"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/model"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/repo"
+	"github.com/alextargov/iot-proj/components/orchestrator/pkg/logger"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/resource"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
 const tableName string = `public.hosts`
@@ -62,10 +62,10 @@ func (r *repository) GetByDeviceID(ctx context.Context, id, tnt string) (*model.
 }
 
 func (r *repository) CreateForDevice(ctx context.Context, item model.Host) error {
-	log.C(ctx).Debugf("Converting host with id %s to entity", item.ID)
+	logger.C(ctx).Debugf("Converting host with id %s to entity", item.ID)
 	entity := r.conv.ToEntity(item)
 
-	log.C(ctx).Debugf("Persisting Host entity with id %s to db", item.ID)
+	logger.C(ctx).Debugf("Persisting Host entity with id %s to db", item.ID)
 	return r.creator.Create(ctx, entity)
 }
 

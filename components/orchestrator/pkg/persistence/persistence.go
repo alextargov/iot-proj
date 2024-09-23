@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/apperrors"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/alextargov/iot-proj/components/orchestrator/pkg/logger"
 
 	"github.com/pkg/errors"
 
@@ -73,7 +73,7 @@ func (db *db) Begin() (PersistenceTx, error) {
 func (db *db) RollbackUnlessCommitted(ctx context.Context, tx PersistenceTx) (didRollback bool) {
 	customTx, ok := tx.(*Transaction)
 	if !ok {
-		log.C(ctx).Warn("State aware transaction is not in use")
+		logger.C(ctx).Warn("State aware transaction is not in use")
 		db.rollback(ctx, tx)
 		return true
 	}
@@ -86,9 +86,9 @@ func (db *db) RollbackUnlessCommitted(ctx context.Context, tx PersistenceTx) (di
 
 func (db *db) rollback(ctx context.Context, tx PersistenceTx) {
 	if err := tx.Rollback(); err == nil {
-		log.C(ctx).Warn("Transaction rolled back")
+		logger.C(ctx).Warn("Transaction rolled back")
 	} else if err != sql.ErrTxDone {
-		log.C(ctx).Warn(err)
+		logger.C(ctx).Warn(err)
 	}
 }
 
@@ -145,7 +145,7 @@ func waitForPersistance(ctx context.Context, conf DatabaseConfig, retryCount int
 		if i > 0 {
 			time.Sleep(5 * time.Second)
 		}
-		log.C(ctx).Info("Trying to connect to DB...")
+		logger.C(ctx).Info("Trying to connect to DB...")
 
 		sqlxDB, err = sqlx.Open("postgres", conf.GetConnString())
 		if err != nil {
@@ -155,11 +155,11 @@ func waitForPersistance(ctx context.Context, conf DatabaseConfig, retryCount int
 		err = sqlxDB.PingContext(ctxWithTimeout)
 		cancelFunc()
 		if err != nil {
-			log.C(ctx).Infof("Got error on pinging DB: %v", err)
+			logger.C(ctx).Infof("Got error on pinging DB with connection string %s: %v", conf.GetConnString(), err)
 			continue
 		}
 
-		log.C(ctx).Infof("Configuring MaxOpenConnections: [%d], MaxIdleConnections: [%d], ConnectionMaxLifetime: [%s]", conf.MaxOpenConnections, conf.MaxIdleConnections, conf.ConnMaxLifetime.String())
+		logger.C(ctx).Infof("Configuring MaxOpenConnections: [%d], MaxIdleConnections: [%d], ConnectionMaxLifetime: [%s]", conf.MaxOpenConnections, conf.MaxIdleConnections, conf.ConnMaxLifetime.String())
 		sqlxDB.SetMaxOpenConns(conf.MaxOpenConnections)
 		sqlxDB.SetMaxIdleConns(conf.MaxIdleConnections)
 		sqlxDB.SetConnMaxLifetime(conf.ConnMaxLifetime)

@@ -10,12 +10,12 @@ import (
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/k8s"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/middlewares/authenticator"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/middlewares/correlation"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/middlewares/cors"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/graphql"
+	"github.com/alextargov/iot-proj/components/orchestrator/pkg/logger"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/persistence"
 	"github.com/gorilla/mux"
-	"github.com/kyma-incubator/compass/components/director/pkg/executor"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/vrischmann/envconfig"
@@ -37,17 +37,16 @@ type config struct {
 	ClientTimeout time.Duration `envconfig:"default=105s"`
 	ServerTimeout time.Duration `envconfig:"default=110s"`
 
-	JWKSEndpoint          string        `envconfig:"default=file://hack/default-jwks.json"`
-	JWKSSyncPeriod        time.Duration `envconfig:"default=5m"`
-	AllowJWTSigningNone   bool          `envconfig:"default=true"`
-	ClientIDHTTPHeaderKey string        `envconfig:"default=client_user,APP_CLIENT_ID_HTTP_HEADER"`
+	JWKSEndpoint          string `envconfig:"default=file://hack/default-jwks.json"`
+	AllowJWTSigningNone   bool   `envconfig:"default=true"`
+	ClientIDHTTPHeaderKey string `envconfig:"default=client_user,APP_CLIENT_ID_HTTP_HEADER"`
 
 	Database persistence.DatabaseConfig
 	Config   auth.Config
 
 	ApplicationsNamespace string
 
-	Log log.Config
+	Log logger.Config
 }
 
 func main() {
@@ -58,8 +57,7 @@ func main() {
 	err := envconfig.InitWithPrefix(&cfg, envPrefix)
 	exitOnError(err, "Error on env init")
 
-	ctx, err = log.Configure(ctx, &cfg.Log)
-	exitOnError(err, "Failed to configure Logger")
+	ctx = logger.InitLogger(ctx, cfg.Log)
 
 	transact, closeFunc, err := persistence.Configure(ctx, cfg.Database)
 	exitOnError(err, "Error while establishing the connection to the database")
@@ -128,16 +126,6 @@ func initAPIHandler(ctx context.Context, cfg config, db persistence.Transactione
 	}
 	authMiddleware := authenticator.New(httpClient, cfg.JWKSEndpoint, cfg.AllowJWTSigningNone, cfg.ClientIDHTTPHeaderKey)
 
-	if cfg.JWKSSyncPeriod != 0 {
-		logrus.Infof("JWKS synchronization enabled. Sync period: %v", cfg.JWKSSyncPeriod)
-		periodicExecutor := executor.NewPeriodic(cfg.JWKSSyncPeriod, func(ctx context.Context) {
-			err := authMiddleware.SynchronizeJWKS(ctx)
-			if err != nil {
-				logrus.WithError(err).Errorf("An error has occurred while synchronizing JWKS: %v", err)
-			}
-		})
-		go periodicExecutor.Run(ctx)
-	}
 	applicationsScheduler, err := buildScheduler(cfg)
 	if err != nil {
 		return nil, err
@@ -147,15 +135,16 @@ func initAPIHandler(ctx context.Context, cfg config, db persistence.Transactione
 
 	rootResolver := domain.NewRootResolver(db, applicationsScheduler)
 	srv := handler.NewDefaultServer(graphql.NewExecutableSchema(graphql.Config{Resolvers: rootResolver}))
-	//mainRouter.Handle("/", playground.Handler("GraphQL playground", cfg.APIEndpoint))
 	mainRouter.Use(cors.New().Handler())
 
 	mainRouter.HandleFunc("/", playground.Handler("GraphQL playground", cfg.APIEndpoint))
 
 	gqlRouter := mainRouter.PathPrefix(cfg.APIEndpoint).Subrouter()
-	gqlRouter.Use(cors.New().Handler())
 
+	gqlRouter.Use(cors.New().Handler())
+	gqlRouter.Use(correlation.CorrelationIDMiddleware)
 	gqlRouter.Use(authMiddleware.Handler())
+
 	gqlRouter.Handle("", srv)
 
 	logrus.Infof("Registering readiness endpoint...")

@@ -6,7 +6,7 @@ import (
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/persistence"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/alextargov/iot-proj/components/orchestrator/pkg/logger"
 
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/resource"
 
@@ -94,7 +94,7 @@ func (g *universalExistQuerier) exists(ctx context.Context, resourceType resourc
 
 	query := getQueryFromBuilder(stmtBuilder)
 
-	log.C(ctx).Debugf("Executing DB query: %s", query)
+	logger.C(ctx).Debugf("Executing DB query: %s", query)
 	var count int
 	err = persist.GetContext(ctx, &count, query, allArgs...)
 	err = persistence.MapSQLError(ctx, err, resourceType, resource.Exists, "while getting object from '%s' table", g.tableName)

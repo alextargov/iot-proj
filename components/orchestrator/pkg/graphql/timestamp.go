@@ -1,11 +1,11 @@
 package graphql
 
 import (
+	"context"
+	"github.com/alextargov/iot-proj/components/orchestrator/pkg/logger"
 	"io"
 	"strconv"
 	"time"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/scalar"
 )
@@ -34,7 +34,7 @@ func (y *Timestamp) UnmarshalGQL(v interface{}) error {
 func (y Timestamp) MarshalGQL(w io.Writer) {
 	_, err := w.Write([]byte(strconv.Quote(time.Time(y).Format(time.RFC3339))))
 	if err != nil {
-		log.D().Errorf("while writing %T: %s", y, err)
+		logger.C(context.Background()).Errorf("while writing %T: %s", y, err)
 	}
 }
 

@@ -4,8 +4,8 @@ import (
 	"context"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/model"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/repo"
+	"github.com/alextargov/iot-proj/components/orchestrator/pkg/logger"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/resource"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"time"
 )
 
@@ -42,7 +42,7 @@ func NewRepository(converter EntityConverter) *repository {
 
 // Create missing godoc
 func (r *repository) Create(ctx context.Context, item model.Widget) error {
-	log.C(ctx).Infof("Converting Widget with id %s to entity", item.ID)
+	logger.C(ctx).Infof("Converting Widget with id %s to entity", item.ID)
 	entity, err := r.conv.ToEntity(item)
 	if err != nil {
 		return err
@@ -52,7 +52,7 @@ func (r *repository) Create(ctx context.Context, item model.Widget) error {
 	entity.CreatedAt = &now
 	entity.UpdatedAt = &now
 
-	log.C(ctx).Debugf("Persisting Widget entity with id %s to db", item.ID)
+	logger.C(ctx).Debugf("Persisting Widget entity with id %s to db", item.ID)
 	return r.creator.Create(ctx, entity)
 }
 

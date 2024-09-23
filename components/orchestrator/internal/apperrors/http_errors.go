@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/99designs/gqlgen/graphql"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/alextargov/iot-proj/components/orchestrator/pkg/logger"
 	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
@@ -24,6 +24,6 @@ func WriteAppError(ctx context.Context, w http.ResponseWriter, appErr error, sta
 		Extensions: map[string]interface{}{"error_code": errCode, "error": errCode.String()}}}}
 	err := json.NewEncoder(w).Encode(resp)
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("An error occurred while encoding data: %v", err)
+		logger.C(ctx).WithError(err).Errorf("An error occurred while encoding data: %v", err)
 	}
 }
