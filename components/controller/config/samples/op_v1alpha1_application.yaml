@@ -2,7 +2,7 @@ apiVersion: func.controller/v1alpha1
 kind: Application
 metadata:
   name: application-sample-3
-  namespace: system
+  namespace: iot-system
 spec:
   # TODO(user): Add fields here
   source_code: |

@@ -38,7 +38,7 @@ func NewApplicationReconciler(statusManager StatusManager, k8sClient KubernetesC
 
 func (r *ApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := ctrl.Log.WithValues("application", req.NamespacedName)
-	ctx = log.ContextWithLogger(ctx, logger)
+	ctx = logger.ContextWithLogger(ctx, logger)
 
 	application, err := r.k8sClient.Get(ctx, req.NamespacedName)
 	if err != nil {
@@ -46,13 +46,13 @@ func (r *ApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	}
 
 	data := "Reconciles " + string(application.Status.Phase)
-	log.C(ctx).Info(data)
+	logger.C(ctx).Info(data)
 
 	finalizer := "application/delete-finalizer"
 
 	if application.ObjectMeta.DeletionTimestamp == nil || application.ObjectMeta.DeletionTimestamp.IsZero() {
 		if !controllerutil.ContainsFinalizer(application, finalizer) {
-			log.C(ctx).Info("Finalizer does not exists. Will try to add it.")
+			logger.C(ctx).Info("Finalizer does not exists. Will try to add it.")
 			controllerutil.AddFinalizer(application, finalizer)
 			if err := r.k8sClient.Update(ctx, application); err != nil {
 				return ctrl.Result{}, err
@@ -61,7 +61,7 @@ func (r *ApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	} else {
 		if controllerutil.ContainsFinalizer(application, finalizer) {
-			log.C(ctx).Info(fmt.Sprintf("Application \"%s\" is being deleted. Will remove finalizer and delete related resources.", application.Name))
+			logger.C(ctx).Info(fmt.Sprintf("Application \"%s\" is being deleted. Will remove finalizer and delete related resources.", application.Name))
 
 			if err := r.function.DeleteFunctionResources(ctx, application.Name, application.Namespace); err != nil {
 				return ctrl.Result{}, err
@@ -107,9 +107,9 @@ func (r *ApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 }
 
 func (r ApplicationReconciler) handleGetError(ctx context.Context, namespacedName types.NamespacedName, err error) (ctrl.Result, error) {
-	log.C(ctx).Error(err, fmt.Sprintf("Unable to retrieve %s resource from API server", namespacedName))
+	logger.C(ctx).Error(err, fmt.Sprintf("Unable to retrieve %s resource from API server", namespacedName))
 	if kubeerrors.IsNotFound(err) {
-		log.C(ctx).Error(err, fmt.Sprintf("%s resource was not found in API server", namespacedName))
+		logger.C(ctx).Error(err, fmt.Sprintf("%s resource was not found in API server", namespacedName))
 		return ctrl.Result{}, nil
 	}
 
@@ -117,13 +117,13 @@ func (r ApplicationReconciler) handleGetError(ctx context.Context, namespacedNam
 }
 
 func (r ApplicationReconciler) handleInitializationError(ctx context.Context, err error) (ctrl.Result, error) {
-	log.C(ctx).Error(err, "Failed to initialize operation status")
+	logger.C(ctx).Error(err, "Failed to initialize operation status")
 	return ctrl.Result{}, err
 }
 
 func (r ApplicationReconciler) handleError(ctx context.Context, err error, op opv1alpha1.State, appName string) (ctrl.Result, error) {
 	msg := fmt.Sprintf("Failed to do operation %s for application %s", op, appName)
-	log.C(ctx).Error(err, msg)
+	logger.C(ctx).Error(err, msg)
 	return ctrl.Result{}, err
 }
 

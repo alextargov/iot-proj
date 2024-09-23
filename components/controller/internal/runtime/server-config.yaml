@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: server-config
-  namespace: system
+  namespace: iot-system
   labels:
     app: controller
 data:
