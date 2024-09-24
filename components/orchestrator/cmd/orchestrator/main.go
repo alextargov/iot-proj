@@ -9,7 +9,6 @@ import (
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/auth"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/k8s"
-	"github.com/alextargov/iot-proj/components/orchestrator/internal/middlewares/authenticator"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/middlewares/correlation"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/middlewares/cors"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/graphql"
@@ -103,7 +102,7 @@ func createServer(ctx context.Context, cfg config, handler http.Handler, name st
 	}
 
 	shutdownFn := func() {
-		ctx, cancel := context.WithTimeout(context.Background(), cfg.ShutdownTimeout)
+		ctx, cancel := context.WithTimeout(ctx, cfg.ShutdownTimeout)
 		defer cancel()
 
 		logrus.Infof("Shutting down %s server...", name)
@@ -118,13 +117,13 @@ func createServer(ctx context.Context, cfg config, handler http.Handler, name st
 func initAPIHandler(ctx context.Context, cfg config, db persistence.Transactioner) (*mux.Router, error) {
 	mainRouter := mux.NewRouter()
 
-	httpClient := &http.Client{
-		Timeout: cfg.ClientTimeout,
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
-	}
-	authMiddleware := authenticator.New(httpClient, cfg.JWKSEndpoint, cfg.AllowJWTSigningNone, cfg.ClientIDHTTPHeaderKey)
+	//httpClient := &http.Client{
+	//	Timeout: cfg.ClientTimeout,
+	//	CheckRedirect: func(req *http.Request, via []*http.Request) error {
+	//		return http.ErrUseLastResponse
+	//	},
+	//}
+	//authMiddleware := authenticator.New(httpClient, cfg.JWKSEndpoint, cfg.AllowJWTSigningNone, cfg.ClientIDHTTPHeaderKey)
 
 	applicationsScheduler, err := buildScheduler(cfg)
 	if err != nil {
@@ -143,7 +142,7 @@ func initAPIHandler(ctx context.Context, cfg config, db persistence.Transactione
 
 	gqlRouter.Use(cors.New().Handler())
 	gqlRouter.Use(correlation.CorrelationIDMiddleware)
-	gqlRouter.Use(authMiddleware.Handler())
+	//gqlRouter.Use(authMiddleware.Handler())
 
 	gqlRouter.Handle("", srv)
 
