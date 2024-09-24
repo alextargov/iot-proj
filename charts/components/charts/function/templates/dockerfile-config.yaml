@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dockerfile-config
+  namespace: iot-system
+  labels:
+    app: controller
+data:
+  Dockerfile: |-
+    FROM node:16
+    USER root
+    RUN mkdir /workdir
+    WORKDIR /workdir
+    RUN  cp /workspace/package.json /workdir && \
+        cp /workspace/server.js /workdir && \
+        npm install
+    USER 1000
+
+    EXPOSE 8080
+    CMD [ "node", "server.js" ]

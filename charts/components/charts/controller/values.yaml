@@ -1,0 +1,22 @@
+deployment:
+  image:
+    name: alextargov/iot-controller
+    version: latest
+    pullPolicy: IfNotPresent
+  replicaCount: 1
+  resources:
+    limits:
+      cpu: 512m
+      memory: 256Mi
+    requests:
+      cpu: 256m
+      memory: 128Mi
+
+metrics:
+  port: 3001
+health:
+  port: 3002
+
+http:
+  client:
+    skipSSLValidation: false

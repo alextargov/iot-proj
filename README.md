@@ -9,3 +9,8 @@
 1. Make sure that the schema in the backend is up-to-date
 2. Run the `orchestrator` component
 3. Run: `npm run generate-types`
+
+### Run in Docker
+1. Start Docker
+2. Run: `./scripts/install.sh`
+3. Access from `http://orchestrator.local.dev`

@@ -1,0 +1,19 @@
+deployment:
+  minReplicas: 1
+  maxReplicas: 1
+  resources:
+    limits:
+      cpu: 1
+      memory: 512Mi
+    requests:
+      cpu: 256m
+      memory: 128Mi
+  image:
+    name: alextargov/iot-orchestrator
+    version: latest
+    pullPolicy: IfNotPresent
+  dbPool:
+    maxOpenConnections: 30
+    maxIdleConnections: 2
+  nodeSelector: {}
+  strategy: {}

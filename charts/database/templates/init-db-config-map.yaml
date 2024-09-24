@@ -1,0 +1,8 @@
+# This file is not part of official PostgreSQL chart
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "postgresql.fullname" . }}-db-init
+data:
+  init-orchestrator-db.sql: |
+    CREATE DATABASE {{ .Values.global.database.embedded.orchestrator.name }};

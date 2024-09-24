@@ -1,0 +1,46 @@
+global:
+  namespace: iot-system
+  orchestrator:
+    name: "orchestrator"
+    graphql:
+      external:
+        port: 3000
+    apiEndpoint: "/graphql"
+    defaultEndpoint: "/"
+    authentication:
+      jwksEndpoint: http://ory-stack-oathkeeper-api.ory.svc.cluster.local:4456/.well-known/jwks.json
+      allowJWTSigningNone: false
+  readinessProbe:
+    initialDelaySeconds: 5
+    timeoutSeconds: 1
+    periodSeconds: 2
+  livenessProbe:
+    initialDelaySeconds: 30
+    timeoutSeconds: 1
+    periodSeconds: 10
+  database:
+    sqlProxyServiceAccount: "proxy-user@gcp-cmp.iam.gserviceaccount.com"
+    manageSecrets: true
+    embedded:
+      enabled: true
+      orchestrator:
+        name: "postgres"
+      orchestratorDBName: "postgres"
+    managedGCP:
+      serviceAccountKey: ""
+      instanceConnectionName: ""
+      orchestrator:
+        name: ""
+        user: ""
+        password: ""
+      host: "localhost"
+      hostPort: "5432"
+      sslMode: ""
+      dbUser: ""
+      dbPassword: ""
+      orchestratorDBName: ""
+  ingress:
+    domainName: "local.dev"
+  istio:
+    gateway:
+      name: "iot-gateway"

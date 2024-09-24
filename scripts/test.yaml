@@ -1,0 +1,104 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: iot-orchestrator
+  namespace: iot-system
+  labels:
+    app: orchestrator
+    release: iot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: orchestrator
+      release: iot
+  strategy:
+    {}
+  template:
+    metadata:
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+        restartOnNewInstallationMarker: "jCWUC" # Restarts the deployment on a new Helm installation. (https://helm.sh/docs/howto/charts_tips_and_tricks/#automatically-roll-deployments)
+      labels:
+        app: orchestrator
+        release: iot
+    spec:
+      serviceAccountName: iot-orchestrator
+      nodeSelector:
+        {}
+      containers:
+        - name: orchestrator
+          image: alextargov/iot-orchestrator:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 1
+              memory: 512Mi
+            requests:
+              cpu: 256m
+              memory: 128Mi
+          env:
+            - name: APP_ADDRESS
+              value: "0.0.0.0:3000"
+            - name: APP_SHUTDOWN_TIMEOUT
+              value: "30s"
+            - name: APP_DEFAULT_API
+              value: "/"
+            - name: APP_API_ENDPOINT
+              value: "/graphql"
+            - name: APP_JWKS_ENDPOINT
+              value: "http://ory-stack-oathkeeper-api.ory.svc.cluster.local:4456/.well-known/jwks.json"
+            - name: APP_ALLOW_JWT_SIGNING_NONE
+              value: "false"
+            - name: APP_DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: iot-postgresql
+                  key: postgresql-orchestrator-username
+            - name: APP_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: iot-postgresql
+                  key: postgresql-orchestrator-password
+            - name: APP_DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: iot-postgresql
+                  key: postgresql-serviceName
+            - name: APP_DB_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: iot-postgresql
+                  key: postgresql-servicePort
+            - name: APP_DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: iot-postgresql
+                  key: postgresql-orchestrator-db-name
+            - name: APP_DB_SSL
+              valueFrom:
+                secretKeyRef:
+                  name: iot-postgresql
+                  key: postgresql-sslMode
+            - name: APP_DB_MAX_OPEN_CONNECTIONS
+              value: "30"
+            - name: APP_DB_MAX_IDLE_CONNECTIONS
+              value: "2"
+          livenessProbe:
+            httpGet:
+              port: 3000
+              path: "/livez"
+            initialDelaySeconds: 30
+            timeoutSeconds: 1
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              port: 3000
+              path: "/readyz"
+            initialDelaySeconds: 5
+            timeoutSeconds: 1
+            periodSeconds: 2
