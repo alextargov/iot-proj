@@ -125,10 +125,13 @@ func (h *authHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !exists {
+		logger.C(ctx).Errorf("User with name %s does not exist", user.Username)
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode("User does not exist")
 		return
 	}
+
+	logger.C(ctx).Infof("User %q exists", user.Username)
 
 	userFromService, err := h.userService.GetByUsername(ctx, user.Username)
 	if err != nil {
@@ -138,8 +141,9 @@ func (h *authHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(userFromService.Password))
+	err = bcrypt.CompareHashAndPassword([]byte(userFromService.Password), []byte(user.Password))
 	if err != nil {
+		logger.C(ctx).Errorf("Error while comparing passwords %+v", err.Error())
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode("Invalid credentials")
 		return

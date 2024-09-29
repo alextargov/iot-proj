@@ -37,13 +37,13 @@ func NewService(repo UserRepository, uuidService UUIDService) *service {
 }
 
 func (s *service) GetByID(ctx context.Context, id string) (*model.User, error) {
-	logger.C(ctx).Debugf("Getting user by id %s", id)
+	logger.C(ctx).Infof("Getting user by id %s", id)
 
 	return s.userRepo.GetByID(ctx, id)
 }
 
 func (s *service) GetByUsername(ctx context.Context, username string) (*model.User, error) {
-	logger.C(ctx).Debugf("Getting user by username %s", username)
+	logger.C(ctx).Infof("Getting user by username %s", username)
 
 	user, err := s.userRepo.GetByUsername(ctx, username)
 	if err != nil {
@@ -54,7 +54,7 @@ func (s *service) GetByUsername(ctx context.Context, username string) (*model.Us
 }
 
 func (s *service) Exists(ctx context.Context, username string) (bool, error) {
-	logger.C(ctx).Debugf("Exists user by username %s", username)
+	logger.C(ctx).Infof("Exists user by username %s", username)
 
 	exists, err := s.userRepo.Exists(ctx, username)
 	if err != nil {
@@ -65,7 +65,7 @@ func (s *service) Exists(ctx context.Context, username string) (bool, error) {
 }
 
 func (s *service) Create(ctx context.Context, userInput model.UserInput) (*model.User, error) {
-	logger.C(ctx).Debugf("Creating user with username: %s", userInput.Username)
+	logger.C(ctx).Infof("Creating user with username: %s", userInput.Username)
 
 	id := s.uuidService.Generate()
 	user := userInput.ToUser(id)
@@ -79,7 +79,7 @@ func (s *service) Create(ctx context.Context, userInput model.UserInput) (*model
 }
 
 func (s *service) DeleteByID(ctx context.Context, id string) error {
-	logger.C(ctx).Debugf("Deleting user with ID %s", id)
+	logger.C(ctx).Infof("Deleting user with ID %s", id)
 
 	if err := s.userRepo.DeleteByID(ctx, id); err != nil {
 		return errors.Wrapf(err, "while deleting user with ID %s", id)

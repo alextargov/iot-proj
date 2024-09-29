@@ -3,7 +3,6 @@ package widget
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/model"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/repo"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/graphql"
@@ -139,8 +138,6 @@ func fromEntityDeviceIDs(in Entity) ([]string, error) {
 	if !ok {
 		return nil, errors.New("DeviceIDs should be slice of bytes")
 	}
-
-	fmt.Println("ALEX", b)
 
 	if err := json.Unmarshal([]byte(b), &deviceIDs); err != nil {
 		return nil, errors.Wrap(err, "while unmarshaling DeviceIDs")

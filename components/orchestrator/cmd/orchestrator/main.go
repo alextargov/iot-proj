@@ -8,9 +8,13 @@ import (
 	"github.com/alextargov/iot-proj/components/controller/client"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/auth"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/user"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/handlers"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/k8s"
+	authmiddleware "github.com/alextargov/iot-proj/components/orchestrator/internal/middlewares/auth"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/middlewares/correlation"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/middlewares/cors"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/uuid"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/graphql"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/logger"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/persistence"
@@ -67,6 +71,7 @@ func main() {
 	}()
 
 	handler, err := initAPIHandler(ctx, cfg, transact)
+
 	exitOnError(err, "Error while registering handler")
 
 	runMainSrv, shutdownMainSrv := createServer(ctx, cfg, handler, "orchestrator")
@@ -115,22 +120,23 @@ func createServer(ctx context.Context, cfg config, handler http.Handler, name st
 }
 
 func initAPIHandler(ctx context.Context, cfg config, db persistence.Transactioner) (*mux.Router, error) {
-	mainRouter := mux.NewRouter()
-
-	//httpClient := &http.Client{
-	//	Timeout: cfg.ClientTimeout,
-	//	CheckRedirect: func(req *http.Request, via []*http.Request) error {
-	//		return http.ErrUseLastResponse
-	//	},
-	//}
-	//authMiddleware := authenticator.New(httpClient, cfg.JWKSEndpoint, cfg.AllowJWTSigningNone, cfg.ClientIDHTTPHeaderKey)
+	jwtWrapper := auth.NewJwtWrapper(cfg.Config)
+	uidService := uuid.NewService()
+	userConv := user.NewConverter()
+	userRepo := user.NewRepository(userConv)
+	userService := user.NewService(userRepo, uidService)
+	authMiddleware := authmiddleware.NewMiddleware(db, jwtWrapper, userService)
+	authHandler := handlers.NewAuthHandler(db, userService, jwtWrapper)
 
 	applicationsScheduler, err := buildScheduler(cfg)
 	if err != nil {
 		return nil, err
 	}
 
-	healthCheckRouter := mainRouter.PathPrefix(cfg.DefaultAPI).Subrouter()
+	mainRouter := mux.NewRouter()
+
+	mainRouter.HandleFunc("/login", authHandler.Login).Methods(http.MethodPost)
+	mainRouter.HandleFunc("/register", authHandler.Register).Methods(http.MethodPost)
 
 	rootResolver := domain.NewRootResolver(db, applicationsScheduler)
 	srv := handler.NewDefaultServer(graphql.NewExecutableSchema(graphql.Config{Resolvers: rootResolver}))
@@ -142,12 +148,13 @@ func initAPIHandler(ctx context.Context, cfg config, db persistence.Transactione
 
 	gqlRouter.Use(cors.New().Handler())
 	gqlRouter.Use(correlation.CorrelationIDMiddleware)
-	//gqlRouter.Use(authMiddleware.Handler())
+	gqlRouter.Use(authMiddleware.Handler)
 
 	gqlRouter.Handle("", srv)
 
-	logrus.Infof("Registering readiness endpoint...")
+	healthCheckRouter := mainRouter.PathPrefix(cfg.DefaultAPI).Subrouter()
 
+	logrus.Infof("Registering readiness endpoint...")
 	healthCheckRouter.HandleFunc("/readyz", newReadinessHandler).Methods("GET")
 
 	logrus.Infof("Registering liveness endpoint...")
