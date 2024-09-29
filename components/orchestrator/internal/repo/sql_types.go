@@ -18,7 +18,7 @@ type Identifiable interface {
 	GetID() string
 }
 
-// EntityWithExternalTenant is an interface that can be used for object with an external tenant to add tenant_id to the struct.
+// EntityWithExternalTenant is an interface that can be used for object with an external tenant to add user_id to the struct.
 // This is needed for update operations when we want to use named arguments in the SQL queries.
 type EntityWithExternalTenant interface {
 	DecorateWithTenantID(tenant string) interface{}

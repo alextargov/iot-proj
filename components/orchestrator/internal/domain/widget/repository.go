@@ -12,7 +12,7 @@ import (
 const tableName string = `public.widgets`
 
 var (
-	updatableTableColumns = []string{"name", "description", "tenant_id", "status", "device_ids", "created_at", "updated_at"}
+	updatableTableColumns = []string{"name", "description", "user_id", "status", "device_ids", "created_at", "updated_at"}
 	idTableColumns        = []string{"id"}
 	tableColumns          = append(idTableColumns, updatableTableColumns...)
 )

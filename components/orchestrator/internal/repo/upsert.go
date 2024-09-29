@@ -134,7 +134,7 @@ func (u *upserter) unsafeUpsert(ctx context.Context, resourceType resource.Type,
 
 // UpsertGlobal adds a new entity in the Compass DB in case it does not exist. If it already exists, updates it.
 // This upserter is not suitable for resources that have m2m tenant relation as it does not maintain tenant accesses.
-// Use it for global scoped resources or resources with embedded tenant_id only.
+// Use it for global scoped resources or resources with embedded user_id only.
 func (u *upserterGlobal) UpsertGlobal(ctx context.Context, dbEntity interface{}) error {
 	return u.unsafeUpsert(ctx, u.resourceType, dbEntity)
 }

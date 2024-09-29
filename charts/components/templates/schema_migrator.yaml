@@ -1,0 +1,62 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: schema-migration-job
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-delete-policy: hook-succeeded
+    sidecar.istio.io/inject: "false"
+spec:
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
+    spec:
+      containers:
+        - name: migrate-db
+          image: {{ .Values.global.schemaMigrator.job.image.name }}:{{ .Values.global.schemaMigrator.job.image.version }}
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          env:
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: iot-postgresql
+                  key: postgresql-orchestrator-username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: iot-postgresql
+                  key: postgresql-orchestrator-password
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: iot-postgresql
+                  key: postgresql-serviceName
+            - name: DB_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: iot-postgresql
+                  key: postgresql-servicePort
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: iot-postgresql
+                  key: postgresql-orchestrator-db-name
+            - name: DB_SSL
+              valueFrom:
+                secretKeyRef:
+                  name: iot-postgresql
+                  key: postgresql-sslMode
+            - name: MIGRATIONS_DIR
+              value: "/migrations"
+            - name: SEED_FILE
+              value: "/seeds/seed.sql"
+      restartPolicy: Never
+  backoffLimit: 4

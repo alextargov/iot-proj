@@ -12,7 +12,7 @@ import (
 const tableName string = `public.devices`
 
 var (
-	updatableTableColumns = []string{"name", "description", "tenant_id", "status", "auth", "created_at", "updated_at"}
+	updatableTableColumns = []string{"name", "description", "user_id", "status", "auth", "created_at", "updated_at"}
 	idTableColumns        = []string{"id"}
 	tableColumns          = append(idTableColumns, updatableTableColumns...)
 )
