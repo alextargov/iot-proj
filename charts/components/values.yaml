@@ -16,7 +16,7 @@ global:
     periodSeconds: 2
   livenessProbe:
     initialDelaySeconds: 30
-    timeoutSeconds: 1
+    timeoutSeconds: 2
     periodSeconds: 10
   database:
     sqlProxyServiceAccount: "proxy-user@gcp-cmp.iam.gserviceaccount.com"
@@ -39,6 +39,18 @@ global:
       dbUser: ""
       dbPassword: ""
       orchestratorDBName: ""
+  schemaMigrator:
+    job:
+      resources:
+        limits:
+          cpu: 1
+          memory: 512Mi
+        requests:
+          cpu: 256m
+          memory: 128Mi
+      image:
+        name: alextargov/iot-schema-migrator
+        version: latest
   ingress:
     domainName: "local.dev"
   istio:

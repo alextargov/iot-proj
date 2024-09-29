@@ -87,7 +87,7 @@ spec:
           livenessProbe:
             httpGet:
               port: {{ .Values.global.orchestrator.graphql.external.port }}
-              path: "/livez"
+              path: "/healthz"
             initialDelaySeconds: {{ .Values.global.livenessProbe.initialDelaySeconds }}
             timeoutSeconds: {{ .Values.global.livenessProbe.timeoutSeconds }}
             periodSeconds: {{.Values.global.livenessProbe.periodSeconds }}

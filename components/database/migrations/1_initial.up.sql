@@ -1,8 +1,3 @@
-CREATE TYPE tenant_type AS ENUM (
-    'USER',
-    'ADMIN'
-);
-
 CREATE TYPE device_status AS ENUM (
     'INITIAL',
     'ACTIVE',
@@ -15,17 +10,19 @@ CREATE TYPE widget_status AS ENUM (
     'ACTIVE'
 );
 
-CREATE TABLE tenants (
+
+CREATE TABLE users (
     id uuid PRIMARY KEY NOT NULL CHECK (id <> '00000000-0000-0000-0000-000000000000'),
-    name varchar(256) NOT NULL,
-    type tenant_type NOT NULL,
-    created_at timestamp
+    username varchar(256) NOT NULL,
+    password varchar(256) NOT NULL,
+    created_at timestamp,
+    updated_at timestamp
 );
 
 CREATE TABLE devices (
     id uuid PRIMARY KEY NOT NULL CHECK (id <> '00000000-0000-0000-0000-000000000000'),
-    tenant_id uuid NOT NULL,
-    CONSTRAINT tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
+    user_id uuid NOT NULL,
+    CONSTRAINT user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     name varchar(256) NOT NULL,
     description text,
     status device_status,
@@ -45,8 +42,8 @@ CREATE TABLE hosts (
 
 CREATE TABLE widgets (
     id uuid PRIMARY KEY NOT NULL CHECK (id <> '00000000-0000-0000-0000-000000000000'),
-    tenant_id uuid NOT NULL,
-    CONSTRAINT tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
+    user_id uuid NOT NULL,
+    CONSTRAINT user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     name varchar(256) NOT NULL,
     description text,
     status widget_status,

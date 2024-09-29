@@ -1,35 +1,52 @@
-# Parent Dockerfile https://github.com/docker-library/mongo/blob/982328582c74dd2f0a9c8c77b84006f291f974c3/3.0/Dockerfile
-FROM mongo:latest
-# RUN apt-get update && apt-get install -y gawk
-# Modify child mongo to use /data/db2 as dbpath (because /data/db wont persist the build)
+FROM --platform=$BUILDPLATFORM golang:1.21.6-alpine3.19 as builder
 
-ENV MONGO_INITDB_ROOT_USERNAME admin
-ENV MONGO_INITDB_ROOT_PASSWORD admin
+WORKDIR /
+RUN apk --update --no-cache add bash git
 
-RUN mkdir -p /data/db2 \
-    && echo "dbpath = /data/db2" > /etc/mongodb.conf \
-    && chown -R mongodb:mongodb /data/db2
+ARG VERSION="v4.16.2"
+ARG DATABASE="postgres"
+ARG SOURCE="file"
 
-COPY ./scripts/collections /data/db2/collections
-COPY ./scripts/init.sh /data/db2
-RUN chmod +x /data/db2/init.sh
+RUN git clone https://github.com/golang-migrate/migrate
+WORKDIR /migrate
+RUN git checkout $VERSION
 
-# RUN mongod --port 27017 --bind_ip 127.0.0.1 --fork --logpath /var/log/mongodb.log --config /etc/mongodb.conf \
-#     && cd /data/db2/ \
-#     && ./init.sh \
-#     && mongod --config /etc/mongodb.conf --shutdown
 
-# Make the new dir a VOLUME to persists it
-VOLUME /data/db2
-EXPOSE 27017
-CMD ["mongod", "--config", "/etc/mongodb.conf", "--smallfiles"]
+ARG TARGETOS TARGETARCH
+RUN GOOS=$TARGETOS GOARCH=$TARGETARCH go build -a -o migrate -ldflags="-X main.Version=$VERSION" -tags "$DATABASE $SOURCE" ./cmd/migrate
 
-#
-#use admin;
-#db.createUser(
-#  {
-#    user: "admin",
-#    pwd: "admin",
-#    roles:["root"]
-#  }
-#);
+FROM alpine:3.19
+
+ARG TARGETARCH
+
+# Set environment variables (can be overridden)
+ENV DB_HOST=localhost
+ENV DB_PORT=5432
+ENV DB_USER=postgres
+ENV DB_PASSWORD=postgres
+ENV DB_NAME=postgres
+
+# Working directory
+WORKDIR /migrate
+
+RUN apk --update --no-cache add bash postgresql-client curl jq
+
+COPY --from=builder /migrate /migrate
+RUN chmod +x ./migrate
+
+RUN mv migrate /usr/local/bin/migrate
+
+# Copy migration files
+COPY ./migrations /migrations
+
+# Copy seed files
+COPY ./seeds /seeds
+
+# Copy migration script
+COPY ./migrate.sh /migrate/migrate.sh
+
+# Make script executable
+RUN chmod +x /migrate/migrate.sh
+
+# Run migration script as the default command
+CMD ["/migrate/migrate.sh"]

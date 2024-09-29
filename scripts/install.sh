@@ -23,11 +23,9 @@ function installDatabase() {
 
 echo "Creating cluster..."
 
-#k3d cluster create \
-#--api-port '127.0.0.1:52982' \
-#--k3s-arg "--disable=traefik@server:0"
 
-k3d cluster create my-cluster \
+## If kubectl does not work, try setting in .kube/config the server to: https://localhost:6443
+k3d cluster create iot \
   --api-port 6443 \
   --port "80:80@loadbalancer" \
   --port "443:443@loadbalancer"  \
