@@ -11,15 +11,15 @@ metadata:
     app.kubernetes.io/instance: {{ .Release.Name }}
 spec:
   hosts:
-    - "{{ .Values.global.orchestrator.name }}.{{ .Values.global.ingress.domainName }}"
+    - "*"
   gateways:
     - {{ .Values.global.istio.gateway.name }}
   http:
     - match:
       - uri:
-          prefix: "/"
+          prefix: "/graphql"
       route:
         - destination:
-            host: {{ template  "fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+            host: {{ template "fullname" . }}
             port:
               number: {{ .Values.global.orchestrator.graphql.external.port }}

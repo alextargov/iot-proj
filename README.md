@@ -13,4 +13,4 @@
 ### Run in Docker
 1. Start Docker
 2. Run: `./scripts/install.sh`
-3. Access from `http://orchestrator.local.dev`
+3. Access from `http://localhost:8080`

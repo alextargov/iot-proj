@@ -50,7 +50,7 @@ yq eval-all --inplace '. as $item ireduce ({}; . * $item )' mergedOverrides.yaml
 # As of Kyma 2.6.3 we need to specify which namespaces should enable istio injection
 RELEASE_NS=iot-system
 kubectl create ns $RELEASE_NS --dry-run=client -o yaml | kubectl apply -f -
-kubectl label ns $RELEASE_NS istio-injection=enabled --overwrite
+#kubectl label ns $RELEASE_NS istio-injection=enabled --overwrite
 
 # As of Kubernetes 1.25 we need to replace PodSecurityPolicies; we chose the Pod Security Standards
 #"$KUBECTL" label ns $RELEASE_NS pod-security.kubernetes.io/enforce=baseline --overwrite
@@ -60,8 +60,8 @@ helm upgrade --install --atomic --timeout "${TIMEOUT}" -f ./mergedOverrides.yaml
 
 trap "cleanup_trap" RETURN EXIT INT TERM
 
-function cleanup_trap() {
-#  if [[ -f mergedOverrides.yaml ]]; then
-#    rm -f mergedOverrides.yaml
-#  fi
+function cleanup_trap {
+  if [[ -f mergedOverrides.yaml ]]; then
+    rm -f mergedOverrides.yaml
+  fi
 }

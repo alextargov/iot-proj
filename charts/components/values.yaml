@@ -52,7 +52,12 @@ global:
         name: alextargov/iot-schema-migrator
         version: latest
   ingress:
-    domainName: "local.dev"
+    domainName: "dev"
   istio:
     gateway:
       name: "iot-gateway"
+  dashboard:
+    name: "dashboard"
+    external:
+      port: 80
+      nodePort: 30080

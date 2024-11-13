@@ -5,11 +5,11 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   selector:
-    istio: ingressgateway  # Use Istio's ingress gateway to handle external traffic
+    istio: ingressgateway
   servers:
     - port:
         number: 80
         name: http
         protocol: HTTP
       hosts:
-        - "{{ .Values.global.orchestrator.name }}.{{ .Values.global.ingress.domainName }}"
+        - "*"

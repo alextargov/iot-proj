@@ -26,16 +26,15 @@ echo "Creating cluster..."
 
 ## If kubectl does not work, try setting in .kube/config the server to: https://localhost:6443
 k3d cluster create iot \
-  --api-port 6443 \
-  --port "80:80@loadbalancer" \
-  --port "443:443@loadbalancer"  \
-  --k3s-arg "--disable=traefik@server:0"
-
+  --api-port 127.0.0.1:6443 \
+  --port "8080:80@loadbalancer" \
+  --port "8443:443@loadbalancer" \
+  --k3s-arg "--disable=traefik@server:*" \
+  --k3s-arg '--kube-apiserver-arg=anonymous-auth=true@server:*'
 
 echo "Installing Istio..."
 
-#istioctl install --set profile=default -y
-istioctl install --set profile=demo -y
+istioctl install --set profile=default -y
 
 kubectl create ns $RELEASE_NS --dry-run=client -o yaml | kubectl apply -f -
 kubectl label ns $RELEASE_NS istio-injection=enabled --overwrite
@@ -55,7 +54,7 @@ echo "Installation finished successfully"
 STATUS=$(helm status iot -n iot-system -o json | jq .info.status)
 echo "Installation status ${STATUS}"
 
-echo "Adding entries to /etc/hosts..."
-echo "\n127.0.0.1 orchestrator.local.dev" | sudo tee -a /etc/hosts 1>/dev/null
+#echo "Adding entries to /etc/hosts..."
+#echo "\n127.0.0.1 orchestrator.dev dashboard.dev" | sudo tee -a /etc/hosts 1>/dev/null
 
-echo "You can now access the GraphQL server on: http://orchestrator.local.dev/graphql"
+echo "You can now access the: \nGraphQL server on: http://localhost:8080/graphql \nUI on: http://localhost:8080"
