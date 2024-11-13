@@ -1,0 +1,22 @@
+deployment:
+  image:
+    name: alextargov/iot-dashboard
+    version: latest
+    pullPolicy: IfNotPresent
+  minReplicas: 1
+  maxReplicas: 1
+  resources:
+    limits:
+      cpu: 512m
+      memory: 256Mi
+    requests:
+      cpu: 256m
+      memory: 128Mi
+  service:
+    type: ClusterIP
+    port: 80
+  strategy: {}
+  nodeSelector: {}
+http:
+  client:
+    skipSSLValidation: false
