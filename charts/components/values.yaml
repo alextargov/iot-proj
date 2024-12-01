@@ -60,4 +60,3 @@ global:
     name: "dashboard"
     external:
       port: 80
-      nodePort: 30080

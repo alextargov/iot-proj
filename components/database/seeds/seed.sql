@@ -1,5 +1,5 @@
 INSERT INTO users (id, username, password, created_at, updated_at) VALUES
-('3286fa91-20c0-4596-b863-cc6a93ce7acb', 'alex', '$2a$10$hSlW4g.qwR28qNj3qCvWXuud04K6utKtdWxtxwnA1qtBPt5qU40m6', now(), now());
+('3286fa91-20c0-4596-b863-cc6a93ce7acb', 'alex', '$2a$10$wXOGXaMPaDwxxgjqIJjRhuxXGIIDjni1vVfeAx7aQWYakujmgkytG', now(), now());
 
 INSERT INTO devices (id, user_id, name, description, status, auth, created_at) VALUES
 ('3d254c4e-8f52-4889-b9fc-0ea97259a2df', '3286fa91-20c0-4596-b863-cc6a93ce7acb', 'Temperature Sensor', 'Living room temp', 'ACTIVE', '{ "credential": {"basic": {"username": "user", "password": "pass"}}}', now()),
