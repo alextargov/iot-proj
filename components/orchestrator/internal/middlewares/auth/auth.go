@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/auth"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/model"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/tenant"
+	"github.com/alextargov/iot-proj/components/orchestrator/pkg/logger"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/persistence"
 	"net/http"
 	"strings"
@@ -37,6 +39,7 @@ func (m middleware) Handler(next http.Handler) http.Handler {
 		ctx := r.Context()
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
+			logger.C(r.Context()).Errorf("Request is missing Authorization header")
 			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode("Missing Authorization header")
 			return
@@ -45,6 +48,7 @@ func (m middleware) Handler(next http.Handler) http.Handler {
 		// Split the "Bearer <token>" format
 		parts := strings.Split(authHeader, " ")
 		if len(parts) != 2 || parts[0] != "Bearer" {
+			logger.C(r.Context()).Errorf("Request is has invalid Authorization header")
 			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode("Invalid Authorization header format")
 			return
@@ -54,6 +58,7 @@ func (m middleware) Handler(next http.Handler) http.Handler {
 
 		claims, err := m.jwtService.ValidateToken(tokenStr)
 		if err != nil {
+			logger.C(r.Context()).Errorf("Request has invalid or expired Authorization header")
 			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode("Invalid or expired token")
 			return
@@ -84,6 +89,7 @@ func (m middleware) Handler(next http.Handler) http.Handler {
 
 		// Attach username to the request context
 		ctx = context.WithValue(ctx, "user", user)
+		ctx = tenant.SaveToContext(ctx, user.ID)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

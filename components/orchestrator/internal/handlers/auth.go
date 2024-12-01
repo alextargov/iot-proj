@@ -165,7 +165,11 @@ func (h *authHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	// Return the token in the response body as JSON
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{
-		"token": tokenString,
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"id":        userFromService.ID,
+		"token":     tokenString,
+		"username":  userFromService.Username,
+		"createdAt": userFromService.CreatedAt,
+		"updatedAt": userFromService.UpdatedAt,
 	})
 }

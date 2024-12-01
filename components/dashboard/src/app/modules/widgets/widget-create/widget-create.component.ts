@@ -34,6 +34,7 @@ import {RepeatForBlock} from '../../../shared/blocks/repeatFor'
 import {DeviceInfoFragment, WidgetInput, WidgetStatus} from 'src/app/shared/graphql/generated'
 import {ToastrService} from "../../../shared/services/toastr/toastr.service";
 import {WidgetService} from "../../../shared/services/widget/widget.service";
+import {Router} from "@angular/router";
 
 @Component({
     selector: 'app-widget-create',
@@ -160,6 +161,7 @@ export class WidgetCreateComponent implements OnInit {
     }
 
     constructor(
+        private router: Router,
         private formBuilder: UntypedFormBuilder,
         private deviceService: DeviceService,
         private widgetService: WidgetService,
@@ -280,12 +282,14 @@ export class WidgetCreateComponent implements OnInit {
         this.deviceInput.nativeElement.value = ''
     }
 
-    public onSaveClick(): void {
+    public async onSaveClick(): Promise<void> {
         const model = this.convertToModel()
         this.widgetService.create(model).subscribe((data) => {
             console.log('success', data)
             this.toast.showSuccess('Successfully created widget')
         })
+
+        await this.router.navigate(['widgets'])
     }
 
     private convertToModel(): WidgetInput {

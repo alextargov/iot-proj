@@ -13,13 +13,13 @@ import (
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/k8s"
 	authmiddleware "github.com/alextargov/iot-proj/components/orchestrator/internal/middlewares/auth"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/middlewares/correlation"
-	"github.com/alextargov/iot-proj/components/orchestrator/internal/middlewares/cors"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/uuid"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/graphql"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/logger"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/persistence"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
+	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
 	"github.com/vrischmann/envconfig"
 	"net/http"
@@ -119,7 +119,7 @@ func createServer(ctx context.Context, cfg config, handler http.Handler, name st
 	return runFn, shutdownFn
 }
 
-func initAPIHandler(ctx context.Context, cfg config, db persistence.Transactioner) (*mux.Router, error) {
+func initAPIHandler(ctx context.Context, cfg config, db persistence.Transactioner) (http.Handler, error) {
 	jwtWrapper := auth.NewJwtWrapper(cfg.Config)
 	uidService := uuid.NewService()
 	userConv := user.NewConverter()
@@ -140,13 +140,11 @@ func initAPIHandler(ctx context.Context, cfg config, db persistence.Transactione
 
 	rootResolver := domain.NewRootResolver(db, applicationsScheduler)
 	srv := handler.NewDefaultServer(graphql.NewExecutableSchema(graphql.Config{Resolvers: rootResolver}))
-	mainRouter.Use(cors.New().Handler())
 
 	mainRouter.HandleFunc("/", playground.Handler("GraphQL playground", cfg.APIEndpoint))
 
 	gqlRouter := mainRouter.PathPrefix(cfg.APIEndpoint).Subrouter()
 
-	gqlRouter.Use(cors.New().Handler())
 	gqlRouter.Use(correlation.CorrelationIDMiddleware)
 	gqlRouter.Use(authMiddleware.Handler)
 
@@ -160,7 +158,14 @@ func initAPIHandler(ctx context.Context, cfg config, db persistence.Transactione
 	logrus.Infof("Registering liveness endpoint...")
 	healthCheckRouter.HandleFunc("/healthz", newReadinessHandler).Methods("GET")
 
-	return mainRouter, nil
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:4200"}, // Frontend origin
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Content-Type", "Authorization"},
+		AllowCredentials: true,
+	})
+
+	return c.Handler(mainRouter), nil
 }
 
 func newReadinessHandler(w http.ResponseWriter, r *http.Request) {

@@ -5,7 +5,11 @@ import { Injectable } from '@angular/core'
 export class ToastrService {
     constructor(private toastr: ToasterSvc) {}
 
-    showSuccess(msg) {
+    public showSuccess(msg: string) {
         this.toastr.success(msg)
+    }
+
+    public showError(msg: string) {
+        this.toastr.error(msg)
     }
 }

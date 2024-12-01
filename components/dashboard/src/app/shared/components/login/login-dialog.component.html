@@ -1,0 +1,51 @@
+<h2 mat-dialog-title>Login</h2>
+<div class="login-dialog--content" mat-dialog-content>
+    <form [formGroup]="loginFormGroup">
+        <mat-form-field appearance="outline" class="login-dialog--content-form-field">
+            <mat-label>Username</mat-label>
+            <input
+                matInput
+                type="text"
+                name="username"
+                formControlName="username"
+                required
+            />
+            <mat-error
+                *ngIf="loginFormGroup?.get('username')?.errors?.required"
+            >Name is required</mat-error>
+            <mat-error
+                *ngIf="loginFormGroup?.get('username')?.errors?.maxlength"
+            >Max length is {{ NAME_MAX_LENGTH }}</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="login-dialog--content-form-field">
+            <mat-label>Password</mat-label>
+            <input
+                matInput
+                type="password"
+                name="password"
+                formControlName="password"
+                required
+            />
+            <mat-error
+                *ngIf="loginFormGroup?.get('password')?.errors?.required"
+            >Password is required</mat-error>
+        </mat-form-field>
+
+        <div class="login-dialog--content-actions">
+            <button
+                mat-button
+                mat-dialog-close
+            >Cancel</button>
+            <button
+                mat-raised-button
+                color="primary"
+                type="submit"
+                (click)="onSubmit()"
+                [disabled]="!loginFormGroup?.valid"
+            >
+                Login
+            </button>
+        </div>
+    </form>
+</div>

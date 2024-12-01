@@ -2,11 +2,15 @@ import { Injectable, Inject } from '@angular/core'
 import { defaultsDeep } from 'lodash'
 
 export interface IAppConfigInterface {
-    APP_API_URL: string
+    APP_API_URL: string,
+    APP_LOGIN_URL: string,
+    APP_REGISTER_URL: string,
 }
 
 const defaultConfig: IAppConfigInterface = {
     APP_API_URL: 'http://localhost:8080',
+    APP_LOGIN_URL: '/login',
+    APP_REGISTER_URL: '/register',
 }
 
 @Injectable()

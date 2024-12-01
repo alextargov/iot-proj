@@ -10,6 +10,8 @@ import { ContentHeaderComponent } from './content-header/content-header.componen
 
 import 'blockly/blocks'
 import { NgxBlocklyModule } from 'ngx-blockly'
+import {LoginDialogComponent} from "./login/login-dialog.component";
+import {ReactiveFormsModule} from "@angular/forms";
 
 @NgModule({
     imports: [
@@ -20,8 +22,9 @@ import { NgxBlocklyModule } from 'ngx-blockly'
         MaterialModule,
         AppRoutingModule,
         NgxBlocklyModule,
+        ReactiveFormsModule
     ],
-    declarations: [NgxBlocklyComponent1, ContentHeaderComponent],
-    exports: [NgxBlocklyComponent1, ContentHeaderComponent],
+    declarations: [NgxBlocklyComponent1, ContentHeaderComponent, LoginDialogComponent],
+    exports: [NgxBlocklyComponent1, ContentHeaderComponent, LoginDialogComponent],
 })
 export class ComponentsModule {}

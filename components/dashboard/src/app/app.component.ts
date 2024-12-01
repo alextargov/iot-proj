@@ -22,7 +22,11 @@ import {
     VARIABLES_CATEGORY,
     Blockly,
 } from 'ngx-blockly'
-import { delay, filter } from 'rxjs'
+import {delay, filter, forkJoin} from 'rxjs'
+import {LoginDialogComponent} from "./shared/components/login/login-dialog.component";
+import {MatDialog} from "@angular/material/dialog";
+import {AuthService} from "./shared/services/auth/auth.service";
+import {EventBusService} from "./shared/services/eventbus/eventbus.service";
 
 @UntilDestroy()
 @Component({
@@ -32,9 +36,27 @@ import { delay, filter } from 'rxjs'
 })
 export class AppComponent {
     title = 'dashboard'
+    public isLoggedIn: boolean = false
 
     public readOnly = false
-    constructor(private observer: BreakpointObserver, private router: Router) {}
+    constructor(
+        private authService: AuthService,
+        private eventBusService: EventBusService,
+        private observer: BreakpointObserver,
+        private router: Router,
+        private dialog: MatDialog,
+    ) {}
+
+    ngOnInit(): void {
+        this.isLoggedIn = this.authService.isLoggedIn();
+
+        this.eventBusService.on('onLoginChange').subscribe({
+            next: () => {
+                this.isLoggedIn = this.authService.isLoggedIn();
+                console.log(this.isLoggedIn);
+            }
+        })
+    }
 
     ngAfterViewInit(): void {
         this.observer
@@ -52,5 +74,24 @@ export class AppComponent {
 
     onCode(code: string) {
         console.log(code)
+    }
+
+    public onLoginClick(): void {
+        const dialogRef = this.dialog.open(LoginDialogComponent, {
+            width: '400px',
+            disableClose: true
+        });
+
+        dialogRef.afterClosed().subscribe(result => {
+            if (result) {
+                console.log('Dialog closed with result:', result);
+                // Handle login logic here
+            }
+        });
+    }
+
+    public onLogoutClick(): void {
+        this.authService.logout();
+        this.eventBusService.emit('onLoginChange', {});
     }
 }

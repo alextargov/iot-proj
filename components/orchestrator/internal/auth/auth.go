@@ -56,7 +56,7 @@ func (j *JwtWrapper) GenerateToken(username string) (string, error) {
 	return signedToken, nil
 }
 
-//ValidateToken validates the jwt token
+// ValidateToken validates the jwt token
 func (j *JwtWrapper) ValidateToken(signedToken string) (claims *JwtClaim, err error) {
 	token, err := jwt.ParseWithClaims(
 		signedToken,
@@ -82,5 +82,4 @@ func (j *JwtWrapper) ValidateToken(signedToken string) (claims *JwtClaim, err er
 	}
 
 	return
-
 }

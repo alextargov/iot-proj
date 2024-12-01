@@ -15,6 +15,7 @@ import {
 } from 'apollo-angular'
 import { HttpLink } from 'apollo-angular/http'
 import { environment } from 'src/environments/environment'
+import {AuthService} from "../services/auth/auth.service";
 
 const errorLink = onError(({ graphQLErrors, networkError, response }) => {
     // React only on graphql errors
@@ -35,12 +36,11 @@ const errorLink = onError(({ graphQLErrors, networkError, response }) => {
     console.log("response", response)
 })
 
-const basicContext = setContext((_, { headers }) => {
+const basicContext = (authToken: string) => setContext((_, { headers }) => {
     const h = {
         ...headers,
         Accept: 'charset=utf-8',
-        Authorization:
-            'Bearer eyAiYWxnIjogIm5vbmUiLCAidHlwIjogIkpXVCIgfQo.eyAic2NvcGVzIjogIndlYmhvb2s6d3JpdGUgZm9ybWF0aW9uX3RlbXBsYXRlLndlYmhvb2tzOnJlYWQgcnVudGltZS53ZWJob29rczpyZWFkIGFwcGxpY2F0aW9uLmxvY2FsX3RlbmFudF9pZDp3cml0ZSB0ZW5hbnRfc3Vic2NyaXB0aW9uOndyaXRlIHRlbmFudDp3cml0ZSBmZXRjaC1yZXF1ZXN0LmF1dGg6cmVhZCB3ZWJob29rcy5hdXRoOnJlYWQgYXBwbGljYXRpb24uYXV0aHM6cmVhZCBhcHBsaWNhdGlvbi53ZWJob29rczpyZWFkIGFwcGxpY2F0aW9uLmFwcGxpY2F0aW9uX3RlbXBsYXRlOnJlYWQgYXBwbGljYXRpb25fdGVtcGxhdGU6d3JpdGUgYXBwbGljYXRpb25fdGVtcGxhdGU6cmVhZCBhcHBsaWNhdGlvbl90ZW1wbGF0ZS53ZWJob29rczpyZWFkIGRvY3VtZW50LmZldGNoX3JlcXVlc3Q6cmVhZCBldmVudF9zcGVjLmZldGNoX3JlcXVlc3Q6cmVhZCBhcGlfc3BlYy5mZXRjaF9yZXF1ZXN0OnJlYWQgcnVudGltZS5hdXRoczpyZWFkIGludGVncmF0aW9uX3N5c3RlbS5hdXRoczpyZWFkIGJ1bmRsZS5pbnN0YW5jZV9hdXRoczpyZWFkIGJ1bmRsZS5pbnN0YW5jZV9hdXRoczpyZWFkIGFwcGxpY2F0aW9uOnJlYWQgYXV0b21hdGljX3NjZW5hcmlvX2Fzc2lnbm1lbnQ6cmVhZCBoZWFsdGhfY2hlY2tzOnJlYWQgYXBwbGljYXRpb246d3JpdGUgcnVudGltZTp3cml0ZSBsYWJlbF9kZWZpbml0aW9uOndyaXRlIGxhYmVsX2RlZmluaXRpb246cmVhZCBydW50aW1lOnJlYWQgdGVuYW50OnJlYWQgZm9ybWF0aW9uOnJlYWQgZm9ybWF0aW9uOndyaXRlIGludGVybmFsX3Zpc2liaWxpdHk6cmVhZCBmb3JtYXRpb25fdGVtcGxhdGU6cmVhZCBmb3JtYXRpb25fdGVtcGxhdGU6d3JpdGUgZm9ybWF0aW9uX2NvbnN0cmFpbnQ6cmVhZCBmb3JtYXRpb25fY29uc3RyYWludDp3cml0ZSBjZXJ0aWZpY2F0ZV9zdWJqZWN0X21hcHBpbmc6cmVhZCBjZXJ0aWZpY2F0ZV9zdWJqZWN0X21hcHBpbmc6d3JpdGUgZm9ybWF0aW9uLnN0YXRlOndyaXRlIHRlbmFudF9hY2Nlc3M6d3JpdGUiLCAidGVuYW50Ijoie1wiY29uc3VtZXJUZW5hbnRcIjpcIjNlNjRlYmFlLTM4YjUtNDZhMC1iMWVkLTljY2VlMTUzYTBhZVwiLFwiZXh0ZXJuYWxUZW5hbnRcIjpcIjNlNjRlYmFlLTM4YjUtNDZhMC1iMWVkLTljY2VlMTUzYTBhZVwifSIgfQo.',
+        Authorization: `Bearer ${authToken}`,
         'Content-Type': 'application/json',
     }
     console.log(h)
@@ -49,7 +49,8 @@ const basicContext = setContext((_, { headers }) => {
     }
 })
 export function createDefaultApollo(
-    httpLink: HttpLink
+    httpLink: HttpLink,
+    authService: AuthService,
 ): ApolloClientOptions<any> {
     const cache = new InMemoryCache({})
 
@@ -59,11 +60,13 @@ export function createDefaultApollo(
         withCredentials: true,
     })
 
+    const authToken = authService.getToken()
+
     return {
         connectToDevTools: !environment.production,
         assumeImmutableResults: true,
         cache,
-        link: ApolloLink.from([basicContext, errorLink, http]),
+        link: ApolloLink.from([basicContext(authToken), errorLink, http]),
         defaultOptions: {
             watchQuery: {
                 errorPolicy: 'all',
@@ -78,7 +81,7 @@ export function createDefaultApollo(
         {
             provide: APOLLO_OPTIONS,
             useFactory: createDefaultApollo,
-            deps: [HttpLink],
+            deps: [HttpLink, AuthService],
         },
     ],
 })
