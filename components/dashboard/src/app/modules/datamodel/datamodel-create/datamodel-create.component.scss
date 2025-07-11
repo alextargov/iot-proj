@@ -1,0 +1,53 @@
+:host {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: scroll;
+
+    ::ng-deep .mat-horizontal-stepper-wrapper {
+        height: 100%;
+    }
+}
+
+.datamodel-create {
+    &__content-header {
+        display: flex;
+    }
+
+    &__container {
+        background: none;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+
+        &-step {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding-bottom: 0;
+        }
+
+        &-navigations {
+            align-self: end;
+        }
+    }
+
+    &__items {
+        display: flex;
+        justify-content: space-between;
+
+        &-left,
+        &-right {
+            display: flex;
+            flex-direction: column;
+        }
+
+        &-left {
+            width: 25%;
+        }
+
+        &-right{
+            width: 70%;
+        }
+    }
+}

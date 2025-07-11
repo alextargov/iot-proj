@@ -1,0 +1,62 @@
+<div [ngStyle]="indentStyle()" class="mb-3">
+
+    <!-- Top Row: Key (if applicable), Type, Required, Delete -->
+    <div class="d-flex align-items-center gap-2 mb-2">
+
+        <!-- Property Key (for object fields that are not root) -->
+        <ng-container *ngIf="field.key !== undefined">
+            <mat-form-field appearance="outline" class="w-32">
+                <mat-label>Key</mat-label>
+                <input matInput [(ngModel)]="field.key" />
+            </mat-form-field>
+
+        </ng-container>
+
+        <!-- Type selector -->
+        <mat-form-field appearance="outline" class="w-32">
+            <mat-label>Type</mat-label>
+            <mat-select [(ngModel)]="field.type">
+                <mat-option *ngFor="let t of types" [value]="t">{{ t }}</mat-option>
+            </mat-select>
+        </mat-form-field>
+
+        <mat-checkbox [(ngModel)]="field.required">Required</mat-checkbox>
+
+
+        <!-- Delete button (not shown for root) -->
+        <button *ngIf="field.key !== undefined" mat-icon-button color="warn" (click)="remove.emit()">
+            <mat-icon>delete</mat-icon>
+        </button>
+    </div>
+
+    <!-- 👇 Nested Object Properties -->
+    <div *ngIf="field.type === 'object'" class="ml-4">
+        <div *ngFor="let prop of field.properties; let i = index">
+            <app-schema-node-editor
+                [field]="prop"
+                [depth]="depth + 1"
+                (remove)="removeProperty(i)"
+            ></app-schema-node-editor>
+        </div>
+
+        <button mat-icon-button color="primary" (click)="addProperty()">
+            <mat-icon>add</mat-icon>
+        </button>
+        <span>Add Property</span>
+    </div>
+
+    <!-- 👇 Array Items -->
+    <div *ngIf="field.type === 'array'" class="ml-4">
+        <div *ngIf="field.items">
+            <app-schema-node-editor [field]="field.items" [depth]="depth + 1" (remove)="removeArrayItems()"></app-schema-node-editor>
+        </div>
+
+        <div *ngIf="!field.items">
+            <button mat-icon-button color="primary" (click)="initItems()">
+                <mat-icon>add</mat-icon>
+            </button>
+            <span>Define Array Items</span>
+        </div>
+    </div>
+
+</div>
