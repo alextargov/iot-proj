@@ -76,18 +76,19 @@ export class AppComponent {
         console.log(code)
     }
 
-    public onLoginClick(): void {
-        const dialogRef = this.dialog.open(LoginDialogComponent, {
-            width: '400px',
-            disableClose: true
-        });
-
-        dialogRef.afterClosed().subscribe(result => {
-            if (result) {
-                console.log('Dialog closed with result:', result);
-                // Handle login logic here
-            }
-        });
+    public async onLoginClick(): Promise<void> {
+        await this.router.navigate(['login'])
+        // const dialogRef = this.dialog.open(LoginDialogComponent, {
+        //     width: '400px',
+        //     disableClose: true
+        // });
+        //
+        // dialogRef.afterClosed().subscribe(result => {
+        //     if (result) {
+        //         console.log('Dialog closed with result:', result);
+        //         // Handle login logic here
+        //     }
+        // });
     }
 
     public onLogoutClick(): void {

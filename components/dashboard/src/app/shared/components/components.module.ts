@@ -12,6 +12,8 @@ import 'blockly/blocks'
 import { NgxBlocklyModule } from 'ngx-blockly'
 import {LoginDialogComponent} from "./login/login-dialog.component";
 import {ReactiveFormsModule} from "@angular/forms";
+import {SchemaNodeEditorComponent} from "./schema-node-editor/schema-node-editor.component";
+import {CoreModule} from "../../core/core.module";
 
 @NgModule({
     imports: [
@@ -22,9 +24,10 @@ import {ReactiveFormsModule} from "@angular/forms";
         MaterialModule,
         AppRoutingModule,
         NgxBlocklyModule,
-        ReactiveFormsModule
+        ReactiveFormsModule,
+        CoreModule
     ],
-    declarations: [NgxBlocklyComponent1, ContentHeaderComponent, LoginDialogComponent],
-    exports: [NgxBlocklyComponent1, ContentHeaderComponent, LoginDialogComponent],
+    declarations: [NgxBlocklyComponent1, ContentHeaderComponent, LoginDialogComponent, SchemaNodeEditorComponent],
+    exports: [NgxBlocklyComponent1, ContentHeaderComponent, LoginDialogComponent, SchemaNodeEditorComponent],
 })
 export class ComponentsModule {}

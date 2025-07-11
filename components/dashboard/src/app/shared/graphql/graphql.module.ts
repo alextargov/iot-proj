@@ -33,6 +33,10 @@ const errorLink = onError(({ graphQLErrors, networkError, response }) => {
         console.error(`[Network error]: ${networkError.message}`)
     }
 
+    if (response.errors) {
+        throw new Error("error")
+    }
+
     console.log("response", response)
 })
 
@@ -43,7 +47,6 @@ const basicContext = (authToken: string) => setContext((_, { headers }) => {
         Authorization: `Bearer ${authToken}`,
         'Content-Type': 'application/json',
     }
-    console.log(h)
     return {
         headers: h,
     }
@@ -61,6 +64,7 @@ export function createDefaultApollo(
     })
 
     const authToken = authService.getToken()
+    console.log(authToken)
 
     return {
         connectToDevTools: !environment.production,

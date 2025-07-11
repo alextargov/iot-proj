@@ -12,10 +12,11 @@ import { DashboardModule } from './modules/dashboard/dashboard.module'
 import { SharedModule } from './shared/shared.module'
 import { ProfileModule } from './modules/profile/profile.module'
 import { WidgetsModule } from './modules/widgets/widgets.module'
-import { DevicesListComponent } from './modules/devices/devices-list/devices-list.component'
 import { DevicesModule } from './modules/devices/devices.module'
 import { HttpClientModule } from '@angular/common/http'
-import { ToastrModule } from 'ngx-toastr'
+import {LoginModule} from "./modules/login/login.module";
+import {DatamodelModule} from "./modules/datamodel/datamodel.module";
+import {MonacoEditorModule} from "ngx-monaco-editor";
 
 @NgModule({
     declarations: [AppComponent],
@@ -29,11 +30,17 @@ import { ToastrModule } from 'ngx-toastr'
         ProfileModule,
         WidgetsModule,
         DevicesModule,
+        LoginModule,
+        DatamodelModule,
 
         CoreModule,
         BrowserAnimationsModule,
         ComponentsModule,
         MaterialModule,
+
+        MonacoEditorModule.forRoot({
+            baseUrl: '' // 👈 must match output path above
+        })
     ],
     providers: [
         {
