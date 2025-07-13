@@ -51,3 +51,14 @@ CREATE TABLE widgets (
     created_at timestamp,
     updated_at timestamp
 );
+
+CREATE TABLE data_models (
+    id uuid PRIMARY KEY NOT NULL CHECK (id <> '00000000-0000-0000-0000-000000000000'),
+    user_id uuid NOT NULL,
+    CONSTRAINT user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    name varchar(256) NOT NULL,
+    description text NOT NULL,
+    schema jsonb NOT NULL,
+    created_at timestamp,
+    updated_at timestamp
+);

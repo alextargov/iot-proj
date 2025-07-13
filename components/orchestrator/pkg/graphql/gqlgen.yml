@@ -61,3 +61,5 @@ models:
     fields:
       host:
         resolver: true
+  JSON:
+    model: "github.com/alextargov/iot-proj/components/orchestrator/pkg/graphql.JSON"

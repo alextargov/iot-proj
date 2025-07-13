@@ -2,14 +2,18 @@ package widget
 
 import (
 	"context"
+	"time"
+
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/model"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/repo"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/logger"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/resource"
-	"time"
 )
 
-const tableName string = `public.widgets`
+const (
+	tableName    string = `public.widgets`
+	tenantColumn string = `user_id`
+)
 
 var (
 	updatableTableColumns = []string{"name", "description", "user_id", "status", "device_ids", "created_at", "updated_at"}
@@ -33,9 +37,9 @@ type repository struct {
 func NewRepository(converter EntityConverter) *repository {
 	return &repository{
 		creator:      repo.NewCreatorGlobal(resource.Widget, tableName, tableColumns),
-		singleGetter: repo.NewSingleGetter(tableName, tableColumns),
+		singleGetter: repo.NewSingleGetterWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
 		deleter:      repo.NewDeleter(tableName),
-		lister:       repo.NewLister(tableName, tableColumns),
+		lister:       repo.NewListerWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
 		conv:         converter,
 	}
 }

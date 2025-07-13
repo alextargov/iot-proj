@@ -2,8 +2,9 @@ package repo
 
 import (
 	"context"
-	"github.com/alextargov/iot-proj/components/orchestrator/pkg/persistence"
 	"strings"
+
+	"github.com/alextargov/iot-proj/components/orchestrator/pkg/persistence"
 
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/apperrors"
 
@@ -17,7 +18,6 @@ import (
 // Lister is an interface for listing tenant scoped entities with either externally managed tenant accesses (m2m table or view) or embedded tenant in them.
 type Lister interface {
 	List(ctx context.Context, resourceType resource.Type, tenant string, dest Collection, additionalConditions ...Condition) error
-	ListWithSelectForUpdate(ctx context.Context, resourceType resource.Type, tenant string, dest Collection, additionalConditions ...Condition) error
 	SetSelectedColumns(selectedColumns []string)
 	Clone() *universalLister
 }
@@ -35,7 +35,6 @@ type ConditionTreeListerGlobal interface {
 // ListerGlobal is an interface for listing global entities.
 type ListerGlobal interface {
 	ListGlobal(ctx context.Context, dest Collection, additionalConditions ...Condition) error
-	ListGlobalWithSelectForUpdate(ctx context.Context, dest Collection, additionalConditions ...Condition) error
 	SetSelectedColumns(selectedColumns []string)
 	Clone() *universalLister
 }
@@ -155,11 +154,6 @@ func (l *universalLister) ListConditionTreeGlobal(ctx context.Context, resourceT
 	return l.listWithConditionTree(ctx, resourceType, dest, NoLock, conditionTree)
 }
 
-// ListWithSelectForUpdate lists tenant scoped entities with tenant isolation subquery and
-func (l *universalLister) ListWithSelectForUpdate(ctx context.Context, resourceType resource.Type, tenant string, dest Collection, additionalConditions ...Condition) error {
-	return l.listWithTenantScope(ctx, resourceType, tenant, dest, ForUpdateLock, additionalConditions)
-}
-
 func (l *universalLister) listWithTenantScope(ctx context.Context, resourceType resource.Type, tenant string, dest Collection, lockClause string, additionalConditions []Condition) error {
 	if tenant == "" {
 		return apperrors.NewTenantRequiredError()
@@ -209,11 +203,6 @@ func (l *universalLister) Clone() *universalLister {
 // ListGlobal lists global entities without tenant isolation.
 func (l *universalLister) ListGlobal(ctx context.Context, dest Collection, additionalConditions ...Condition) error {
 	return l.list(ctx, l.resourceType, dest, NoLock, additionalConditions...)
-}
-
-// ListGlobalWithSelectForUpdate lists global entities without tenant isolation.
-func (l *universalLister) ListGlobalWithSelectForUpdate(ctx context.Context, dest Collection, additionalConditions ...Condition) error {
-	return l.list(ctx, l.resourceType, dest, ForUpdateLock, additionalConditions...)
 }
 
 func (l *universalLister) list(ctx context.Context, resourceType resource.Type, dest Collection, lockClause string, conditions ...Condition) error {

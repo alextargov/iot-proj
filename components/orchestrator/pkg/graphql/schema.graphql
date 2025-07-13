@@ -1,6 +1,7 @@
 scalar PageCursor
 scalar Any
 scalar Timestamp
+scalar JSON
 
 union CredentialData = BasicCredentialData | OAuthCredentialData | CertificateOAuthCredentialData | BearerTokenCredentialData
 
@@ -105,6 +106,15 @@ type Widget {
     updatedAt: Timestamp
 }
 
+type DataModel {
+    id: ID!
+    name: String!
+    description: String!
+    schema: JSON!
+    createdAt: Timestamp
+    updatedAt: Timestamp
+}
+
 input HostInput {
     url: String!
     turnOnEndpoint: String
@@ -164,12 +174,19 @@ input AuthInput {
     accessStrategy: String
 }
 
+input DataModelInput {
+    name: String!
+    description: String!
+    schema: JSON!
+}
+
 type Query {
     devices: [Device]!
     device(id: ID!): Device
     deviceByIdAndAggregation(id: ID!, aggregation: AggregationType!): Device
     widgets: [Widget]!
     widget(id: ID!): Widget
+    dataModels: [DataModel]!
 }
 
 type Mutation {
@@ -179,4 +196,7 @@ type Mutation {
     deleteDevice(id: String!): String!
     createWidget(input: WidgetInput!): Widget!
     deleteWidget(id: ID!): String!
+    createDataModel(input: DataModelInput!): DataModel!
+    deleteDataModel(id: ID!): String!
+    updateDataModel(id: ID!, input: DataModelInput!): DataModel!
 }

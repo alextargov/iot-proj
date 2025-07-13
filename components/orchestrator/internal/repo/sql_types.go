@@ -27,21 +27,6 @@ type EntityWithExternalTenant interface {
 // Entity denotes an DB-layer entity which can be timestamped with created_at, updated_at, deleted_at and ready values
 type Entity interface {
 	Identifiable
-
-	GetReady() bool
-	SetReady(ready bool)
-
-	GetCreatedAt() time.Time
-	SetCreatedAt(t time.Time)
-
-	GetUpdatedAt() time.Time
-	SetUpdatedAt(t time.Time)
-
-	GetDeletedAt() time.Time
-	SetDeletedAt(t time.Time)
-
-	GetError() sql.NullString
-	SetError(err sql.NullString)
 }
 
 // BaseEntity represents a base implementation of Entity
@@ -57,65 +42,6 @@ type BaseEntity struct {
 // GetID returns the ID of the entity
 func (e *BaseEntity) GetID() string {
 	return e.ID
-}
-
-// GetReady returns the ready value of the entity
-func (e *BaseEntity) GetReady() bool {
-	return e.Ready
-}
-
-// SetReady sets the ready value of the entity
-func (e *BaseEntity) SetReady(ready bool) {
-	e.Ready = ready
-}
-
-// GetCreatedAt returns the created_at value of the entity
-func (e *BaseEntity) GetCreatedAt() time.Time {
-	if e.CreatedAt == nil {
-		return time.Time{}
-	}
-	return *e.CreatedAt
-}
-
-// SetCreatedAt sets the created_at value of the entity
-func (e *BaseEntity) SetCreatedAt(t time.Time) {
-	e.CreatedAt = &t
-}
-
-// GetUpdatedAt returns the updated_at value of the entity
-func (e *BaseEntity) GetUpdatedAt() time.Time {
-	if e.UpdatedAt == nil {
-		return time.Time{}
-	}
-	return *e.UpdatedAt
-}
-
-// SetUpdatedAt sets the updated_at value of the entity
-func (e *BaseEntity) SetUpdatedAt(t time.Time) {
-	e.UpdatedAt = &t
-}
-
-// GetDeletedAt returns the deleted_at value of the entity
-func (e *BaseEntity) GetDeletedAt() time.Time {
-	if e.DeletedAt == nil {
-		return time.Time{}
-	}
-	return *e.DeletedAt
-}
-
-// SetDeletedAt sets the deleted_at value of the entity
-func (e *BaseEntity) SetDeletedAt(t time.Time) {
-	e.DeletedAt = &t
-}
-
-// GetError returns the error value of the entity
-func (e *BaseEntity) GetError() sql.NullString {
-	return e.Error
-}
-
-// SetError sets the error value of the entity
-func (e *BaseEntity) SetError(err sql.NullString) {
-	e.Error = err
 }
 
 // NewNullableString returns a new sql.NullString based on the given string pointer

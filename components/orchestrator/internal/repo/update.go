@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/persistence"
 	"strings"
-	"time"
 
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/logger"
 
@@ -21,7 +20,6 @@ type UpdaterGlobal interface {
 	UpdateSingleWithVersionGlobal(ctx context.Context, dbEntity interface{}) error
 	SetIDColumns(idColumns []string)
 	SetUpdatableColumns(updatableColumns []string)
-	TechnicalUpdate(ctx context.Context, dbEntity interface{}) error
 	Clone() UpdaterGlobal
 }
 
@@ -195,16 +193,6 @@ func (u *updaterGlobal) SetIDColumns(idColumns []string) {
 // SetUpdatableColumns is a setter for updatableColumns.
 func (u *updaterGlobal) SetUpdatableColumns(updatableColumns []string) {
 	u.updatableColumns = updatableColumns
-}
-
-// TechnicalUpdate is a global single update which maintains the updated at property of the entity.
-func (u *updaterGlobal) TechnicalUpdate(ctx context.Context, dbEntity interface{}) error {
-	entity, ok := dbEntity.(Entity)
-	if ok && entity.GetDeletedAt().IsZero() {
-		entity.SetUpdatedAt(time.Now())
-		dbEntity = entity
-	}
-	return u.updateSingleWithFields(ctx, dbEntity, buildFieldsToSet(u.updatableColumns))
 }
 
 // Clone clones the updater.

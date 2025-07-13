@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/persistence"
 	"strings"
-	"time"
 
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/apperrors"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/logger"
@@ -14,7 +13,7 @@ import (
 
 // Creator is an interface for creating entities with externally managed tenant accesses (m2m table or view)
 type Creator interface {
-	Create(ctx context.Context, resourceType resource.Type, tenant string, dbEntity interface{}) error
+	Create(ctx context.Context, resourceType resource.Type, dbEntity interface{}) error
 }
 
 // CreatorGlobal is an interface for creating global entities without tenant or entities with tenant embedded in them.
@@ -38,17 +37,6 @@ func NewCreator(tableName string, columns []string) Creator {
 	}
 }
 
-// NewCreatorWithMatchingColumns is a constructor for Creator about entities with externally managed tenant accesses (m2m table or view).
-// In addition, matcherColumns can be added in order to identify already existing top-level entities and prevent their duplicate creation.
-func NewCreatorWithMatchingColumns(tableName string, columns []string, matcherColumns []string) Creator {
-	return &universalCreator{
-		tableName:          tableName,
-		columns:            columns,
-		matcherColumns:     matcherColumns,
-		ownerCheckRequired: true,
-	}
-}
-
 // NewCreatorGlobal is a constructor for GlobalCreator about entities without tenant or entities with tenant embedded in them.
 func NewCreatorGlobal(resourceType resource.Type, tableName string, columns []string) CreatorGlobal {
 	return &globalCreator{
@@ -61,7 +49,7 @@ func NewCreatorGlobal(resourceType resource.Type, tableName string, columns []st
 // Create is a method for creating entities with externally managed tenant accesses (m2m table or view)
 // In case of top level entity it creates tenant access record in the m2m table as well.
 // In case of child entity first it checks if the calling tenant has access to the parent entity and then creates the child entity.
-func (c *universalCreator) Create(ctx context.Context, resourceType resource.Type, tenant string, dbEntity interface{}) error {
+func (c *universalCreator) Create(ctx context.Context, resourceType resource.Type, dbEntity interface{}) error {
 	if dbEntity == nil {
 		return apperrors.NewInternalError("item cannot be nil")
 	}
@@ -75,20 +63,10 @@ func (c *universalCreator) Create(ctx context.Context, resourceType resource.Typ
 		return apperrors.NewInternalError("id cannot be empty, check if the entity implements Identifiable")
 	}
 
-	entity, ok := dbEntity.(Entity)
-	if ok && entity.GetCreatedAt().IsZero() { // This zero check is needed to mock the Create tests
-		now := time.Now()
-		entity.SetCreatedAt(now)
-		entity.SetReady(true)
-		entity.SetError(NewValidNullableString(""))
-
-		dbEntity = entity
-	}
-
-	return c.createChildEntity(ctx, tenant, dbEntity, resourceType)
+	return c.createChildEntity(ctx, dbEntity, resourceType)
 }
 
-func (c *universalCreator) createChildEntity(ctx context.Context, tenant string, dbEntity interface{}, resourceType resource.Type) error {
+func (c *universalCreator) createChildEntity(ctx context.Context, dbEntity interface{}, resourceType resource.Type) error {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return err

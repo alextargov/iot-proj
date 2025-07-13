@@ -2,8 +2,9 @@ package repo
 
 import (
 	"context"
-	"github.com/alextargov/iot-proj/components/orchestrator/pkg/persistence"
 	"strings"
+
+	"github.com/alextargov/iot-proj/components/orchestrator/pkg/persistence"
 
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/logger"
 
@@ -17,7 +18,6 @@ import (
 // SingleGetter is an interface for getting tenant scoped entities with either externally managed tenant accesses (m2m table or view) or embedded tenant in them.
 type SingleGetter interface {
 	Get(ctx context.Context, resourceType resource.Type, tenant string, conditions Conditions, orderByParams OrderByParams, dest interface{}) error
-	GetForUpdate(ctx context.Context, resourceType resource.Type, tenant string, conditions Conditions, orderByParams OrderByParams, dest interface{}) error
 }
 
 // SingleGetterGlobal is an interface for getting global entities.
@@ -59,17 +59,8 @@ func NewSingleGetterGlobal(resourceType resource.Type, tableName string, selecte
 }
 
 // Get gets tenant scoped entities with tenant isolation subquery.
-// If the tenantColumn is configured the isolation is based on equal condition on tenantColumn.
-// If the tenantColumn is not configured an entity with externally managed tenant accesses in m2m table / view is assumed.
 func (g *universalSingleGetter) Get(ctx context.Context, resourceType resource.Type, tenant string, conditions Conditions, orderByParams OrderByParams, dest interface{}) error {
 	return g.getWithTenantIsolation(ctx, resourceType, tenant, conditions, orderByParams, dest, NoLock)
-}
-
-// GetForUpdate gets tenant scoped entities with tenant isolation subquery and locks them explicitly until the transaction is finished.
-// If the tenantColumn is configured the isolation is based on equal condition on tenantColumn.
-// If the tenantColumn is not configured an entity with externally managed tenant accesses in m2m table / view is assumed.
-func (g *universalSingleGetter) GetForUpdate(ctx context.Context, resourceType resource.Type, tenant string, conditions Conditions, orderByParams OrderByParams, dest interface{}) error {
-	return g.getWithTenantIsolation(ctx, resourceType, tenant, conditions, orderByParams, dest, ForUpdateLock)
 }
 
 func (g *universalSingleGetter) getWithTenantIsolation(ctx context.Context, resourceType resource.Type, tenant string, conditions Conditions, orderByParams OrderByParams, dest interface{}, lockClause string) error {

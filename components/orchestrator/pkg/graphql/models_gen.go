@@ -3,6 +3,7 @@
 package graphql
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"strconv"
@@ -14,18 +15,20 @@ type CredentialData interface {
 
 type Pageable interface {
 	IsPageable()
+	GetPageInfo() *PageInfo
+	GetTotalCount() int
 }
 
 type Auth struct {
-	CredentialForDevice  CredentialData `json:"credentialForDevice"`
-	CredentialForService *string        `json:"credentialForService"`
-	AccessStrategy       *string        `json:"accessStrategy"`
+	CredentialForDevice  CredentialData `json:"credentialForDevice,omitempty"`
+	CredentialForService *string        `json:"credentialForService,omitempty"`
+	AccessStrategy       *string        `json:"accessStrategy,omitempty"`
 }
 
 type AuthInput struct {
-	CredentialForDevice  *CredentialDataInput `json:"credentialForDevice"`
-	CredentialForService *string              `json:"credentialForService"`
-	AccessStrategy       *string              `json:"accessStrategy"`
+	CredentialForDevice  *CredentialDataInput `json:"credentialForDevice,omitempty"`
+	CredentialForService *string              `json:"credentialForService,omitempty"`
+	AccessStrategy       *string              `json:"accessStrategy,omitempty"`
 }
 
 type BasicCredentialData struct {
@@ -61,18 +64,33 @@ type CertificateOAuthCredentialDataInput struct {
 }
 
 type CredentialDataInput struct {
-	Basic            *BasicCredentialDataInput            `json:"basic"`
-	Oauth            *OAuthCredentialDataInput            `json:"oauth"`
-	CertificateOAuth *CertificateOAuthCredentialDataInput `json:"certificateOAuth"`
-	BearerToken      *TokenCredentialDataInput            `json:"bearerToken"`
+	Basic            *BasicCredentialDataInput            `json:"basic,omitempty"`
+	Oauth            *OAuthCredentialDataInput            `json:"oauth,omitempty"`
+	CertificateOAuth *CertificateOAuthCredentialDataInput `json:"certificateOAuth,omitempty"`
+	BearerToken      *TokenCredentialDataInput            `json:"bearerToken,omitempty"`
+}
+
+type DataModel struct {
+	ID          string     `json:"id"`
+	Name        string     `json:"name"`
+	Description string     `json:"description"`
+	Schema      JSON       `json:"schema"`
+	CreatedAt   *Timestamp `json:"createdAt,omitempty"`
+	UpdatedAt   *Timestamp `json:"updatedAt,omitempty"`
+}
+
+type DataModelInput struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Schema      JSON   `json:"schema"`
 }
 
 type DeviceInput struct {
 	Name        string       `json:"name"`
-	Description *string      `json:"description"`
+	Description *string      `json:"description,omitempty"`
 	Status      DeviceStatus `json:"status"`
-	Host        *HostInput   `json:"host"`
-	Auth        *AuthInput   `json:"auth"`
+	Host        *HostInput   `json:"host,omitempty"`
+	Auth        *AuthInput   `json:"auth,omitempty"`
 }
 
 type DevicePage struct {
@@ -81,19 +99,24 @@ type DevicePage struct {
 	TotalCount int       `json:"totalCount"`
 }
 
-func (DevicePage) IsPageable() {}
+func (DevicePage) IsPageable()                 {}
+func (this DevicePage) GetPageInfo() *PageInfo { return this.PageInfo }
+func (this DevicePage) GetTotalCount() int     { return this.TotalCount }
 
 type Host struct {
 	ID              string  `json:"id"`
 	URL             string  `json:"url"`
-	TurnOnEndpoint  *string `json:"turnOnEndpoint"`
-	TurnOffEndpoint *string `json:"turnOffEndpoint"`
+	TurnOnEndpoint  *string `json:"turnOnEndpoint,omitempty"`
+	TurnOffEndpoint *string `json:"turnOffEndpoint,omitempty"`
 }
 
 type HostInput struct {
 	URL             string  `json:"url"`
-	TurnOnEndpoint  *string `json:"turnOnEndpoint"`
-	TurnOffEndpoint *string `json:"turnOffEndpoint"`
+	TurnOnEndpoint  *string `json:"turnOnEndpoint,omitempty"`
+	TurnOffEndpoint *string `json:"turnOffEndpoint,omitempty"`
+}
+
+type Mutation struct {
 }
 
 type OAuthCredentialData struct {
@@ -116,6 +139,9 @@ type PageInfo struct {
 	HasNextPage bool   `json:"hasNextPage"`
 }
 
+type Query struct {
+}
+
 type TokenCredentialDataInput struct {
 	Token string `json:"token"`
 }
@@ -123,23 +149,23 @@ type TokenCredentialDataInput struct {
 type Widget struct {
 	ID          string       `json:"id"`
 	Name        string       `json:"name"`
-	Description *string      `json:"description"`
+	Description *string      `json:"description,omitempty"`
 	Status      WidgetStatus `json:"status"`
 	TenantID    string       `json:"tenantId"`
 	Code        string       `json:"code"`
 	Workspace   string       `json:"workspace"`
-	DeviceIds   []string     `json:"deviceIds"`
-	CreatedAt   *Timestamp   `json:"createdAt"`
-	UpdatedAt   *Timestamp   `json:"updatedAt"`
+	DeviceIds   []string     `json:"deviceIds,omitempty"`
+	CreatedAt   *Timestamp   `json:"createdAt,omitempty"`
+	UpdatedAt   *Timestamp   `json:"updatedAt,omitempty"`
 }
 
 type WidgetInput struct {
 	Name        string       `json:"name"`
-	Description *string      `json:"description"`
+	Description *string      `json:"description,omitempty"`
 	Status      WidgetStatus `json:"status"`
 	Code        string       `json:"code"`
 	Workspace   string       `json:"workspace"`
-	DeviceIds   []string     `json:"deviceIds"`
+	DeviceIds   []string     `json:"deviceIds,omitempty"`
 }
 
 type AggregationType string
@@ -168,7 +194,7 @@ func (e AggregationType) String() string {
 	return string(e)
 }
 
-func (e *AggregationType) UnmarshalGQL(v interface{}) error {
+func (e *AggregationType) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
@@ -183,6 +209,20 @@ func (e *AggregationType) UnmarshalGQL(v interface{}) error {
 
 func (e AggregationType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *AggregationType) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e AggregationType) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
 }
 
 type DeviceStatus string
@@ -213,7 +253,7 @@ func (e DeviceStatus) String() string {
 	return string(e)
 }
 
-func (e *DeviceStatus) UnmarshalGQL(v interface{}) error {
+func (e *DeviceStatus) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
@@ -228,6 +268,20 @@ func (e *DeviceStatus) UnmarshalGQL(v interface{}) error {
 
 func (e DeviceStatus) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *DeviceStatus) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e DeviceStatus) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
 }
 
 type OperationType string
@@ -258,7 +312,7 @@ func (e OperationType) String() string {
 	return string(e)
 }
 
-func (e *OperationType) UnmarshalGQL(v interface{}) error {
+func (e *OperationType) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
@@ -273,6 +327,20 @@ func (e *OperationType) UnmarshalGQL(v interface{}) error {
 
 func (e OperationType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *OperationType) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e OperationType) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
 }
 
 type WidgetStatus string
@@ -299,7 +367,7 @@ func (e WidgetStatus) String() string {
 	return string(e)
 }
 
-func (e *WidgetStatus) UnmarshalGQL(v interface{}) error {
+func (e *WidgetStatus) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
@@ -314,4 +382,18 @@ func (e *WidgetStatus) UnmarshalGQL(v interface{}) error {
 
 func (e WidgetStatus) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *WidgetStatus) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e WidgetStatus) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
 }

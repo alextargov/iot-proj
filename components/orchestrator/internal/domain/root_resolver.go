@@ -3,6 +3,7 @@ package domain
 import (
 	"context"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/auth"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/datamodel"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/device"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/host"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/widget"
@@ -18,6 +19,7 @@ type RootResolver struct {
 	persistence persistence.Transactioner
 	device      *device.Resolver
 	widget      *widget.Resolver
+	dataModel   *datamodel.Resolver
 }
 
 func NewRootResolver(persistence persistence.Transactioner, scheduler k8s.Scheduler) *RootResolver {
@@ -39,10 +41,16 @@ func NewRootResolver(persistence persistence.Transactioner, scheduler k8s.Schedu
 	deviceRes := device.NewResolver(persistence, deviceSvc, hostSvc, deviceConv, hostConv)
 	widgetRes := widget.NewResolver(persistence, widgetSvc, widgetConv, scheduler)
 
+	dataModelConv := datamodel.NewConverter()
+	dataModelRepo := datamodel.NewRepository(dataModelConv)
+	dataModelSvc := datamodel.NewService(dataModelRepo, uuidService)
+	dataModelRes := datamodel.NewResolver(persistence, dataModelSvc, dataModelConv)
+
 	return &RootResolver{
 		persistence: persistence,
 		device:      deviceRes,
 		widget:      widgetRes,
+		dataModel:   dataModelRes,
 	}
 }
 
@@ -84,6 +92,10 @@ func (r *queryResolver) Widgets(ctx context.Context) ([]*graphql.Widget, error) 
 	return r.widget.Widgets(ctx)
 }
 
+func (r *queryResolver) DataModels(ctx context.Context) ([]*graphql.DataModel, error) {
+	return r.dataModel.DataModels(ctx)
+}
+
 type mutationResolver struct {
 	*RootResolver
 }
@@ -110,6 +122,18 @@ func (r *mutationResolver) CreateWidget(ctx context.Context, in graphql.WidgetIn
 
 func (r *mutationResolver) DeleteWidget(ctx context.Context, id string) (string, error) {
 	return r.widget.DeleteWidget(ctx, id)
+}
+
+func (r *mutationResolver) CreateDataModel(ctx context.Context, in graphql.DataModelInput) (*graphql.DataModel, error) {
+	return r.dataModel.CreateDataModel(ctx, in)
+}
+
+func (r *mutationResolver) UpdateDataModel(ctx context.Context, id string, in graphql.DataModelInput) (*graphql.DataModel, error) {
+	return r.dataModel.UpdateDataModel(ctx, id, in)
+}
+
+func (r *mutationResolver) DeleteDataModel(ctx context.Context, id string) (string, error) {
+	return r.dataModel.DeleteDataModel(ctx, id)
 }
 
 type deviceResolver struct {

@@ -2,7 +2,7 @@ package device
 
 import (
 	"context"
-	"fmt"
+
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/apperrors"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/model"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/graphql"
@@ -120,8 +120,6 @@ func (r *Resolver) CreateDevice(ctx context.Context, input graphql.DeviceInput) 
 		return nil, err
 	}
 
-	fmt.Println(device)
-
 	err = tx.Commit()
 	if err != nil {
 		return nil, err
@@ -139,11 +137,11 @@ func (r *Resolver) DeleteDevice(ctx context.Context, id string) (string, error) 
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	if err := r.hostSvc.DeleteByDeviceID(ctx, id); err != nil {
+	if err = r.hostSvc.DeleteByDeviceID(ctx, id); err != nil {
 		return "", err
 	}
 
-	if err := r.deviceSvc.Delete(ctx, id); err != nil {
+	if err = r.deviceSvc.Delete(ctx, id); err != nil {
 		return "", err
 	}
 
