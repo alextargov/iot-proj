@@ -7,27 +7,14 @@ import {
 } from '@angular/core'
 import {
     UntypedFormBuilder,
-    UntypedFormControl,
     UntypedFormGroup,
     Validators,
 } from '@angular/forms'
-import { COMMA, ENTER } from '@angular/cdk/keycodes'
-import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete'
-import { Observable } from 'rxjs'
-import { map, startWith } from 'rxjs/operators'
-import { MatStepper } from '@angular/material/stepper'
-import slugify from 'slugify'
-import { DeviceService } from '../../../shared/services/device/device.service'
 import {
-    AuthPolicy,
-} from '../../../shared/services/device/device.interface'
-import { ToastrService } from '../../../shared/services/toastr/toastr.service'
-import { v4 as uuidv4 } from 'uuid'
-import {
-    CredentialDataInput,
-    DeviceInput,
-    DeviceStatus,
+     DataModelInput,
 } from '../../../shared/graphql/generated'
+import {Router} from "@angular/router";
+import {DatamodelService} from "../../../shared/services/datamodel/datamodel.service";
 
 enum SchemaTypeEnum {
     Object = 'object',
@@ -79,8 +66,8 @@ export class DatamodelCreateComponent implements OnInit {
 
     constructor(
         private fb: UntypedFormBuilder,
-        private deviceService: DeviceService,
-        private toast: ToastrService
+        private router: Router,
+        private dataModelService: DatamodelService,
     ) {}
 
     public ngOnInit(): void {
@@ -91,7 +78,7 @@ export class DatamodelCreateComponent implements OnInit {
         });
 
         // try below to parse the example schema and then render it
-        this.root = JSON.parse(this.exampleSchema);
+        // this.root = JSON.parse(this.exampleSchema);
     }
 
     public root: SchemaField = { type: SchemaTypeEnum.Object, properties: [] };
@@ -99,6 +86,23 @@ export class DatamodelCreateComponent implements OnInit {
 
     public generateSchema() {
         this.schemaOutput = this.buildSchema(this.root);
+    }
+
+    public saveDatamodel() {
+        const dataModelInput: DataModelInput = {
+            name: this.datamodelFormGroup.get('name').value,
+            description: this.datamodelFormGroup.get('description').value,
+            schema: this.schemaOutput,
+        }
+        this.dataModelService.createDataModel(dataModelInput).subscribe((result) => {
+            console.log('Data model created:', result);
+
+            this.router.navigate(['/datamodel']);
+        });
+    }
+
+    public cancel() {
+        this.router.navigate(['/datamodel']);
     }
 
     private buildSchema(field: SchemaField): any {

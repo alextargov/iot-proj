@@ -14,6 +14,7 @@ export type Scalars = {
   Int: number;
   Float: number;
   Any: any;
+  JSON: any;
   PageCursor: any;
   Timestamp: any;
   _Any: any;
@@ -77,6 +78,22 @@ export type CredentialDataInput = {
   oauth?: InputMaybe<OAuthCredentialDataInput>;
 };
 
+export type DataModel = {
+  __typename?: 'DataModel';
+  createdAt?: Maybe<Scalars['Timestamp']>;
+  description: Scalars['String'];
+  id: Scalars['ID'];
+  name: Scalars['String'];
+  schema: Scalars['JSON'];
+  updatedAt?: Maybe<Scalars['Timestamp']>;
+};
+
+export type DataModelInput = {
+  description: Scalars['String'];
+  name: Scalars['String'];
+  schema: Scalars['JSON'];
+};
+
 export type Device = {
   __typename?: 'Device';
   auth?: Maybe<Auth>;
@@ -128,12 +145,20 @@ export type HostInput = {
 
 export type Mutation = {
   __typename?: 'Mutation';
+  createDataModel: DataModel;
   createDevice: Device;
   createWidget: Widget;
+  deleteDataModel: Scalars['String'];
   deleteDevice: Scalars['String'];
   deleteWidget: Scalars['String'];
   setDeviceOperation: Device;
   setOperation: Scalars['Boolean'];
+  updateDataModel: DataModel;
+};
+
+
+export type MutationCreateDataModelArgs = {
+  input: DataModelInput;
 };
 
 
@@ -144,6 +169,11 @@ export type MutationCreateDeviceArgs = {
 
 export type MutationCreateWidgetArgs = {
   input: WidgetInput;
+};
+
+
+export type MutationDeleteDataModelArgs = {
+  id: Scalars['ID'];
 };
 
 
@@ -166,6 +196,12 @@ export type MutationSetDeviceOperationArgs = {
 export type MutationSetOperationArgs = {
   data?: InputMaybe<Scalars['Any']>;
   op: OperationType;
+};
+
+
+export type MutationUpdateDataModelArgs = {
+  id: Scalars['ID'];
+  input: DataModelInput;
 };
 
 export type OAuthCredentialData = {
@@ -202,6 +238,8 @@ export type Pageable = {
 
 export type Query = {
   __typename?: 'Query';
+  _service: _Service;
+  dataModels: Array<Maybe<DataModel>>;
   device?: Maybe<Device>;
   deviceByIdAndAggregation?: Maybe<Device>;
   devices: Array<Maybe<Device>>;
@@ -257,6 +295,32 @@ export enum WidgetStatus {
   Inactive = 'INACTIVE'
 }
 
+export type _Service = {
+  __typename?: '_Service';
+  sdl?: Maybe<Scalars['String']>;
+};
+
+export type DataModelInfoFragment = { __typename?: 'DataModel', id: string, name: string, description: string, schema: any, createdAt?: any | null, updatedAt?: any | null };
+
+export type ListDataModelsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type ListDataModelsQuery = { __typename?: 'Query', dataModels: Array<{ __typename?: 'DataModel', id: string, name: string, description: string, schema: any, createdAt?: any | null, updatedAt?: any | null } | null> };
+
+export type CreateDataModelMutationVariables = Exact<{
+  input: DataModelInput;
+}>;
+
+
+export type CreateDataModelMutation = { __typename?: 'Mutation', createDataModel: { __typename?: 'DataModel', id: string, name: string, description: string, schema: any, createdAt?: any | null, updatedAt?: any | null } };
+
+export type DeleteDataModelMutationVariables = Exact<{
+  id: Scalars['ID'];
+}>;
+
+
+export type DeleteDataModelMutation = { __typename?: 'Mutation', deleteDataModel: string };
+
 export type DeviceInfoFragment = { __typename?: 'Device', id: string, name: string, description?: string | null, status: DeviceStatus, tenantId: string, createdAt?: any | null, updatedAt?: any | null, auth?: { __typename?: 'Auth', credentialForService?: string | null, credentialForDevice?: { __typename?: 'BasicCredentialData', username: string, password: string } | { __typename?: 'BearerTokenCredentialData', token: string } | { __typename?: 'CertificateOAuthCredentialData', clientId: string, certificate: string, url: string } | { __typename?: 'OAuthCredentialData', clientId: string, clientSecret: string, url: string } | null } | null, host?: { __typename?: 'Host', id: string, url: string, turnOnEndpoint?: string | null, turnOffEndpoint?: string | null } | null };
 
 export type GetAllDevicesQueryVariables = Exact<{ [key: string]: never; }>;
@@ -299,6 +363,16 @@ export type DeleteWidgetMutationVariables = Exact<{
 
 export type DeleteWidgetMutation = { __typename?: 'Mutation', deleteWidget: string };
 
+export const DataModelInfoFragmentDoc = gql`
+    fragment DataModelInfo on DataModel {
+  id
+  name
+  description
+  schema
+  createdAt
+  updatedAt
+}
+    `;
 export const DeviceInfoFragmentDoc = gql`
     fragment DeviceInfo on Device {
   id
@@ -352,6 +426,58 @@ export const WidgetInfoFragmentDoc = gql`
   updatedAt
 }
     `;
+export const ListDataModelsDocument = gql`
+    query ListDataModels {
+  dataModels {
+    ...DataModelInfo
+  }
+}
+    ${DataModelInfoFragmentDoc}`;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class ListDataModelsGQL extends Apollo.Query<ListDataModelsQuery, ListDataModelsQueryVariables> {
+    document = ListDataModelsDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const CreateDataModelDocument = gql`
+    mutation CreateDataModel($input: DataModelInput!) {
+  createDataModel(input: $input) {
+    ...DataModelInfo
+  }
+}
+    ${DataModelInfoFragmentDoc}`;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class CreateDataModelGQL extends Apollo.Mutation<CreateDataModelMutation, CreateDataModelMutationVariables> {
+    document = CreateDataModelDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const DeleteDataModelDocument = gql`
+    mutation DeleteDataModel($id: ID!) {
+  deleteDataModel(id: $id)
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class DeleteDataModelGQL extends Apollo.Mutation<DeleteDataModelMutation, DeleteDataModelMutationVariables> {
+    document = DeleteDataModelDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
 export const GetAllDevicesDocument = gql`
     query GetAllDevices {
   devices {

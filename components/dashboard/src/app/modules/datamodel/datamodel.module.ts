@@ -8,6 +8,7 @@ import { DatamodelRoutingModule } from './datamodel-routing.module'
 import { DatamodelCreateComponent } from './datamodel-create/datamodel-create.component'
 import { DatamodelListComponent } from './datamodel-list/datamodel-list.component'
 import {MonacoEditorModule} from "ngx-monaco-editor";
+import {DatamodelResolver} from "./datamodel-resolver.service";
 
 @NgModule({
     declarations: [
@@ -24,5 +25,8 @@ import {MonacoEditorModule} from "ngx-monaco-editor";
             baseUrl: '/assets/monaco/min/vs/loader.js' // 👈 must match output path above
         })
     ],
+    providers: [
+        DatamodelResolver
+    ]
 })
 export class DatamodelModule {}

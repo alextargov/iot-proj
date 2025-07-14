@@ -6,8 +6,7 @@ import { DeviceService } from './device/device.service'
 import { ToastrService } from './toastr/toastr.service'
 import { ToastrModule } from 'ngx-toastr'
 import {EventBusService} from "./eventbus/eventbus.service";
-// import { BroadcasterService } from './broadcaster/broadcaster.service';
-// import { LoadingOverlayService } from './loading-overlay/loading-overlay.service';
+import {DatamodelService} from "./datamodel/datamodel.service";
 
 @NgModule({
     imports: [
@@ -20,11 +19,9 @@ import {EventBusService} from "./eventbus/eventbus.service";
         ApiService,
         AppConfigService,
         DeviceService,
+        DatamodelService,
         ToastrService,
         EventBusService,
-
-        // BroadcasterService,
-        // LoadingOverlayService,
     ],
 })
 export class ServicesModule {}

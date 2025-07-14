@@ -3,6 +3,7 @@ import { RouterModule, Routes } from '@angular/router'
 import { DatamodelListComponent } from './datamodel-list/datamodel-list.component'
 import { DatamodelCreateComponent } from './datamodel-create/datamodel-create.component'
 import {AuthGuard} from "../../shared/guards/auth.guard";
+import {DatamodelResolver} from "./datamodel-resolver.service";
 
 const routes: Routes = [
     {
@@ -11,16 +12,15 @@ const routes: Routes = [
             {
                 path: '',
                 component: DatamodelListComponent,
+                resolve: {
+                    dataModels: DatamodelResolver
+                }
             },
             {
                 path: 'create',
                 pathMatch: 'full',
                 component: DatamodelCreateComponent,
             },
-            // {
-            //   path: ':id',
-            //   component: WidgetDetailsComponent,
-            // }
         ],
         canActivate: [AuthGuard],
     },

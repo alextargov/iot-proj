@@ -2,12 +2,11 @@
     class="datamodel-create__content-header"
     title="Data Model create"
 ></app-content-header>
-<div>
+<div class="datamodel-create__content">
     <form
         [formGroup]="datamodelFormGroup"
-        class="datamodel-create__metadata"
+        class="datamodel-create__content-form"
     >
-        <ng-template matStepLabel>Metadata</ng-template>
         <div class="datamodel-create__items">
             <div class="datamodel-create__items-left">
                 <mat-form-field appearance="fill">
@@ -59,5 +58,24 @@
             </div>
         </div>
     </form>
+
+    <div class="datamodel-create__footer">
+        <button
+            class="datamodel-create__footer-cancel"
+            mat-raised-button
+            color="warn"
+            (click)="cancel()">
+            Cancel
+        </button>
+
+        <button
+            class="datamodel-create__footer-save"
+            mat-raised-button
+            color="primary"
+            (click)="saveDatamodel()"
+            [disabled]="!datamodelFormGroup.valid">
+            Save
+        </button>
+    </div>
 
 </div>

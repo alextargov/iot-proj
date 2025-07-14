@@ -1,11 +1,9 @@
 import { Observable, map } from 'rxjs'
 import { Injectable } from '@angular/core'
 
-import { ApiService } from '../api/api.service'
 import { DeviceStatus, IDevice } from './device.interface'
 import {
     CreateDeviceDocument,
-    CreateDeviceGQL,
     CreateDeviceMutation,
     DeleteDeviceDocument,
     DeleteDeviceMutation,
@@ -54,9 +52,7 @@ export class DeviceService {
     ]
 
     constructor(
-        private readonly apiService: ApiService,
         private readonly getAllDevicesGql: GetAllDevicesGQL,
-        private readonly createDeviceGql: CreateDeviceGQL,
         private readonly apollo: Apollo
     ) {}
 

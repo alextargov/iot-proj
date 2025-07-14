@@ -3,7 +3,9 @@
 import { Component, OnInit } from '@angular/core'
 import {animate, state, style, transition, trigger} from '@angular/animations';
 import {ContentHeaderButton} from "../../../shared/components/content-header/content-header.component";
-import {Router} from "@angular/router";
+import {ActivatedRoute, Router} from "@angular/router";
+import {DatamodelService} from "../../../shared/services/datamodel/datamodel.service";
+import {IDataModel} from "../../../shared/services/datamodel/datamodel.interface";
 
 @Component({
     selector: 'app-datamodel-list',
@@ -18,13 +20,17 @@ import {Router} from "@angular/router";
     ],
 })
 export class DatamodelListComponent implements OnInit {
-    public dataSource = [{name: "one", description: "one description", createdAt: new Date()}, {name: "two", description: "two description", createdAt: new Date()}];
-    public columnsToDisplay = ['name', 'createdAt'];
-    public columnsToDisplayWithExpand = [...this.columnsToDisplay, 'expand'];
+    public dataSource = [];
+    // public columnsToDisplay = ['name', 'description', 'createdAt'];
+    public columnsToDisplay = [{key: 'name', displayName: "Name"}, {key: 'description', displayName: 'Description'},{ key: 'createdAt', displayName: 'Created At' }];
+    public columnsToDisplayWithExpand = [...this.columnsToDisplay.map((c) => c.key), 'expand' ];
     public expandedElement: any | null;
 
-    constructor(private router: Router) {
-    }
+    constructor(
+        private datamodelService: DatamodelService,
+        private router: Router,
+        private route: ActivatedRoute
+    ) {}
 
     public buttons: ContentHeaderButton[] = [
         {
@@ -36,9 +42,13 @@ export class DatamodelListComponent implements OnInit {
     ]
 
     public ngOnInit(): void {
+        this.route.data.subscribe(({ dataModels }) => {
+            console.log(dataModels);
+            this.dataSource = dataModels;
+        });
     }
 
-    public async onAddClick() {
+    public async onAddClick(): Promise<void> {
         try {
             await this.router.navigate(['datamodel/create'])
         } catch (e) {
@@ -46,4 +56,23 @@ export class DatamodelListComponent implements OnInit {
         }
     }
 
+    public onToggleClick(event: MouseEvent, row: IDataModel): void {
+        event.stopPropagation();
+        this.expandedElement = this.expandedElement === row ? null : row;
+    }
+
+    public onDeleteClick(event: MouseEvent, row: IDataModel): void {
+        event.stopPropagation();
+        if (confirm(`Are you sure you want to delete the data model "${row.name}"?`)) {
+            this.datamodelService.deleteDataModel(row.id).subscribe({
+                next: () => {
+                    this.dataSource = this.dataSource.filter((item) => item.id !== row.id);
+                },
+                error: (err) => {
+                    console.error('Error deleting data model:', err);
+                    alert('Failed to delete data model. Please try again later.');
+                }
+            });
+        }
+    }
 }

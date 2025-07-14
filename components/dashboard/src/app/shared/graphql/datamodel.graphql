@@ -1,0 +1,24 @@
+fragment DataModelInfo on DataModel {
+    id
+    name
+    description
+    schema
+    createdAt
+    updatedAt
+}
+
+query ListDataModels {
+    dataModels {
+        ...DataModelInfo
+    }
+}
+
+mutation CreateDataModel($input: DataModelInput!) {
+    createDataModel(input: $input) {
+        ...DataModelInfo
+    }
+}
+
+mutation DeleteDataModel($id: ID!) {
+    deleteDataModel(id: $id)
+}
