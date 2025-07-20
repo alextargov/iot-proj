@@ -4,30 +4,28 @@ import {
     ElementRef,
     OnInit,
     ViewChild,
-} from '@angular/core'
+} from '@angular/core';
 import {
     UntypedFormBuilder,
     UntypedFormControl,
     UntypedFormGroup,
     Validators,
-} from '@angular/forms'
-import { COMMA, ENTER } from '@angular/cdk/keycodes'
-import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete'
-import { Observable } from 'rxjs'
-import { map, startWith } from 'rxjs/operators'
-import { MatStepper } from '@angular/material/stepper'
-import slugify from 'slugify'
-import { DeviceService } from '../../../shared/services/device/device.service'
-import {
-    AuthPolicy,
-} from '../../../shared/services/device/device.interface'
-import { ToastrService } from '../../../shared/services/toastr/toastr.service'
-import { v4 as uuidv4 } from 'uuid'
+} from '@angular/forms';
+import { COMMA, ENTER } from '@angular/cdk/keycodes';
+import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
+import { Observable } from 'rxjs';
+import { map, startWith } from 'rxjs/operators';
+import { MatStepper } from '@angular/material/stepper';
+import slugify from 'slugify';
+import { DeviceService } from '../../../shared/services/device/device.service';
+import { AuthPolicy } from '../../../shared/services/device/device.interface';
+import { ToastrService } from '../../../shared/services/toastr/toastr.service';
+import { v4 as uuidv4 } from 'uuid';
 import {
     CredentialDataInput,
     DeviceInput,
     DeviceStatus,
-} from '../../../shared/graphql/generated'
+} from '../../../shared/graphql/generated';
 
 @Component({
     selector: 'app-device-create',
@@ -35,21 +33,20 @@ import {
     styleUrls: ['./device-create.component.scss'],
 })
 export class DeviceCreateComponent implements OnInit, AfterViewInit {
-    public deviceCreateMetadataFormGroup: UntypedFormGroup
-    public deviceCreateAuthorizationFormGroup: UntypedFormGroup
-    public deviceCreateOutputFormGroup: UntypedFormGroup
+    public deviceCreateMetadataFormGroup: UntypedFormGroup;
+    public deviceCreateAuthorizationFormGroup: UntypedFormGroup;
+    public deviceCreateOutputFormGroup: UntypedFormGroup;
     public readonly authorizationPolicies: AuthPolicy[] = [
         AuthPolicy.None,
         AuthPolicy.Basic,
         AuthPolicy.OAuth,
         AuthPolicy.Certificate,
         AuthPolicy.Bearer,
-    ]
-    public selectedAuthorizationPolicy: AuthPolicy = AuthPolicy.None
-    public authPolicy = AuthPolicy
-    public filteredDataTypes: Observable<string[]>
-    public readonly separatorKeysCodes: number[] = [ENTER, COMMA]
-    public dataOutputTypes: { key: string; name: string }[] = []
+    ];
+    public selectedAuthorizationPolicy: AuthPolicy = AuthPolicy.None;
+    public authPolicy = AuthPolicy;
+    public readonly separatorKeysCodes: number[] = [ENTER, COMMA];
+    public dataOutputTypes: { key: string; name: string }[] = [];
 
     private readonly allDataOutputTypes: string[] = [
         'Degrees Celsius',
@@ -61,11 +58,11 @@ export class DeviceCreateComponent implements OnInit, AfterViewInit {
         'Volt',
         'Pascal',
         'Lumen',
-    ]
+    ];
 
-    @ViewChild('dataOutputInput') dataOutputInput: ElementRef<HTMLInputElement>
-    @ViewChild('tokenInput') tokenInput: ElementRef<HTMLInputElement>
-    @ViewChild('deviceStepper') stepper: MatStepper
+    @ViewChild('dataOutputInput') dataOutputInput: ElementRef<HTMLInputElement>;
+    @ViewChild('tokenInput') tokenInput: ElementRef<HTMLInputElement>;
+    @ViewChild('deviceStepper') stepper: MatStepper;
 
     constructor(
         private fb: UntypedFormBuilder,
@@ -80,7 +77,7 @@ export class DeviceCreateComponent implements OnInit, AfterViewInit {
             deviceURL: [''],
             turnOnEndpoint: [''],
             turnOffEndpoint: [''],
-        })
+        });
         this.deviceCreateAuthorizationFormGroup = this.fb.group({
             communicationToDevice: [false],
             communicationToServer: [false],
@@ -92,38 +89,23 @@ export class DeviceCreateComponent implements OnInit, AfterViewInit {
             authCredentialsCertificateClientSecret: [''],
             authCredentialsCertificateClientCert: [''],
             authCredentialsBearerToken: [''],
-        })
+        });
         this.deviceCreateOutputFormGroup = this.fb.group({
             dataOutput: [],
-        })
-
-        this.filteredDataTypes = this.dataOutputControl.valueChanges.pipe(
-            startWith(null),
-            map((dataType: string | null) =>
-                dataType
-                    ? this._filterDataTypes(dataType)
-                    : this.allDataOutputTypes.slice()
-            )
-        )
+        });
     }
 
     public ngAfterViewInit() {
-        this.stepper.reset()
-    }
-
-    get dataOutputControl() {
-        return this.deviceCreateOutputFormGroup.controls[
-            'dataOutput'
-        ] as UntypedFormControl
+        this.stepper.reset();
     }
 
     public removeDataOutputType(dataOutputType: string): void {
         const index = this.dataOutputTypes.findIndex(
             (ot) => ot.name === dataOutputType
-        )
+        );
 
         if (index >= 0) {
-            this.dataOutputTypes.splice(index, 1)
+            this.dataOutputTypes.splice(index, 1);
         }
     }
 
@@ -131,40 +113,39 @@ export class DeviceCreateComponent implements OnInit, AfterViewInit {
         this.dataOutputTypes.push({
             name: event.option.viewValue,
             key: slugify(event.option.viewValue, { lower: true }),
-        })
-        this.dataOutputInput.nativeElement.value = ''
-        this.dataOutputControl.setValue(null)
+        });
+        this.dataOutputInput.nativeElement.value = '';
     }
 
     public onResetClick(stepper: MatStepper): void {
-        this.deviceCreateMetadataFormGroup.reset()
-        this.deviceCreateAuthorizationFormGroup.reset()
-        this.selectedAuthorizationPolicy = AuthPolicy.None
-        this.tokenInput.nativeElement.value = "";
-        this.dataOutputTypes = []
-        stepper.reset()
+        this.deviceCreateMetadataFormGroup.reset();
+        this.deviceCreateAuthorizationFormGroup.reset();
+        this.selectedAuthorizationPolicy = AuthPolicy.None;
+        this.tokenInput.nativeElement.value = '';
+        this.dataOutputTypes = [];
+        stepper.reset();
     }
 
     public isDataTypeOptionDisabled(dataTypeName: string): boolean {
         return (
             this.dataOutputTypes.findIndex((ot) => ot.name === dataTypeName) >=
             0
-        )
+        );
     }
 
     public onSaveClick(): void {
-        const data = this.convertToModel()
+        const data = this.convertToModel();
         this.deviceService.createDevice(data).subscribe((data) => {
-            console.log('success', data)
-            this.toast.showSuccess('Successfully created device')
-        })
+            console.log('success', data);
+            this.toast.showSuccess('Successfully created device');
+        });
     }
 
     public onEnableConnectionClick(
         event: KeyboardEvent,
         communication: string
     ) {
-        event.stopPropagation()
+        event.stopPropagation();
         setTimeout(() => {
             if (
                 communication === 'deviceToServer' &&
@@ -174,9 +155,9 @@ export class DeviceCreateComponent implements OnInit, AfterViewInit {
             ) {
                 // TODO: Invoke server to generate a token
 
-                this.tokenInput.nativeElement.value = uuidv4()
+                this.tokenInput.nativeElement.value = uuidv4();
             }
-        })
+        });
     }
 
     private convertToModel(): DeviceInput {
@@ -191,7 +172,7 @@ export class DeviceCreateComponent implements OnInit, AfterViewInit {
                       this.deviceCreateMetadataFormGroup.get('turnOnEndpoint')
                           .value,
               }
-            : null
+            : null;
         return {
             name: this.deviceCreateMetadataFormGroup.get('name').value,
             description:
@@ -204,7 +185,7 @@ export class DeviceCreateComponent implements OnInit, AfterViewInit {
                 ),
                 credentialForService: this.tokenInput.nativeElement.value,
             },
-        }
+        };
     }
 
     private getAuthorizationCredentials(
@@ -212,7 +193,7 @@ export class DeviceCreateComponent implements OnInit, AfterViewInit {
     ): CredentialDataInput {
         switch (policy) {
             case AuthPolicy.None:
-                return null
+                return null;
             case AuthPolicy.Basic:
                 return {
                     basic: {
@@ -223,7 +204,7 @@ export class DeviceCreateComponent implements OnInit, AfterViewInit {
                             'authCredentialsBasicPassword'
                         ).value,
                     },
-                }
+                };
             case AuthPolicy.OAuth:
                 return {
                     oauth: {
@@ -238,7 +219,7 @@ export class DeviceCreateComponent implements OnInit, AfterViewInit {
                             'authCredentialsOAuthURL'
                         ).value,
                     },
-                }
+                };
             case AuthPolicy.Certificate:
                 return {
                     certificateOAuth: {
@@ -253,7 +234,7 @@ export class DeviceCreateComponent implements OnInit, AfterViewInit {
                                 'authCredentialsCertificateClientCert'
                             ).value,
                     },
-                }
+                };
             case AuthPolicy.Bearer:
                 return {
                     bearerToken: {
@@ -261,15 +242,15 @@ export class DeviceCreateComponent implements OnInit, AfterViewInit {
                             'authCredentialsBearerToken'
                         ).value,
                     },
-                }
+                };
         }
     }
 
     private _filterDataTypes(value: string): string[] {
-        const filterValue = value.toLowerCase()
+        const filterValue = value.toLowerCase();
 
         return this.allDataOutputTypes.filter((dataType) =>
             dataType.toLowerCase().includes(filterValue)
-        )
+        );
     }
 }

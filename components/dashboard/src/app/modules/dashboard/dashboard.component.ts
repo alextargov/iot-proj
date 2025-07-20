@@ -1,9 +1,4 @@
-import {
-    ChangeDetectionStrategy,
-    Component,
-    OnInit,
-    ViewEncapsulation,
-} from '@angular/core'
+import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 
 import {
     CompactType,
@@ -14,12 +9,12 @@ import {
     GridType,
     PushDirections,
     Resizable,
-} from 'angular-gridster2'
+} from 'angular-gridster2';
 
 interface Safe extends GridsterConfig {
-    draggable: Draggable
-    resizable: Resizable
-    pushDirections: PushDirections
+    draggable: Draggable;
+    resizable: Resizable;
+    pushDirections: PushDirections;
 }
 
 @Component({
@@ -30,9 +25,9 @@ interface Safe extends GridsterConfig {
     // encapsulation: ViewEncapsulation.None
 })
 export class DashboardComponent implements OnInit {
-    public options: Safe
-    public dashboard: Array<GridsterItem>
-    public isLocked: boolean = true
+    public options: Safe;
+    public dashboard: Array<GridsterItem>;
+    public isLocked: boolean = true;
 
     ngOnInit(): void {
         this.options = {
@@ -94,7 +89,7 @@ export class DashboardComponent implements OnInit {
             disableWindowResize: false,
             disableWarnings: false,
             scrollToNewItems: false,
-        }
+        };
 
         this.dashboard = [
             // { cols: 2, rows: 1, y: 0, x: 0 },
@@ -140,25 +135,25 @@ export class DashboardComponent implements OnInit {
             //   label: 'Drag&Resize Disabled'
             // },
             // { cols: 1, rows: 1, y: 2, x: 6 }
-        ]
+        ];
     }
 
     changedOptions(): void {
         if (this.options.api && this.options.api.optionsChanged) {
-            this.options.api.optionsChanged()
+            this.options.api.optionsChanged();
         }
     }
 
     removeItem($event: MouseEvent | TouchEvent, item): void {
-        $event.preventDefault()
-        $event.stopPropagation()
-        this.dashboard.splice(this.dashboard.indexOf(item), 1)
+        $event.preventDefault();
+        $event.stopPropagation();
+        this.dashboard.splice(this.dashboard.indexOf(item), 1);
     }
 
     public removeAll($event: MouseEvent | TouchEvent): void {
-        $event.preventDefault()
-        $event.stopPropagation()
-        this.dashboard = []
+        $event.preventDefault();
+        $event.stopPropagation();
+        this.dashboard = [];
     }
 
     addItem(): void {
@@ -169,11 +164,11 @@ export class DashboardComponent implements OnInit {
             rows: 1,
             dragEnabled: !this.isLocked,
             resizeEnabled: !this.isLocked,
-        })
+        });
     }
 
     public onLockButtonClick(): void {
-        this.isLocked = !this.isLocked
+        this.isLocked = !this.isLocked;
 
         this.options = {
             ...this.options,
@@ -188,6 +183,6 @@ export class DashboardComponent implements OnInit {
                 this.options.displayGrid === DisplayGrid.None
                     ? DisplayGrid.Always
                     : DisplayGrid.None,
-        }
+        };
     }
 }

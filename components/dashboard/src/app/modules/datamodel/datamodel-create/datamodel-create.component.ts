@@ -1,30 +1,25 @@
-import {
-    Component,
-    OnInit,
-} from '@angular/core'
+import { Component, OnInit } from '@angular/core';
 import {
     UntypedFormBuilder,
     UntypedFormGroup,
     Validators,
-} from '@angular/forms'
-import {
-     DataModelInput,
-} from '../../../shared/graphql/generated'
-import {Router} from "@angular/router";
-import {DatamodelService} from "../../../shared/services/datamodel/datamodel.service";
-import {JsonSchemaService} from "../../../shared/services/jsonschema/jsonschema.service";
+} from '@angular/forms';
+import { DataModelInput } from '../../../shared/graphql/generated';
+import { Router } from '@angular/router';
+import { DatamodelService } from '../../../shared/services/datamodel/datamodel.service';
+import { JsonSchemaService } from '../../../shared/services/jsonschema/jsonschema.service';
 
 enum SchemaTypeEnum {
     Object = 'object',
     Array = 'array',
     String = 'string',
     Number = 'number',
-    Boolean = 'boolean'
+    Boolean = 'boolean',
 }
 
 enum Mode {
     UI = 'ui',
-    CODE = 'code'
+    CODE = 'code',
 }
 
 interface SchemaField {
@@ -43,7 +38,8 @@ interface SchemaField {
     styleUrls: ['./datamodel-create.component.scss'],
 })
 export class DatamodelCreateComponent implements OnInit {
-    private exampleSchema = '{\n  "type": "object",\n  "properties": {\n    "temperature": { "type": "number" },\n    "humidity": { "type": "number" },\n    "deviceId": { "type": "string" }\n  },\n  "required": ["temperature", "humidity"]\n}'
+    private exampleSchema =
+        '{\n  "type": "object",\n  "properties": {\n    "temperature": { "type": "number" },\n    "humidity": { "type": "number" },\n    "deviceId": { "type": "string" }\n  },\n  "required": ["temperature", "humidity"]\n}';
 
     public mode: 'ui' | 'code' = 'code';
     public selectedMode: Mode = Mode.CODE;
@@ -64,21 +60,21 @@ export class DatamodelCreateComponent implements OnInit {
         tabSize: 2,
         padding: {
             top: 10,
-            bottom: 10
+            bottom: 10,
         },
         scrollbar: {
             vertical: 'auto',
-            horizontal: 'auto'
-        }
+            horizontal: 'auto',
+        },
     };
 
-    editorInstance!: any
+    editorInstance!: any;
 
     constructor(
         private fb: UntypedFormBuilder,
         private router: Router,
         private dataModelService: DatamodelService,
-        private jsonSchemaService: JsonSchemaService,
+        private jsonSchemaService: JsonSchemaService
     ) {}
 
     public ngOnInit(): void {
@@ -107,10 +103,12 @@ export class DatamodelCreateComponent implements OnInit {
             name: this.datamodelFormGroup.get('name').value,
             description: this.datamodelFormGroup.get('description').value,
             schema: this.schemaOutput,
-        }
-        this.dataModelService.createDataModel(dataModelInput).subscribe((result) => {
-            this.router.navigate(['/datamodel']);
-        });
+        };
+        this.dataModelService
+            .createDataModel(dataModelInput)
+            .subscribe((result) => {
+                this.router.navigate(['/datamodel']);
+            });
     }
 
     public cancel() {
@@ -144,7 +142,7 @@ export class DatamodelCreateComponent implements OnInit {
         if (field.type === SchemaTypeEnum.Array) {
             return {
                 type: SchemaTypeEnum.Array,
-                items: this.buildSchema(field.items!)
+                items: this.buildSchema(field.items!),
             };
         }
 
@@ -157,19 +155,19 @@ export class DatamodelCreateComponent implements OnInit {
     public async onUiToggleClick() {
         const code: string = this.datamodelFormGroup.get('code').value;
 
-        const monacoInstance = (window as any).monaco as typeof import('monaco-editor');
+        const monacoInstance = (window as any)
+            .monaco as typeof import('monaco-editor');
         const model = this.editorInstance.getModel();
         if (!model) return;
 
         try {
-            const isValid = await this.jsonSchemaService.validateSchema(code)
+            const isValid = await this.jsonSchemaService.validateSchema(code);
             if (!isValid) {
                 throw new Error('Invalid JSON schema');
             }
             monacoInstance.editor.setModelMarkers(model, 'owner', []);
-
         } catch (error) {
-            this.selectedMode = Mode.CODE
+            this.selectedMode = Mode.CODE;
             const markers = [];
 
             if (!code.trim()) {
@@ -184,14 +182,14 @@ export class DatamodelCreateComponent implements OnInit {
             }
 
             monacoInstance.editor.setModelMarkers(model, 'owner', markers);
-            return
+            return;
         }
 
         this.root = JSON.parse(code);
-        this.mode = Mode.UI
+        this.mode = Mode.UI;
     }
 
     public onCodeToggleClick() {
-        this.mode = Mode.CODE
+        this.mode = Mode.CODE;
     }
 }

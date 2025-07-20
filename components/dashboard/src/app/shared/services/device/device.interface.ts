@@ -1,56 +1,56 @@
 export interface IDevice {
-    _id?: string
-    userID: string
-    name: string
-    description: string
-    host: IDeviceHost
+    _id?: string;
+    userID: string;
+    name: string;
+    description: string;
+    host: IDeviceHost;
 
-    credentials?: IDeviceCredentials
-    status: DeviceStatus
-    dataOutput: IDeviceDataOutput[]
+    credentials?: IDeviceCredentials;
+    status: DeviceStatus;
+    dataOutput: IDeviceDataOutput[];
     // dataOutputUnit: string;
-    createdAt?: number
-    updatedAt?: number
+    createdAt?: number;
+    updatedAt?: number;
 }
 
 export interface IDeviceHost {
-    url?: string
-    turnOnEndpoint?: string
-    turnOffEndpoint?: string
+    url?: string;
+    turnOnEndpoint?: string;
+    turnOffEndpoint?: string;
 }
 
 export interface IDeviceCredentials {
-    type: AuthPolicy
+    type: AuthPolicy;
     credentials?:
         | IDeviceCredentialsBasic
         | IDeviceCredentialsOAuth
         | IDeviceCredentialsCertificate
-        | IDeviceCredentialsBearer
+        | IDeviceCredentialsBearer;
 }
 
 export interface IDeviceCredentialsBearer {
-    token: string
+    token: string;
 }
 
 export interface IDeviceCredentialsBasic {
-    username: string
-    password: string
+    username: string;
+    password: string;
 }
 
 export interface IDeviceCredentialsOAuth {
-    clientID: string
-    clientSecret: string
+    clientID: string;
+    clientSecret: string;
 }
 
 export interface IDeviceCredentialsCertificate {
-    clientID: string
-    clientSecret: string
-    certificate: string
+    clientID: string;
+    clientSecret: string;
+    certificate: string;
 }
 
 export interface IDeviceDataOutput {
-    key: string
-    name: string
+    key: string;
+    name: string;
 }
 
 export enum AuthPolicy {
@@ -69,9 +69,9 @@ export enum DeviceStatus {
 }
 
 export interface IDevicePage {
-    data: IDevice[]
+    data: IDevice[];
     pageInfo: {
-        start: string
-        cursor: string
-    }
+        start: string;
+        cursor: string;
+    };
 }

@@ -1,26 +1,26 @@
-import { CustomBlock, Blockly } from 'ngx-blockly'
-import { javascriptGenerator } from 'blockly/javascript'
+import { CustomBlock, Blockly } from 'ngx-blockly';
+import { javascriptGenerator } from 'blockly/javascript';
 
 export class AggregationBlock extends CustomBlock {
-    private id: string
-    private name: string
-    private options: any[]
+    private id: string;
+    private name: string;
+    private options: any[];
 
     constructor(type, obj, ...args) {
-        super(type, null, obj)
+        super(type, null, obj);
 
         if (args.length > 0) {
-            this.id = args[0].id
-            this.name = args[0].name
-            this.options = args[0].options
+            this.id = args[0].id;
+            this.name = args[0].name;
+            this.options = args[0].options;
         }
 
-        this.class = AggregationBlock
+        this.class = AggregationBlock;
     }
 
     public defineBlock() {
-        this.block.setOutput(true, 'Aggregation')
-        this.block.setColour(15)
+        this.block.setOutput(true, 'Aggregation');
+        this.block.setColour(15);
 
         if (this.options) {
             this.block
@@ -28,20 +28,22 @@ export class AggregationBlock extends CustomBlock {
                 .appendField(
                     new Blockly.FieldLabelSerializable(this.name, this.id)
                 )
-                .appendField(new Blockly.FieldDropdown(this.options), 'MODE')
+                .appendField(new Blockly.FieldDropdown(this.options), 'MODE');
 
-            return
+            return;
         }
 
         this.block
             .appendDummyInput()
-            .appendField(new Blockly.FieldLabelSerializable(this.name, this.id))
+            .appendField(
+                new Blockly.FieldLabelSerializable(this.name, this.id)
+            );
     }
 
     public toJavaScriptCode(block: Blockly.Block): string | any[] {
         // TODO: Assemble JavaScript into code variable.
-        var code = ``
+        var code = ``;
 
-        return [code, javascriptGenerator.ORDER_NONE]
+        return [code, javascriptGenerator.ORDER_NONE];
     }
 }

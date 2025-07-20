@@ -1,17 +1,19 @@
-import { Observable, map } from 'rxjs'
-import { Injectable } from '@angular/core'
+import { Observable, map } from 'rxjs';
+import { Injectable } from '@angular/core';
 
-import { ApiService } from '../api/api.service'
+import { ApiService } from '../api/api.service';
 import {
     CreateWidgetDocument,
     CreateWidgetGQL,
-    CreateWidgetMutation, DeleteWidgetDocument, DeleteWidgetMutation,
+    CreateWidgetMutation,
+    DeleteWidgetDocument,
+    DeleteWidgetMutation,
     GetAllWidgetsGQL,
     WidgetInfoFragment,
-    WidgetInput
-} from '../../graphql/generated'
-import {  FetchResult } from '@apollo/client/core'
-import { Apollo } from 'apollo-angular'
+    WidgetInput,
+} from '../../graphql/generated';
+import { FetchResult } from '@apollo/client/core';
+import { Apollo } from 'apollo-angular';
 
 @Injectable({
     providedIn: 'root',
@@ -27,7 +29,7 @@ export class WidgetService {
     public getAll(): Observable<WidgetInfoFragment[]> {
         return this.getAllWidgetsGql
             .watch()
-            .valueChanges.pipe(map((res) => res.data?.widgets ?? []))
+            .valueChanges.pipe(map((res) => res.data?.widgets ?? []));
     }
 
     public create(
@@ -38,17 +40,15 @@ export class WidgetService {
             variables: {
                 input: data,
             },
-        })
+        });
     }
 
-    public delete(
-        id: string
-    ): Observable<FetchResult<DeleteWidgetMutation>> {
+    public delete(id: string): Observable<FetchResult<DeleteWidgetMutation>> {
         return this.apollo.mutate<DeleteWidgetMutation>({
             mutation: DeleteWidgetDocument,
             variables: {
                 id,
             },
-        })
+        });
     }
 }

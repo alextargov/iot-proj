@@ -73,7 +73,7 @@
                         'widget-list__table-status-initial':
                             element.status === 'INACTIVE'
                     }"
-                >{{ getStatus(element.status) }}</mat-icon
+                    >{{ getStatus(element.status) }}</mat-icon
                 >
             </td>
         </ng-container>
@@ -112,13 +112,13 @@
                     <mat-icon
                         class="widget-list__table-definition-actions-edit"
                         tooltip="Edit"
-                    >edit</mat-icon
+                        >edit</mat-icon
                     >
                     <mat-icon
                         class="widget-list__table-definition-actions-delete"
                         tooltip="Delete"
                         (click)="onDelete(element)"
-                    >delete</mat-icon
+                        >delete</mat-icon
                     >
                 </div>
             </td>

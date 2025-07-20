@@ -15,7 +15,10 @@
         <!-- Type selector -->
         <mat-form-field appearance="outline" class="w-32">
             <mat-label>Type</mat-label>
-            <mat-select [(ngModel)]="field.type" (selectionChange)="onTypeChange()">
+            <mat-select
+                [(ngModel)]="field.type"
+                (selectionChange)="onTypeChange()"
+            >
                 <mat-option value="object">object</mat-option>
                 <mat-option value="array">array</mat-option>
                 <mat-option value="string">string</mat-option>
@@ -25,10 +28,18 @@
             </mat-select>
         </mat-form-field>
 
-        <mat-checkbox *ngIf="depth > 0 && parentType !== 'array'" [(ngModel)]="field.required">Required</mat-checkbox>
+        <mat-checkbox
+            *ngIf="depth > 0 && parentType !== 'array'"
+            [(ngModel)]="field.required"
+            >Required</mat-checkbox
+        >
 
         <!-- Description -->
-        <mat-form-field appearance="outline" class="w-64" *ngIf="isDescriptionFeatureEnabled">
+        <mat-form-field
+            appearance="outline"
+            class="w-64"
+            *ngIf="isDescriptionFeatureEnabled"
+        >
             <mat-label>Description</mat-label>
             <input matInput [(ngModel)]="field.description" />
         </mat-form-field>

@@ -5,7 +5,7 @@ enum SchemaTypeEnum {
     Array = 'array',
     String = 'string',
     Number = 'number',
-    Boolean = 'boolean'
+    Boolean = 'boolean',
 }
 
 export interface SchemaField {
@@ -23,18 +23,21 @@ export interface SchemaField {
 })
 export class SchemaNodeEditorComponent implements OnInit {
     @Input() field!: SchemaField;
-    @Input() key = "";
+    @Input() key = '';
     @Input() depth = 0;
     @Input() parentType: 'object' | 'array' | null = null;
 
     @Output() remove = new EventEmitter<void>();
-    @Output() keyChange = new EventEmitter<{ oldKey: string; newKey: string }>();
+    @Output() keyChange = new EventEmitter<{
+        oldKey: string;
+        newKey: string;
+    }>();
 
     oldKey: string = '';
     public isDescriptionFeatureEnabled: boolean = false;
 
     ngOnInit(): void {
-        if (this.key !== "") {
+        if (this.key !== '') {
             this.field.key = this.key;
         }
 
@@ -42,7 +45,10 @@ export class SchemaNodeEditorComponent implements OnInit {
             this.oldKey = this.field.key;
         }
 
-        if (this.field?.type === SchemaTypeEnum.Object && !this.field.properties) {
+        if (
+            this.field?.type === SchemaTypeEnum.Object &&
+            !this.field.properties
+        ) {
             this.field.properties = {};
         }
 
@@ -60,7 +66,7 @@ export class SchemaNodeEditorComponent implements OnInit {
             key: newKey,
             type: SchemaTypeEnum.String,
             description: '',
-            required: false
+            required: false,
         };
     }
 

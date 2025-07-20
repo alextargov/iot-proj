@@ -1,11 +1,9 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { Observable, of } from 'rxjs';
+import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
-import { environment } from 'src/environments/environment';
-import {AppConfigService} from "../app-config/app-config.service";
-import {ApiService} from "../api/api.service";
+import { AppConfigService } from '../app-config/app-config.service';
+import { ApiService } from '../api/api.service';
 
 interface ILoginResponse {
     id: string;
@@ -24,7 +22,7 @@ interface ILoginResponse {
 // }
 
 @Injectable({
-    providedIn: 'root'
+    providedIn: 'root',
 })
 export class AuthService {
     private isAuthenticated = false;
@@ -42,18 +40,25 @@ export class AuthService {
     constructor(
         private readonly apiService: ApiService,
         private readonly router: Router,
-        private readonly appConfigService: AppConfigService,
+        private readonly appConfigService: AppConfigService
     ) {
         this.apiURLUserLogin = this.appConfigService.get('APP_LOGIN_URL');
         this.apiURLUserRegister = this.appConfigService.get('APP_REGISTER_URL');
     }
 
-    public loginUser(username: string, password: string): Observable<ILoginResponse> {
-        return this.apiService.request<ILoginResponse>(this.apiURLUserLogin, { method: 'POST', data: {username, password }})
+    public loginUser(
+        username: string,
+        password: string
+    ): Observable<ILoginResponse> {
+        return this.apiService
+            .request<ILoginResponse>(this.apiURLUserLogin, {
+                method: 'POST',
+                data: { username, password },
+            })
             .pipe(
-                tap(user => {
+                tap((user) => {
                     if (!user) {
-                        return
+                        return;
                     }
 
                     this.setUserSession(user);
@@ -68,7 +73,10 @@ export class AuthService {
     }
 
     public getToken(): string | null {
-        return sessionStorage.getItem(this.TOKEN_KEY) || localStorage.getItem(this.TOKEN_KEY);
+        return (
+            sessionStorage.getItem(this.TOKEN_KEY) ||
+            localStorage.getItem(this.TOKEN_KEY)
+        );
     }
 
     public logout(): void {

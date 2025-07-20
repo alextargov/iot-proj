@@ -29,7 +29,11 @@
                         "assets": [
                             "src/favicon.ico",
                             "src/assets",
-                            { "glob": "**/*", "input": "node_modules/monaco-editor", "output": "/assets/monaco-editor/" }
+                            {
+                                "glob": "**/*",
+                                "input": "node_modules/monaco-editor",
+                                "output": "/assets/monaco-editor/"
+                            }
                         ],
                         "styles": [
                             "./node_modules/@angular/material/prebuilt-themes/deeppurple-amber.css",
@@ -115,9 +119,7 @@
         }
     },
     "cli": {
-        "schematicCollections": [
-          "@angular-eslint/schematics"
-        ],
+        "schematicCollections": ["@angular-eslint/schematics"],
         "analytics": "6fdddbc7-c7d0-43ab-8054-543c2d30e0c7"
     }
 }

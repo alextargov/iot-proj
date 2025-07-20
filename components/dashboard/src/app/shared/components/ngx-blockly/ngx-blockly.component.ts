@@ -1,14 +1,4 @@
-import {
-    Component,
-    ComponentFactoryResolver,
-    ComponentRef,
-    ElementRef,
-    OnInit,
-    ViewChild,
-    ViewContainerRef,
-} from '@angular/core'
-import { STEPPER_GLOBAL_OPTIONS } from '@angular/cdk/stepper'
-import { FormBuilder, FormGroup, Validators } from '@angular/forms'
+import { Component, ViewChild } from '@angular/core';
 import {
     Button,
     Category,
@@ -28,19 +18,20 @@ import {
     VARIABLES_CATEGORY,
     Blockly,
     NgxBlocklyComponent,
-} from 'ngx-blockly'
+} from 'ngx-blockly';
 
 @Component({
-    selector: 'ngx-blockly--',
+    selector: 'app-ngx-blockly--',
     templateUrl: './ngx-blockly.component.html',
     styleUrls: ['./ngx-blockly.component.css'],
 })
+// eslint-disable-next-line @angular-eslint/component-class-suffix
 export class NgxBlocklyComponent1 {
-    public readOnly = false
+    public readOnly = false;
 
-    public customBlocks: CustomBlock[] = []
-    public button: Button = new Button('asd', 'asdasd')
-    public label: Label = new Label('asd', 'asdasd')
+    public customBlocks: CustomBlock[] = [];
+    public button: Button = new Button('asd', 'asdasd');
+    public label: Label = new Label('asd', 'asdasd');
 
     public config: NgxBlocklyConfig = {
         toolbox:
@@ -67,13 +58,13 @@ export class NgxBlocklyComponent1 {
         plugins: {
             toolbox: NgxBlocklyToolbox,
         },
-    }
+    };
 
-    @ViewChild('blockly1') blocklyComponent: NgxBlocklyComponent
+    @ViewChild('blockly1') blocklyComponent: NgxBlocklyComponent;
 
     constructor() {
-        const workspace = new Blockly.WorkspaceSvg(new Blockly.Options({}))
-        const toolbox: NgxBlocklyToolbox = new NgxBlocklyToolbox(workspace)
+        const workspace = new Blockly.WorkspaceSvg(new Blockly.Options({}));
+        const toolbox: NgxBlocklyToolbox = new NgxBlocklyToolbox(workspace);
         toolbox.nodes = [
             LOGIC_CATEGORY,
             new Category('bla', '#ff0000', [
@@ -89,12 +80,12 @@ export class NgxBlocklyComponent1 {
             new Separator(),
             VARIABLES_CATEGORY,
             FUNCTIONS_CATEGORY,
-        ]
-        this.config.toolbox = toolbox.toXML()
+        ];
+        this.config.toolbox = toolbox.toXML();
     }
 
     onCode(code: string) {
-        console.log(code)
+        console.log(code);
     }
     // @Input() public config: NgxBlocklyConfig = {};
     // @Input() public customBlocks: CustomBlock[] = [];

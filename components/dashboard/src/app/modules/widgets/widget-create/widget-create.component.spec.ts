@@ -1,25 +1,25 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing'
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { WidgetCreateComponent } from './widget-create.component'
+import { WidgetCreateComponent } from './widget-create.component';
 
 describe('WidgetCreateComponent', () => {
-    let component: WidgetCreateComponent
-    let fixture: ComponentFixture<WidgetCreateComponent>
+    let component: WidgetCreateComponent;
+    let fixture: ComponentFixture<WidgetCreateComponent>;
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
             declarations: [WidgetCreateComponent],
             teardown: { destroyAfterEach: false },
-        }).compileComponents()
-    })
+        }).compileComponents();
+    });
 
     beforeEach(() => {
-        fixture = TestBed.createComponent(WidgetCreateComponent)
-        component = fixture.componentInstance
-        fixture.detectChanges()
-    })
+        fixture = TestBed.createComponent(WidgetCreateComponent);
+        component = fixture.componentInstance;
+        fixture.detectChanges();
+    });
 
     it('should create', () => {
-        expect(component).toBeTruthy()
-    })
-})
+        expect(component).toBeTruthy();
+    });
+});

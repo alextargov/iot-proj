@@ -1,7 +1,14 @@
-import {Component, ElementRef, OnInit, ViewChild} from '@angular/core'
-import {STEPPER_GLOBAL_OPTIONS, StepperSelectionEvent,} from '@angular/cdk/stepper'
-import {UntypedFormBuilder, UntypedFormGroup, Validators,} from '@angular/forms'
-import {COMMA, ENTER} from '@angular/cdk/keycodes'
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import {
+    STEPPER_GLOBAL_OPTIONS,
+    StepperSelectionEvent,
+} from '@angular/cdk/stepper';
+import {
+    UntypedFormBuilder,
+    UntypedFormGroup,
+    Validators,
+} from '@angular/forms';
+import { COMMA, ENTER } from '@angular/cdk/keycodes';
 
 import {
     Blockly,
@@ -22,19 +29,23 @@ import {
     Separator,
     TEXT_CATEGORY,
     VARIABLES_CATEGORY,
-} from 'ngx-blockly'
-import {DeviceService} from 'src/app/shared/services/device/device.service'
-import {MatAutocompleteSelectedEvent} from '@angular/material/autocomplete'
-import {Observable} from 'rxjs'
-import {map, startWith} from 'rxjs/operators'
-import {DynamicDropdownBlock} from '../../../shared/blocks/dynamic-dropdown'
-import {AggregationBlock} from '../../../shared/blocks/aggregation'
-import {IOperation, OperationBlock} from '../../../shared/blocks/operation'
-import {RepeatForBlock} from '../../../shared/blocks/repeatFor'
-import {DeviceInfoFragment, WidgetInput, WidgetStatus} from 'src/app/shared/graphql/generated'
-import {ToastrService} from "../../../shared/services/toastr/toastr.service";
-import {WidgetService} from "../../../shared/services/widget/widget.service";
-import {Router} from "@angular/router";
+} from 'ngx-blockly';
+import { DeviceService } from 'src/app/shared/services/device/device.service';
+import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
+import { Observable } from 'rxjs';
+import { map, startWith } from 'rxjs/operators';
+import { DynamicDropdownBlock } from '../../../shared/blocks/dynamic-dropdown';
+import { AggregationBlock } from '../../../shared/blocks/aggregation';
+import { IOperation, OperationBlock } from '../../../shared/blocks/operation';
+import { RepeatForBlock } from '../../../shared/blocks/repeatFor';
+import {
+    DeviceInfoFragment,
+    WidgetInput,
+    WidgetStatus,
+} from 'src/app/shared/graphql/generated';
+import { ToastrService } from '../../../shared/services/toastr/toastr.service';
+import { WidgetService } from '../../../shared/services/widget/widget.service';
+import { Router } from '@angular/router';
 
 @Component({
     selector: 'app-widget-create',
@@ -48,10 +59,10 @@ import {Router} from "@angular/router";
     ],
 })
 export class WidgetCreateComponent implements OnInit {
-    public readonly NAME_MAX_LENGTH = 64
-    public readonly DESCRIPTION_MAX_LENGTH = 256
-    public readonly separatorKeysCodes: number[] = [ENTER, COMMA]
-    public isLoaded = false
+    public readonly NAME_MAX_LENGTH = 64;
+    public readonly DESCRIPTION_MAX_LENGTH = 256;
+    public readonly separatorKeysCodes: number[] = [ENTER, COMMA];
+    public isLoaded = false;
     private readonly aggregationOperations: any[] = [
         {
             id: 'sum',
@@ -76,7 +87,7 @@ export class WidgetCreateComponent implements OnInit {
               console.error(error);
             }`,
         },
-    ]
+    ];
     private readonly operations: IOperation[] = [
         {
             id: 'turnon',
@@ -110,23 +121,23 @@ export class WidgetCreateComponent implements OnInit {
             additionalText: 'with content:',
             hasSecondInput: true,
         },
-    ]
+    ];
 
-    public detailsFormGroup: UntypedFormGroup
+    public detailsFormGroup: UntypedFormGroup;
 
-    public devices: DeviceInfoFragment[]
-    public selectedDevices: Set<DeviceInfoFragment> = new Set()
-    public filteredDevices: Observable<DeviceInfoFragment[]>
+    public devices: DeviceInfoFragment[];
+    public selectedDevices: Set<DeviceInfoFragment> = new Set();
+    public filteredDevices: Observable<DeviceInfoFragment[]>;
 
-    @ViewChild('deviceInput') public deviceInput: ElementRef<HTMLInputElement>
+    @ViewChild('deviceInput') public deviceInput: ElementRef<HTMLInputElement>;
 
-    public readOnly = false
+    public readOnly = false;
 
-    public customBlocks: CustomBlock[] = []
-    public button: Button = new Button('ExampleButton', 'TestButton')
-    public label: Label = new Label('ExampleLabel', 'TestLabel')
-    public workspaceXML: string
-    public workspaceCode: string
+    public customBlocks: CustomBlock[] = [];
+    public button: Button = new Button('ExampleButton', 'TestButton');
+    public label: Label = new Label('ExampleLabel', 'TestLabel');
+    public workspaceXML: string;
+    public workspaceCode: string;
 
     public config: NgxBlocklyConfig = {
         trashcan: true,
@@ -149,14 +160,16 @@ export class WidgetCreateComponent implements OnInit {
             spacing: 5,
         },
         css: true,
-    }
+    };
 
     private blocklyComponent: NgxBlocklyComponent;
 
     // @ViewChild('blockly', { static: false }) blocklyComponent: NgxBlocklyComponent
-    @ViewChild('blockly', { static: false }) set blockly(content: NgxBlocklyComponent) {
+    @ViewChild('blockly', { static: false }) set blockly(
+        content: NgxBlocklyComponent
+    ) {
         if (content) {
-            this.blocklyComponent = content
+            this.blocklyComponent = content;
         }
     }
 
@@ -183,22 +196,22 @@ export class WidgetCreateComponent implements OnInit {
             ],
             isActive: [true],
             device: [''],
-        })
+        });
 
-        const workspace = new Blockly.WorkspaceSvg(new Blockly.Options({}))
+        const workspace = new Blockly.WorkspaceSvg(new Blockly.Options({}));
         const toolbox: NgxBlocklyToolbox = new NgxBlocklyToolbox(workspace);
 
         this.deviceService.getAllDevices().subscribe((deviceList) => {
-            this.devices = deviceList
-            console.log(deviceList)
+            this.devices = deviceList;
+            console.log(deviceList);
 
-            const workspace = new Blockly.WorkspaceSvg(new Blockly.Options({}))
-            const toolbox: NgxBlocklyToolbox = new NgxBlocklyToolbox(workspace)
+            const workspace = new Blockly.WorkspaceSvg(new Blockly.Options({}));
+            const toolbox: NgxBlocklyToolbox = new NgxBlocklyToolbox(workspace);
 
             const dynamicDropdownDevices = deviceList.map((device) => [
                 device.name,
                 device.id,
-            ])
+            ]);
             const dropdownOutput = new DynamicDropdownBlock(
                 'deviceDropdownOutput',
                 {
@@ -206,7 +219,7 @@ export class WidgetCreateComponent implements OnInit {
                     data: dynamicDropdownDevices,
                     isOutput: true,
                 }
-            )
+            );
             const dropdownInput = new DynamicDropdownBlock(
                 'deviceDropdownInput',
                 {
@@ -214,26 +227,26 @@ export class WidgetCreateComponent implements OnInit {
                     data: dynamicDropdownDevices,
                     isOutput: false,
                 }
-            )
-            const deviceBlocks = [dropdownOutput, dropdownInput]
+            );
+            const deviceBlocks = [dropdownOutput, dropdownInput];
 
             const aggregations = this.aggregationOperations.map(
                 (agg, idx) =>
                     new AggregationBlock('aggregation_' + idx, { ...agg })
-            )
+            );
             const operations = this.operations.map(
                 (op, idx) => new OperationBlock('operation_' + idx, { ...op })
-            )
+            );
             const repeats = [
                 new RepeatForBlock('repeatForBlock', { id: 'repeatForBlock' }),
-            ]
+            ];
 
             this.customBlocks.push(
                 ...deviceBlocks,
                 ...aggregations,
                 ...operations,
                 ...repeats
-            )
+            );
 
             toolbox.nodes = [
                 LOGIC_CATEGORY,
@@ -250,11 +263,11 @@ export class WidgetCreateComponent implements OnInit {
                 new Category('Devices', '%{BKY_LOGIC_HUE}', deviceBlocks),
                 new Category('Aggregations', '#00AFFF', aggregations),
                 new Category('Operations', '#00AA00', operations),
-            ]
+            ];
 
-            this.config.toolbox = toolbox.toXML()
+            this.config.toolbox = toolbox.toXML();
 
-            this.isLoaded = true
+            this.isLoaded = true;
 
             this.filteredDevices = this.detailsFormGroup
                 .get('device')
@@ -263,61 +276,65 @@ export class WidgetCreateComponent implements OnInit {
                     map((fruit: string | null) =>
                         fruit ? this._filter(fruit) : this.devices.slice()
                     )
-                )
-        })
+                );
+        });
     }
 
     onCode(code: string) {
-        this.workspaceCode = code
-        console.log(code)
+        this.workspaceCode = code;
+        console.log(code);
     }
 
     removeDevice(keyword) {
-        this.selectedDevices.delete(keyword)
+        this.selectedDevices.delete(keyword);
     }
 
     selected(event: MatAutocompleteSelectedEvent): void {
-        this.selectedDevices.add(event.option.value as DeviceInfoFragment)
-        this.detailsFormGroup.get('device').setValue('')
-        this.deviceInput.nativeElement.value = ''
+        this.selectedDevices.add(event.option.value as DeviceInfoFragment);
+        this.detailsFormGroup.get('device').setValue('');
+        this.deviceInput.nativeElement.value = '';
     }
 
     public async onSaveClick(): Promise<void> {
-        const model = this.convertToModel()
+        const model = this.convertToModel();
         this.widgetService.create(model).subscribe((data) => {
-            console.log('success', data)
-            this.toast.showSuccess('Successfully created widget')
-        })
+            console.log('success', data);
+            this.toast.showSuccess('Successfully created widget');
+        });
 
-        await this.router.navigate(['widgets'])
+        await this.router.navigate(['widgets']);
     }
 
     private convertToModel(): WidgetInput {
         return {
             name: this.detailsFormGroup.get('name').value,
             description: this.detailsFormGroup.get('description').value,
-            status: this.detailsFormGroup.get('isActive').value ? WidgetStatus.Active : WidgetStatus.Inactive,
+            status: this.detailsFormGroup.get('isActive').value
+                ? WidgetStatus.Active
+                : WidgetStatus.Inactive,
             code: this.workspaceCode,
-            workspace:  this.workspaceXML,
-            deviceIds: Array.from(this.selectedDevices.values()).map((device) => device.id)
-        }
+            workspace: this.workspaceXML,
+            deviceIds: Array.from(this.selectedDevices.values()).map(
+                (device) => device.id
+            ),
+        };
     }
 
     private _filter(value: string): DeviceInfoFragment[] {
         if (typeof value !== 'string') {
-            return this.devices
+            return this.devices;
         }
-        const filterValue = value.toLowerCase()
+        const filterValue = value.toLowerCase();
 
         return this.devices.filter((d) =>
             d.name.toLowerCase().includes(filterValue)
-        )
+        );
     }
 
     public onNavigateToBlockly(): void {
         setTimeout(() => {
-            console.log(this.blocklyComponent)
-            this.blocklyComponent.resize()
+            console.log(this.blocklyComponent);
+            this.blocklyComponent.resize();
             //       this.blocklyComponent.fromXml(`<xml xmlns="https://developers.google.com/blockly/xml">
             //   <block type="controls_if" id="aWfzI?F$qXe8;y,6=j[V" x="29" y="8"></block>
             //   <block type="repeatForBlock" id="hnF\`HuTwmUu*cN_:i(?P" x="33" y="14">
@@ -332,19 +349,19 @@ export class WidgetCreateComponent implements OnInit {
             //   Blockly.Xml.textToDom(`<xml><block type="repeatForBlock" id="7PXEeoJd08$_MK)!I_9h" x="29" y="77"><field name="intervalValue">1</field><field name="intervalType">0</field><statement name="do"><block type="controls_if" id="G[@TMT,$5@:DP^}W4!WT"><value name="IF0"><block type="logic_compare" id="Gn.!bPr*p,SUE1Rlx+Hl"><field name="OP">EQ</field><value name="A"><block type="deviceDropdownOutput" id="Qs399?AkV%1|{|7$511+"><field name="selectedDeviceOutput">b2e8f85c-3caa-4d2e-8c0e-641385d3ddbc</field><value name="aggregation"><block type="aggregation_0" id="}g]322#ioc%aWV_kDWbt"></block></value></block></value><value name="B"><block type="math_number" id="I1Fu27{Ht:\`x/m;!+@]x"><field name="NUM">0</field></block></value></block></value><statement name="DO0"><block type="operation_2" id="GYL@Pb3M].LCx=|2B[x!"><value name="operation"><block type="text" id="Er,nBi;6#T(Bjg(]FU%d"><field name="TEXT">alex</field></block></value></block></statement></block></statement></block></xml>`),
             //   this.blocklyComponent.workspace
             // );
-        }, 100)
+        }, 100);
     }
 
     public workspaceChange(event) {
         if (!event || !event.workspaceId) {
-            return
+            return;
         }
-        this.workspaceXML = this.blocklyComponent.toXml()
+        this.workspaceXML = this.blocklyComponent.toXml();
     }
 
     public onSelectionChange(event: StepperSelectionEvent) {
         if (event.selectedIndex === 1) {
-            this.onNavigateToBlockly()
+            this.onNavigateToBlockly();
         }
     }
 }

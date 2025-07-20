@@ -1,7 +1,7 @@
-import { Observable, map } from 'rxjs'
-import { Injectable } from '@angular/core'
+import { Observable, map } from 'rxjs';
+import { Injectable } from '@angular/core';
 
-import { DeviceStatus, IDevice } from './device.interface'
+import { DeviceStatus, IDevice } from './device.interface';
 import {
     CreateDeviceDocument,
     CreateDeviceMutation,
@@ -9,10 +9,10 @@ import {
     DeleteDeviceMutation,
     DeviceInfoFragment,
     GetAllDevicesGQL,
-} from '../../graphql/generated'
-import { DeviceInput } from '../../graphql/generated'
-import { FetchResult } from '@apollo/client/core'
-import { Apollo } from 'apollo-angular'
+} from '../../graphql/generated';
+import { DeviceInput } from '../../graphql/generated';
+import { FetchResult } from '@apollo/client/core';
+import { Apollo } from 'apollo-angular';
 
 @Injectable({
     providedIn: 'root',
@@ -49,7 +49,7 @@ export class DeviceService {
             },
             createdAt: new Date().getTime(),
         },
-    ]
+    ];
 
     constructor(
         private readonly getAllDevicesGql: GetAllDevicesGQL,
@@ -59,7 +59,7 @@ export class DeviceService {
     public getAllDevices(): Observable<DeviceInfoFragment[]> {
         return this.getAllDevicesGql
             .watch()
-            .valueChanges.pipe(map((res) => res.data?.devices ?? []))
+            .valueChanges.pipe(map((res) => res.data?.devices ?? []));
     }
 
     public createDevice(
@@ -70,7 +70,7 @@ export class DeviceService {
             variables: {
                 input: data,
             },
-        })
+        });
     }
 
     public deleteDevice(
@@ -81,6 +81,6 @@ export class DeviceService {
             variables: {
                 id,
             },
-        })
+        });
     }
 }

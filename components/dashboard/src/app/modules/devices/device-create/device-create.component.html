@@ -320,48 +320,6 @@
                     <mat-form-field
                         class="device-create__data-output-form-field"
                     >
-                        <mat-label>Data Output</mat-label>
-                        <mat-chip-grid
-                            #dataOutputList
-                            aria-label="Data output selection"
-                        >
-                            <mat-chip-row
-                                *ngFor="let dataOutputType of dataOutputTypes"
-                                (removed)="
-                                    removeDataOutputType(dataOutputType.name)
-                                "
-                            >
-                                {{ dataOutputType.name }}
-                                <button matChipRemove>
-                                    <mat-icon>cancel</mat-icon>
-                                </button>
-                            </mat-chip-row>
-                            <input
-                                matInput
-                                placeholder="New data type..."
-                                #dataOutputInput
-                                formControlName="dataOutput"
-                                [matAutocomplete]="auto"
-                                [matChipInputFor]="dataOutputList"
-                                [matChipInputSeparatorKeyCodes]="
-                                    separatorKeysCodes
-                                "
-                            />
-                        </mat-chip-grid>
-                        <mat-autocomplete
-                            #auto="matAutocomplete"
-                            (optionSelected)="selectedDataType($event)"
-                        >
-                            <mat-option
-                                *ngFor="
-                                    let dataType of filteredDataTypes | async
-                                "
-                                [value]="dataType"
-                                [disabled]="isDataTypeOptionDisabled(dataType)"
-                            >
-                                {{ dataType }}
-                            </mat-option>
-                        </mat-autocomplete>
                     </mat-form-field>
                 </form>
 

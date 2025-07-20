@@ -1,25 +1,25 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
-import {FormBuilder, UntypedFormGroup, Validators} from "@angular/forms";
-import {AuthService} from "../../services/auth/auth.service";
-import {ToastrService} from "../../services/toastr/toastr.service";
-import {EventBusService} from "../../services/eventbus/eventbus.service";
+import { FormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+import { AuthService } from '../../services/auth/auth.service';
+import { ToastrService } from '../../services/toastr/toastr.service';
+import { EventBusService } from '../../services/eventbus/eventbus.service';
 
 @Component({
     selector: 'app-login-dialog',
     templateUrl: './login-dialog.component.html',
-    styleUrls: ['./login-dialog.component.scss']
+    styleUrls: ['./login-dialog.component.scss'],
 })
-export class LoginDialogComponent {
-    public readonly NAME_MAX_LENGTH = 128
-    public loginFormGroup: UntypedFormGroup
+export class LoginDialogComponent implements OnInit {
+    public readonly NAME_MAX_LENGTH = 128;
+    public loginFormGroup: UntypedFormGroup;
 
     constructor(
         private readonly dialogRef: MatDialogRef<LoginDialogComponent>,
         private readonly formBuilder: FormBuilder,
         private readonly toast: ToastrService,
         private readonly authService: AuthService,
-        private readonly eventBusService: EventBusService,
+        private readonly eventBusService: EventBusService
     ) {}
 
     public ngOnInit(): void {
@@ -31,10 +31,8 @@ export class LoginDialogComponent {
                     Validators.maxLength(this.NAME_MAX_LENGTH),
                 ],
             ],
-            password: [
-                '',
-            ]
-        })
+            password: [''],
+        });
     }
 
     onSubmit(): void {
@@ -42,15 +40,21 @@ export class LoginDialogComponent {
             return;
         }
 
-        this.authService.loginUser(this.loginFormGroup.get("username").value, this.loginFormGroup.get("password").value)
+        this.authService
+            .loginUser(
+                this.loginFormGroup.get('username').value,
+                this.loginFormGroup.get('password').value
+            )
             .subscribe({
                 next: () => {
                     this.eventBusService.emit('onLoginChange', {});
                     this.dialogRef.close();
                 },
                 error: () => {
-                    this.toast.showError("An error has occurred while logging in!.");
+                    this.toast.showError(
+                        'An error has occurred while logging in!.'
+                    );
                 },
-            })
+            });
     }
 }

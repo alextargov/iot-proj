@@ -15,17 +15,17 @@
                 </mat-form-field>
                 <mat-form-field appearance="fill">
                     <mat-label>Description</mat-label>
-                    <input
-                        matInput
-                        formControlName="description"
-                        required
-                    />
+                    <input matInput formControlName="description" required />
                 </mat-form-field>
             </div>
 
             <div class="datamodel-create__items-right">
-                <mat-button-toggle-group value="code" [(value)]="selectedMode">>
-                    <mat-button-toggle value="code" (click)="onCodeToggleClick()">
+                <mat-button-toggle-group value="code" [(value)]="selectedMode"
+                    >>
+                    <mat-button-toggle
+                        value="code"
+                        (click)="onCodeToggleClick()"
+                    >
                         <mat-icon>code</mat-icon>
                         Code based
                     </mat-button-toggle>
@@ -45,9 +45,17 @@
                 <div *ngIf="mode === 'ui'">
                     <h1>Dynamic JSON Schema Builder</h1>
 
-                    <app-schema-node-editor [field]="root" [depth]="0"></app-schema-node-editor>
+                    <app-schema-node-editor
+                        [field]="root"
+                        [depth]="0"
+                    ></app-schema-node-editor>
 
-                    <button mat-raised-button color="primary" (click)="generateSchema()" class="mt-4">
+                    <button
+                        mat-raised-button
+                        color="primary"
+                        (click)="generateSchema()"
+                        class="mt-4"
+                    >
                         Generate Schema
                     </button>
 
@@ -65,7 +73,8 @@
             class="datamodel-create__footer-cancel"
             mat-raised-button
             color="warn"
-            (click)="cancel()">
+            (click)="cancel()"
+        >
             Cancel
         </button>
 
@@ -74,9 +83,9 @@
             mat-raised-button
             color="primary"
             (click)="saveDatamodel()"
-            [disabled]="!datamodelFormGroup.valid">
+            [disabled]="!datamodelFormGroup.valid"
+        >
             Save
         </button>
     </div>
-
 </div>

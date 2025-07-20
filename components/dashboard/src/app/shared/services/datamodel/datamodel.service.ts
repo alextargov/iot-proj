@@ -1,5 +1,5 @@
-import { Observable, map } from 'rxjs'
-import { Injectable } from '@angular/core'
+import { Observable, map } from 'rxjs';
+import { Injectable } from '@angular/core';
 
 import {
     CreateDataModelDocument,
@@ -9,9 +9,9 @@ import {
     DeleteDataModelDocument,
     DeleteDataModelMutation,
     ListDataModelsGQL,
-} from '../../graphql/generated'
-import { FetchResult } from '@apollo/client/core'
-import { Apollo } from 'apollo-angular'
+} from '../../graphql/generated';
+import { FetchResult } from '@apollo/client/core';
+import { Apollo } from 'apollo-angular';
 
 @Injectable({
     providedIn: 'root',
@@ -25,7 +25,7 @@ export class DatamodelService {
     public listDataModels(): Observable<DataModelInfoFragment[]> {
         return this.listDataModelsGql
             .watch({}, { fetchPolicy: 'network-only' })
-            .valueChanges.pipe(map((res) => res.data?.dataModels ?? []))
+            .valueChanges.pipe(map((res) => res.data?.dataModels ?? []));
     }
 
     public createDataModel(
@@ -34,13 +34,13 @@ export class DatamodelService {
         const inputData: DataModelInput = {
             ...data,
             schema: JSON.stringify(data.schema), // Ensure schema is a string
-        }
+        };
         return this.apollo.mutate<CreateDataModelGQL>({
             mutation: CreateDataModelDocument,
             variables: {
                 input: inputData,
             },
-        })
+        });
     }
 
     public deleteDataModel(
@@ -51,6 +51,6 @@ export class DatamodelService {
             variables: {
                 id,
             },
-        })
+        });
     }
 }

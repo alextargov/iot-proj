@@ -1,25 +1,22 @@
 // connect device with the app - like CMP
 
-import { Component, OnInit, ViewChild } from '@angular/core'
-import { MatPaginator } from '@angular/material/paginator'
-import { MatTableDataSource } from '@angular/material/table'
-import {
-    DeviceStatus,
-    IDevice,
-} from 'src/app/shared/services/device/device.interface'
-import { DeviceService } from 'src/app/shared/services/device/device.service'
-import { ContentHeaderButton } from '../../../shared/components/content-header/content-header.component'
-import { Router } from '@angular/router'
-import { DeviceInfoFragment } from 'src/app/shared/graphql/generated'
-import { MatDialog } from '@angular/material/dialog'
-import { DeviceDeleteComponent } from '../device-delete/device-delete.component'
+import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
+import { MatPaginator } from '@angular/material/paginator';
+import { MatTableDataSource } from '@angular/material/table';
+import { DeviceStatus } from 'src/app/shared/services/device/device.interface';
+import { DeviceService } from 'src/app/shared/services/device/device.service';
+import { ContentHeaderButton } from '../../../shared/components/content-header/content-header.component';
+import { Router } from '@angular/router';
+import { DeviceInfoFragment } from 'src/app/shared/graphql/generated';
+import { MatDialog } from '@angular/material/dialog';
+import { DeviceDeleteComponent } from '../device-delete/device-delete.component';
 
 @Component({
     selector: 'app-devices-list',
     templateUrl: './devices-list.component.html',
     styleUrls: ['./devices-list.component.scss'],
 })
-export class DevicesListComponent implements OnInit {
+export class DevicesListComponent implements OnInit, AfterViewInit {
     displayedColumns: string[] = [
         'name',
         'description',
@@ -27,8 +24,8 @@ export class DevicesListComponent implements OnInit {
         'isRunning',
         'createdAt',
         'actions',
-    ]
-    dataSource = new MatTableDataSource<DeviceInfoFragment>()
+    ];
+    dataSource = new MatTableDataSource<DeviceInfoFragment>();
 
     public buttons: ContentHeaderButton[] = [
         {
@@ -37,12 +34,12 @@ export class DevicesListComponent implements OnInit {
             action: this.onAddClick.bind(this),
             color: 'primary',
         },
-    ]
+    ];
 
-    @ViewChild(MatPaginator) public paginator: MatPaginator
+    @ViewChild(MatPaginator) public paginator: MatPaginator;
 
     public ngAfterViewInit() {
-        this.dataSource.paginator = this.paginator
+        this.dataSource.paginator = this.paginator;
     }
 
     constructor(
@@ -53,30 +50,30 @@ export class DevicesListComponent implements OnInit {
 
     public ngOnInit(): void {
         this.deviceService.getAllDevices().subscribe((deviceList) => {
-            console.log('ngOnInit')
+            console.log('ngOnInit');
 
-            this.dataSource.data = deviceList
-        })
+            this.dataSource.data = deviceList;
+        });
     }
 
     public getStatus(status: DeviceStatus) {
         if (status === DeviceStatus.ACTIVE) {
-            return 'check_circle'
+            return 'check_circle';
         } else if (status === DeviceStatus.ERROR) {
-            return 'error'
+            return 'error';
         } else if (
             status === DeviceStatus.INITIAL ||
             status === DeviceStatus.UNREACHABLE
         ) {
-            return 'circle'
+            return 'circle';
         }
     }
 
     public async onAddClick(): Promise<void> {
         try {
-            await this.router.navigate(['devices/create'])
+            await this.router.navigate(['devices/create']);
         } catch (e) {
-            console.log(e)
+            console.log(e);
         }
     }
 
@@ -85,7 +82,7 @@ export class DevicesListComponent implements OnInit {
             data: {
                 device,
             },
-        })
+        });
 
         dialogRef.afterClosed().subscribe((deviceToDelete) => {
             if (deviceToDelete) {
@@ -94,9 +91,9 @@ export class DevicesListComponent implements OnInit {
                     .subscribe((res) => {
                         this.dataSource.data = this.dataSource.data.filter(
                             (device) => device.id !== deviceToDelete
-                        )
-                    })
+                        );
+                    });
             }
-        })
+        });
     }
 }

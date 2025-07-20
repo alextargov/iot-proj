@@ -16,10 +16,12 @@ export class JsonSchemaService {
     /**
      * Validates a JSON Schema against the official meta-schema (e.g., draft-07)
      */
-    async validateSchema(schema: string): Promise<{ valid: boolean; errors: any[] | null; }> {
+    async validateSchema(
+        schema: string
+    ): Promise<{ valid: boolean; errors: any[] | null }> {
         let schemaObj: object;
         try {
-            schemaObj = JSON.parse(schema)
+            schemaObj = JSON.parse(schema);
         } catch (e) {
             throw new Error(`Invalid JSON schema schema: ${e}`);
         }
@@ -34,7 +36,10 @@ export class JsonSchemaService {
     /**
      * Validates data against a schema (if schema is already valid)
      */
-    validateData(schema: any, data: any): { valid: boolean; errors: any[] | null } {
+    validateData(
+        schema: any,
+        data: any
+    ): { valid: boolean; errors: any[] | null } {
         const validate = this.ajv.compile(schema);
         const valid = validate(data);
         return {
