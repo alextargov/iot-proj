@@ -1,13 +1,14 @@
-<div [ngStyle]="indentStyle()" class="mb-3">
-
-    <!-- Top Row: Key (if applicable), Type, Required, Delete -->
-    <div class="d-flex align-items-center gap-2 mb-2">
-
-        <!-- Property Key (for object fields that are not root) -->
+<div class="pl-4" [style.margin-left.px]="depth * 20">
+    <div class="flex items-center gap-2 mb-2">
+        <!-- Key input and Required checkbox (for object properties) -->
         <ng-container *ngIf="field.key !== undefined">
             <mat-form-field appearance="outline" class="w-32">
                 <mat-label>Key</mat-label>
-                <input matInput [(ngModel)]="field.key" />
+                <input
+                    matInput
+                    [(ngModel)]="field.key"
+                    (ngModelChange)="onKeyChange(oldKey, $event)"
+                />
             </mat-form-field>
 
         </ng-container>
@@ -16,47 +17,58 @@
         <mat-form-field appearance="outline" class="w-32">
             <mat-label>Type</mat-label>
             <mat-select [(ngModel)]="field.type">
-                <mat-option *ngFor="let t of types" [value]="t">{{ t }}</mat-option>
+                <mat-option value="object">object</mat-option>
+                <mat-option value="array">array</mat-option>
+                <mat-option value="string">string</mat-option>
+                <mat-option value="number">number</mat-option>
+                <mat-option value="integer">integer</mat-option>
+                <mat-option value="boolean">boolean</mat-option>
             </mat-select>
         </mat-form-field>
 
-        <mat-checkbox [(ngModel)]="field.required">Required</mat-checkbox>
+        <mat-checkbox *ngIf="depth > 0" [(ngModel)]="field.required">Required</mat-checkbox>
 
 
-        <!-- Delete button (not shown for root) -->
-        <button *ngIf="field.key !== undefined" mat-icon-button color="warn" (click)="remove.emit()">
+        <!-- Description -->
+        <mat-form-field appearance="outline" class="w-64" *ngIf="isDescriptionFeatureEnabled">
+            <mat-label>Description</mat-label>
+            <input matInput [(ngModel)]="field.description" />
+        </mat-form-field>
+
+        <!-- Delete icon (except for root node) -->
+        <button
+            mat-icon-button
+            color="warn"
+            (click)="remove.emit()"
+            *ngIf="depth > 0"
+        >
             <mat-icon>delete</mat-icon>
         </button>
     </div>
 
-    <!-- 👇 Nested Object Properties -->
-    <div *ngIf="field.type === 'object'" class="ml-4">
-        <div *ngFor="let prop of field.properties; let i = index">
+    <!-- If type is object, render its properties -->
+    <div *ngIf="field.type === 'object'">
+        <div *ngFor="let item of field.properties | keyvalue">
             <app-schema-node-editor
-                [field]="prop"
+                [field]="field.properties![item.key]"
+                [key]="item.key"
                 [depth]="depth + 1"
-                (remove)="removeProperty(i)"
+                (remove)="removeProperty(item.key)"
+                (keyChange)="onKeyChange(item.key, $event)"
             ></app-schema-node-editor>
         </div>
 
+        <!-- Add new property -->
         <button mat-icon-button color="primary" (click)="addProperty()">
             <mat-icon>add</mat-icon>
         </button>
-        <span>Add Property</span>
     </div>
 
-    <!-- 👇 Array Items -->
-    <div *ngIf="field.type === 'array'" class="ml-4">
-        <div *ngIf="field.items">
-            <app-schema-node-editor [field]="field.items" [depth]="depth + 1" (remove)="removeArrayItems()"></app-schema-node-editor>
-        </div>
+    <!-- If type is array, render item schema -->
+    <div *ngIf="field.type === 'array'" class="pl-4">
+        <app-schema-node-editor
 
-        <div *ngIf="!field.items">
-            <button mat-icon-button color="primary" (click)="initItems()">
-                <mat-icon>add</mat-icon>
-            </button>
-            <span>Define Array Items</span>
-        </div>
+            [depth]="depth + 1"
+        ></app-schema-node-editor>
     </div>
-
 </div>

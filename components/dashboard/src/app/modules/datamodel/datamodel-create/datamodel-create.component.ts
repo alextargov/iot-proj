@@ -28,7 +28,9 @@ interface SchemaField {
     key?: string;
     type: SchemaTypeEnum;
     required?: boolean;
-    properties?: SchemaField[]; // for object
+    properties?: {
+        [key: string]: SchemaField;
+    };
     items?: SchemaField; // for array
 }
 
@@ -77,11 +79,10 @@ export class DatamodelCreateComponent implements OnInit {
             code: [this.exampleSchema, [Validators.required]],
         });
 
-        // try below to parse the example schema and then render it
-        // this.root = JSON.parse(this.exampleSchema);
+        this.root = JSON.parse(this.exampleSchema);
     }
 
-    public root: SchemaField = { type: SchemaTypeEnum.Object, properties: [] };
+    public root: SchemaField = { type: SchemaTypeEnum.Object, properties: {} };
     schemaOutput: any = {};
 
     public generateSchema() {
@@ -105,23 +106,28 @@ export class DatamodelCreateComponent implements OnInit {
         this.router.navigate(['/datamodel']);
     }
 
-    private buildSchema(field: SchemaField): any {
+    buildSchema(field: SchemaField): any {
         if (field.type === SchemaTypeEnum.Object) {
-            const obj: any = {
+            const schema: any = {
                 type: SchemaTypeEnum.Object,
                 properties: {},
             };
+
             const required: string[] = [];
 
-            field.properties?.forEach(prop => {
-                if (prop.key) {
-                    obj.properties[prop.key] = this.buildSchema(prop);
-                    if (prop.required) required.push(prop.key);
+            for (const key in field.properties) {
+                const prop = field.properties[key];
+                schema.properties[key] = this.buildSchema(prop);
+                if (prop.required) {
+                    required.push(key);
                 }
-            });
+            }
 
-            if (required.length > 0) obj.required = required;
-            return obj;
+            if (required.length > 0) {
+                schema.required = required;
+            }
+
+            return schema;
         }
 
         if (field.type === SchemaTypeEnum.Array) {
@@ -131,6 +137,10 @@ export class DatamodelCreateComponent implements OnInit {
             };
         }
 
-        return { type: field.type };
+        return {
+            type: field.type,
+            // description: field.description || undefined
+        };
     }
+
 }

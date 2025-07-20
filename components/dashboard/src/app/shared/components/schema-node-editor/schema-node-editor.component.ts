@@ -1,4 +1,4 @@
-import {Component, EventEmitter, Input, Output} from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 
 enum SchemaTypeEnum {
     Object = 'object',
@@ -8,47 +8,83 @@ enum SchemaTypeEnum {
     Boolean = 'boolean'
 }
 
-interface SchemaField {
-    key?: string;
+export interface SchemaField {
+    key?: string; // UI only
     type: SchemaTypeEnum;
+    description?: string;
     required?: boolean;
-    properties?: SchemaField[];
+    properties?: Record<string, SchemaField>;
     items?: SchemaField;
 }
 
 @Component({
     selector: 'app-schema-node-editor',
-    templateUrl: './schema-node-editor.component.html'
+    templateUrl: './schema-node-editor.component.html',
 })
-export class SchemaNodeEditorComponent {
+export class SchemaNodeEditorComponent implements OnInit {
     @Input() field!: SchemaField;
-    @Input() depth: number = 0;
+    @Input() key = "";
+    @Input() depth = 0;
     @Output() remove = new EventEmitter<void>();
+    @Output() keyChange = new EventEmitter<{ oldKey: string; newKey: string }>();
 
-    types = [SchemaTypeEnum.Object, SchemaTypeEnum.Array, SchemaTypeEnum.String, SchemaTypeEnum.Number, SchemaTypeEnum.Boolean];
+    oldKey: string = '';
+    public isDescriptionFeatureEnabled: boolean = false;
 
-    addProperty() {
-        if (!this.field.properties) this.field.properties = [];
-        this.field.properties.push({
-            key: '',
+    ngOnInit(): void {
+        console.log(this.field)
+        console.log(this.key)
+        if (this.key !== "") {
+            this.field.key = this.key;
+        }
+
+        if (this.field?.key) {
+            this.oldKey = this.field.key;
+        }
+
+        if (this.field?.type === SchemaTypeEnum.Object && !this.field.properties) {
+            this.field.properties = {};
+        }
+
+        if (this.field?.type === SchemaTypeEnum.Array && !this.field.items) {
+            this.field.items = {
+                type: SchemaTypeEnum.String, // Default item type
+            };
+        }
+    }
+
+    addProperty(): void {
+        if (!this.field.properties) this.field.properties = {};
+        const newKey = this.generateUniqueKey();
+        this.field.properties[newKey] = {
+            key: newKey,
             type: SchemaTypeEnum.String,
-            required: false,
-        });
+            description: '',
+            required: false
+        };
     }
 
-    removeProperty(index: number) {
-        this.field.properties?.splice(index, 1);
+    generateUniqueKey(): string {
+        const base = 'property';
+        let count = 1;
+        let key = `${base}${count}`;
+        while (this.field.properties && this.field.properties[key]) {
+            key = `${base}${++count}`;
+        }
+        return key;
     }
 
-    initItems() {
-        this.field.items = { type: SchemaTypeEnum.String };
+    removeProperty(key: string): void {
+        delete this.field.properties?.[key];
     }
 
-    removeArrayItems() {
-        this.field.items = undefined;
-    }
-
-    indentStyle() {
-        return { 'margin-left.px': this.depth * 20 };
+    onKeyChange(oldKey: string, newKey: string): void {
+        if (oldKey === newKey || !newKey.trim()) return;
+        if (this.field.properties && this.field.properties[oldKey]) {
+            const existing = this.field.properties[oldKey];
+            existing.key = newKey;
+            this.field.properties[newKey] = existing;
+            delete this.field.properties[oldKey];
+        }
     }
 }
