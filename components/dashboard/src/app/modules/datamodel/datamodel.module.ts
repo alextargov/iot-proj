@@ -9,11 +9,13 @@ import { DatamodelCreateComponent } from './datamodel-create/datamodel-create.co
 import { DatamodelListComponent } from './datamodel-list/datamodel-list.component'
 import {MonacoEditorModule} from "ngx-monaco-editor";
 import {DatamodelResolver} from "./datamodel-resolver.service";
+import {DataModelDeleteComponent} from "./datamodel-delete/datamodel-delete.component";
 
 @NgModule({
     declarations: [
         DatamodelCreateComponent,
         DatamodelListComponent,
+        DataModelDeleteComponent,
     ],
     exports: [],
     imports: [

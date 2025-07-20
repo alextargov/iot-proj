@@ -25,6 +25,8 @@ export class SchemaNodeEditorComponent implements OnInit {
     @Input() field!: SchemaField;
     @Input() key = "";
     @Input() depth = 0;
+    @Input() parentType: 'object' | 'array' | null = null;
+
     @Output() remove = new EventEmitter<void>();
     @Output() keyChange = new EventEmitter<{ oldKey: string; newKey: string }>();
 
@@ -32,8 +34,6 @@ export class SchemaNodeEditorComponent implements OnInit {
     public isDescriptionFeatureEnabled: boolean = false;
 
     ngOnInit(): void {
-        console.log(this.field)
-        console.log(this.key)
         if (this.key !== "") {
             this.field.key = this.key;
         }
@@ -85,6 +85,19 @@ export class SchemaNodeEditorComponent implements OnInit {
             existing.key = newKey;
             this.field.properties[newKey] = existing;
             delete this.field.properties[oldKey];
+        }
+    }
+
+    onTypeChange(): void {
+        if (this.field.type === SchemaTypeEnum.Object) {
+            this.field.properties = {};
+            delete this.field.items;
+        } else if (this.field.type === SchemaTypeEnum.Array) {
+            this.field.items = { type: SchemaTypeEnum.String }; // Default item type
+            delete this.field.properties;
+        } else {
+            delete this.field.properties;
+            delete this.field.items;
         }
     }
 }

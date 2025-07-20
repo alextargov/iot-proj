@@ -24,24 +24,25 @@
             </div>
 
             <div class="datamodel-create__items-right">
-                <mat-button-toggle-group value="code" #outputTypes="matButtonToggleGroup">
-                    <mat-button-toggle value="code">
+                <mat-button-toggle-group value="code" [(value)]="selectedMode">>
+                    <mat-button-toggle value="code" (click)="onCodeToggleClick()">
                         <mat-icon>code</mat-icon>
                         Code based
                     </mat-button-toggle>
-                    <mat-button-toggle value="ui">
+                    <mat-button-toggle value="ui" (click)="onUiToggleClick()">
                         <mat-icon>table_rows</mat-icon>
                         UI based
                     </mat-button-toggle>
                 </mat-button-toggle-group>
 
                 <ngx-monaco-editor
-                    *ngIf="outputTypes.value === 'code'"
+                    *ngIf="mode === 'code'"
                     formControlName="code"
                     [options]="editorOptions"
+                    (onInit)="editorInit($event)"
                     style="height: 400px"
                 ></ngx-monaco-editor>
-                <div *ngIf="outputTypes.value === 'ui'">
+                <div *ngIf="mode === 'ui'">
                     <h1>Dynamic JSON Schema Builder</h1>
 
                     <app-schema-node-editor [field]="root" [depth]="0"></app-schema-node-editor>

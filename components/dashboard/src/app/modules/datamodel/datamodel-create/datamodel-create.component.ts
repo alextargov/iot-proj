@@ -1,9 +1,6 @@
 import {
-    AfterViewInit,
     Component,
-    ElementRef,
     OnInit,
-    ViewChild,
 } from '@angular/core'
 import {
     UntypedFormBuilder,
@@ -15,6 +12,7 @@ import {
 } from '../../../shared/graphql/generated'
 import {Router} from "@angular/router";
 import {DatamodelService} from "../../../shared/services/datamodel/datamodel.service";
+import {JsonSchemaService} from "../../../shared/services/jsonschema/jsonschema.service";
 
 enum SchemaTypeEnum {
     Object = 'object',
@@ -22,6 +20,11 @@ enum SchemaTypeEnum {
     String = 'string',
     Number = 'number',
     Boolean = 'boolean'
+}
+
+enum Mode {
+    UI = 'ui',
+    CODE = 'code'
 }
 
 interface SchemaField {
@@ -41,6 +44,9 @@ interface SchemaField {
 })
 export class DatamodelCreateComponent implements OnInit {
     private exampleSchema = '{\n  "type": "object",\n  "properties": {\n    "temperature": { "type": "number" },\n    "humidity": { "type": "number" },\n    "deviceId": { "type": "string" }\n  },\n  "required": ["temperature", "humidity"]\n}'
+
+    public mode: 'ui' | 'code' = 'code';
+    public selectedMode: Mode = Mode.CODE;
 
     public datamodelFormGroup: UntypedFormGroup;
     public editorOptions = {
@@ -66,10 +72,13 @@ export class DatamodelCreateComponent implements OnInit {
         }
     };
 
+    editorInstance!: any
+
     constructor(
         private fb: UntypedFormBuilder,
         private router: Router,
         private dataModelService: DatamodelService,
+        private jsonSchemaService: JsonSchemaService,
     ) {}
 
     public ngOnInit(): void {
@@ -80,6 +89,10 @@ export class DatamodelCreateComponent implements OnInit {
         });
 
         this.root = JSON.parse(this.exampleSchema);
+    }
+
+    editorInit(editor: any) {
+        this.editorInstance = editor;
     }
 
     public root: SchemaField = { type: SchemaTypeEnum.Object, properties: {} };
@@ -96,8 +109,6 @@ export class DatamodelCreateComponent implements OnInit {
             schema: this.schemaOutput,
         }
         this.dataModelService.createDataModel(dataModelInput).subscribe((result) => {
-            console.log('Data model created:', result);
-
             this.router.navigate(['/datamodel']);
         });
     }
@@ -143,4 +154,44 @@ export class DatamodelCreateComponent implements OnInit {
         };
     }
 
+    public async onUiToggleClick() {
+        const code: string = this.datamodelFormGroup.get('code').value;
+
+        const monacoInstance = (window as any).monaco as typeof import('monaco-editor');
+        const model = this.editorInstance.getModel();
+        if (!model) return;
+
+        try {
+            const isValid = await this.jsonSchemaService.validateSchema(code)
+            if (!isValid) {
+                throw new Error('Invalid JSON schema');
+            }
+            monacoInstance.editor.setModelMarkers(model, 'owner', []);
+
+        } catch (error) {
+            this.selectedMode = Mode.CODE
+            const markers = [];
+
+            if (!code.trim()) {
+                markers.push({
+                    severity: monacoInstance.MarkerSeverity.Error,
+                    message: 'Code cannot be empty.',
+                    startLineNumber: 1,
+                    startColumn: 1,
+                    endLineNumber: 1,
+                    endColumn: 2,
+                });
+            }
+
+            monacoInstance.editor.setModelMarkers(model, 'owner', markers);
+            return
+        }
+
+        this.root = JSON.parse(code);
+        this.mode = Mode.UI
+    }
+
+    public onCodeToggleClick() {
+        this.mode = Mode.CODE
+    }
 }

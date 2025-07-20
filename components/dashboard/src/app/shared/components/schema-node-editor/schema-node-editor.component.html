@@ -1,7 +1,7 @@
 <div class="pl-4" [style.margin-left.px]="depth * 20">
     <div class="flex items-center gap-2 mb-2">
-        <!-- Key input and Required checkbox (for object properties) -->
-        <ng-container *ngIf="field.key !== undefined">
+        <!-- Key input and Required checkbox (only for object properties, not arrays or root) -->
+        <ng-container *ngIf="depth > 0 && parentType === 'object'">
             <mat-form-field appearance="outline" class="w-32">
                 <mat-label>Key</mat-label>
                 <input
@@ -10,13 +10,12 @@
                     (ngModelChange)="onKeyChange(oldKey, $event)"
                 />
             </mat-form-field>
-
         </ng-container>
 
         <!-- Type selector -->
         <mat-form-field appearance="outline" class="w-32">
             <mat-label>Type</mat-label>
-            <mat-select [(ngModel)]="field.type">
+            <mat-select [(ngModel)]="field.type" (selectionChange)="onTypeChange()">
                 <mat-option value="object">object</mat-option>
                 <mat-option value="array">array</mat-option>
                 <mat-option value="string">string</mat-option>
@@ -26,8 +25,7 @@
             </mat-select>
         </mat-form-field>
 
-        <mat-checkbox *ngIf="depth > 0" [(ngModel)]="field.required">Required</mat-checkbox>
-
+        <mat-checkbox *ngIf="depth > 0 && parentType !== 'array'" [(ngModel)]="field.required">Required</mat-checkbox>
 
         <!-- Description -->
         <mat-form-field appearance="outline" class="w-64" *ngIf="isDescriptionFeatureEnabled">
@@ -35,7 +33,7 @@
             <input matInput [(ngModel)]="field.description" />
         </mat-form-field>
 
-        <!-- Delete icon (except for root node) -->
+        <!-- Delete icon (non-root only) -->
         <button
             mat-icon-button
             color="warn"
@@ -46,29 +44,29 @@
         </button>
     </div>
 
-    <!-- If type is object, render its properties -->
+    <!-- Object: recursively show properties -->
     <div *ngIf="field.type === 'object'">
         <div *ngFor="let item of field.properties | keyvalue">
             <app-schema-node-editor
                 [field]="field.properties![item.key]"
                 [key]="item.key"
                 [depth]="depth + 1"
-                (remove)="removeProperty(item.key)"
+                [parentType]="'object'"
                 (keyChange)="onKeyChange(item.key, $event)"
+                (remove)="removeProperty(item.key)"
             ></app-schema-node-editor>
         </div>
-
-        <!-- Add new property -->
         <button mat-icon-button color="primary" (click)="addProperty()">
             <mat-icon>add</mat-icon>
         </button>
     </div>
 
-    <!-- If type is array, render item schema -->
-    <div *ngIf="field.type === 'array'" class="pl-4">
+    <!-- Array: show items -->
+    <div *ngIf="field.type === 'array'">
         <app-schema-node-editor
-
+            [field]="field.items!"
             [depth]="depth + 1"
+            [parentType]="'array'"
         ></app-schema-node-editor>
     </div>
 </div>

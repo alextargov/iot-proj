@@ -7,6 +7,7 @@ import { ToastrService } from './toastr/toastr.service'
 import { ToastrModule } from 'ngx-toastr'
 import {EventBusService} from "./eventbus/eventbus.service";
 import {DatamodelService} from "./datamodel/datamodel.service";
+import {JsonSchemaService} from "./jsonschema/jsonschema.service";
 
 @NgModule({
     imports: [
@@ -22,6 +23,7 @@ import {DatamodelService} from "./datamodel/datamodel.service";
         DatamodelService,
         ToastrService,
         EventBusService,
+        JsonSchemaService
     ],
 })
 export class ServicesModule {}
