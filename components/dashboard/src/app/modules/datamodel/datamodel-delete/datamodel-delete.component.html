@@ -1,0 +1,15 @@
+<div class="datamodel-delete__content">
+    <h1 mat-dialog-title>Delete data model "{{ dataModel.name }}"</h1>
+    <div mat-dialog-content>Are you sure you want to delete the data model?"</div>
+    <div mat-dialog-actions>
+        <button mat-button mat-dialog-close (click)="close()">Close</button>
+        <button
+            mat-dialog-close
+            mat-raised-button
+            color="warn"
+            (click)="delete()"
+        >
+            Delete
+        </button>
+    </div>
+</div>

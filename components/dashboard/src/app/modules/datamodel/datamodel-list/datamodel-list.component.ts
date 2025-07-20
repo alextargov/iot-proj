@@ -6,6 +6,8 @@ import {ContentHeaderButton} from "../../../shared/components/content-header/con
 import {ActivatedRoute, Router} from "@angular/router";
 import {DatamodelService} from "../../../shared/services/datamodel/datamodel.service";
 import {IDataModel} from "../../../shared/services/datamodel/datamodel.interface";
+import {DataModelDeleteComponent} from "../datamodel-delete/datamodel-delete.component";
+import {MatDialog} from "@angular/material/dialog";
 
 @Component({
     selector: 'app-datamodel-list',
@@ -29,7 +31,8 @@ export class DatamodelListComponent implements OnInit {
     constructor(
         private datamodelService: DatamodelService,
         private router: Router,
-        private route: ActivatedRoute
+        private route: ActivatedRoute,
+        private dialog: MatDialog
     ) {}
 
     public buttons: ContentHeaderButton[] = [
@@ -43,7 +46,6 @@ export class DatamodelListComponent implements OnInit {
 
     public ngOnInit(): void {
         this.route.data.subscribe(({ dataModels }) => {
-            console.log(dataModels);
             this.dataSource = dataModels;
         });
     }
@@ -61,18 +63,27 @@ export class DatamodelListComponent implements OnInit {
         this.expandedElement = this.expandedElement === row ? null : row;
     }
 
-    public onDeleteClick(event: MouseEvent, row: IDataModel): void {
+    public onDeleteClick(event: MouseEvent, dataModel: IDataModel): void {
         event.stopPropagation();
-        if (confirm(`Are you sure you want to delete the data model "${row.name}"?`)) {
-            this.datamodelService.deleteDataModel(row.id).subscribe({
-                next: () => {
-                    this.dataSource = this.dataSource.filter((item) => item.id !== row.id);
-                },
-                error: (err) => {
-                    console.error('Error deleting data model:', err);
-                    alert('Failed to delete data model. Please try again later.');
-                }
-            });
-        }
+
+        const dialogRef = this.dialog.open(DataModelDeleteComponent, {
+            data: {
+                dataModel,
+            },
+        })
+
+        dialogRef.afterClosed().subscribe((deletedDataModelId: string) => {
+            if (deletedDataModelId) {
+                this.datamodelService.deleteDataModel(deletedDataModelId).subscribe({
+                    next: () => {
+                        this.dataSource = this.dataSource.filter((item) => item.id !== deletedDataModelId);
+                    },
+                    error: (err) => {
+                        console.error('Error deleting data model:', err);
+                        alert('Failed to delete data model. Please try again later.');
+                    }
+                });
+            }
+        })
     }
 }
