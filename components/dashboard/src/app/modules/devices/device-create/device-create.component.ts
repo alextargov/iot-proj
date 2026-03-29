@@ -7,25 +7,26 @@ import {
 } from '@angular/core';
 import {
     UntypedFormBuilder,
-    UntypedFormControl,
     UntypedFormGroup,
     Validators,
 } from '@angular/forms';
-import { COMMA, ENTER } from '@angular/cdk/keycodes';
-import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
-import { Observable } from 'rxjs';
-import { map, startWith } from 'rxjs/operators';
+
 import { MatStepper } from '@angular/material/stepper';
-import slugify from 'slugify';
 import { DeviceService } from '../../../shared/services/device/device.service';
 import { AuthPolicy } from '../../../shared/services/device/device.interface';
 import { ToastrService } from '../../../shared/services/toastr/toastr.service';
 import { v4 as uuidv4 } from 'uuid';
 import {
-    CredentialDataInput,
+    CredentialDataInput, DataModelInfoFragment,
     DeviceInput,
     DeviceStatus,
 } from '../../../shared/graphql/generated';
+import { map, Observable } from "rxjs";
+import {startWith} from "rxjs/operators";
+import {DatamodelService} from "../../../shared/services/datamodel/datamodel.service";
+import {Mode, SchemaTypeEnum} from "../../datamodel/datamodel-create/datamodel-create.component";
+import {SchemaField} from "../../../shared/components/schema-node-editor/schema-node-editor.component";
+import {MatAutocompleteSelectedEvent} from "@angular/material/autocomplete";
 
 @Component({
     selector: 'app-device-create',
@@ -45,30 +46,50 @@ export class DeviceCreateComponent implements OnInit, AfterViewInit {
     ];
     public selectedAuthorizationPolicy: AuthPolicy = AuthPolicy.None;
     public authPolicy = AuthPolicy;
-    public readonly separatorKeysCodes: number[] = [ENTER, COMMA];
-    public dataOutputTypes: { key: string; name: string }[] = [];
+    public filteredDataModels: Observable<DataModelInfoFragment[]>;
+    public dataModels: DataModelInfoFragment[] = [];
 
-    private readonly allDataOutputTypes: string[] = [
-        'Degrees Celsius',
-        'Degrees Kelvin',
-        'Degrees Fahrenheit',
-        '%',
-        'Watt',
-        'Amp',
-        'Volt',
-        'Pascal',
-        'Lumen',
-    ];
+    @ViewChild('tokenInput')
+    public tokenInput: ElementRef<HTMLInputElement>;
+    @ViewChild('deviceStepper')
+    public stepper: MatStepper;
 
-    @ViewChild('dataOutputInput') dataOutputInput: ElementRef<HTMLInputElement>;
-    @ViewChild('tokenInput') tokenInput: ElementRef<HTMLInputElement>;
-    @ViewChild('deviceStepper') stepper: MatStepper;
+    public schema: SchemaField = { type: SchemaTypeEnum.Object, properties: {} };
+    public mode: 'ui' | 'code' = 'code';
+    public selectedMode: Mode = Mode.CODE;
+    public editorInstance!: any;
+    public editorOptions = {
+        theme: 'vs-dark',
+        language: 'json',
+        automaticLayout: true,
+        minimap: { enabled: false },
+        fontSize: 14,
+        wordWrap: 'on',
+        formatOnPaste: true,
+        formatOnType: true,
+        scrollBeyondLastLine: false,
+        lineNumbers: 'on',
+        folding: true,
+        tabSize: 2,
+        padding: {
+            top: 10,
+            bottom: 10,
+        },
+        scrollbar: {
+            vertical: 'auto',
+            horizontal: 'auto',
+        },
+    };
+
 
     constructor(
         private fb: UntypedFormBuilder,
         private deviceService: DeviceService,
+        private dataModelService: DatamodelService,
         private toast: ToastrService
-    ) {}
+    ) {
+
+    }
 
     public ngOnInit(): void {
         this.deviceCreateMetadataFormGroup = this.fb.group({
@@ -91,7 +112,17 @@ export class DeviceCreateComponent implements OnInit, AfterViewInit {
             authCredentialsBearerToken: [''],
         });
         this.deviceCreateOutputFormGroup = this.fb.group({
-            dataOutput: [],
+            dataModel: '',
+        });
+
+        this.dataModelService.listDataModels().subscribe((data: DataModelInfoFragment[]) => {
+            console.log(data)
+            this.dataModels = data
+
+            this.filteredDataModels = this.deviceCreateOutputFormGroup.get("dataModel").valueChanges.pipe(
+                startWith(''),
+                map(dataModel => (dataModel ? this._filterStates(dataModel) : this.dataModels.slice())),
+            );
         });
     }
 
@@ -99,38 +130,13 @@ export class DeviceCreateComponent implements OnInit, AfterViewInit {
         this.stepper.reset();
     }
 
-    public removeDataOutputType(dataOutputType: string): void {
-        const index = this.dataOutputTypes.findIndex(
-            (ot) => ot.name === dataOutputType
-        );
-
-        if (index >= 0) {
-            this.dataOutputTypes.splice(index, 1);
-        }
-    }
-
-    public selectedDataType(event: MatAutocompleteSelectedEvent): void {
-        this.dataOutputTypes.push({
-            name: event.option.viewValue,
-            key: slugify(event.option.viewValue, { lower: true }),
-        });
-        this.dataOutputInput.nativeElement.value = '';
-    }
-
     public onResetClick(stepper: MatStepper): void {
         this.deviceCreateMetadataFormGroup.reset();
         this.deviceCreateAuthorizationFormGroup.reset();
+        this.deviceCreateOutputFormGroup.reset();
         this.selectedAuthorizationPolicy = AuthPolicy.None;
         this.tokenInput.nativeElement.value = '';
-        this.dataOutputTypes = [];
         stepper.reset();
-    }
-
-    public isDataTypeOptionDisabled(dataTypeName: string): boolean {
-        return (
-            this.dataOutputTypes.findIndex((ot) => ot.name === dataTypeName) >=
-            0
-        );
     }
 
     public onSaveClick(): void {
@@ -160,6 +166,31 @@ export class DeviceCreateComponent implements OnInit, AfterViewInit {
         });
     }
 
+    public displayDataModel(dataModel: DataModelInfoFragment): string {
+        return dataModel && dataModel.name ? dataModel.name : '';
+    }
+
+    public onCodeToggleClick() {
+        this.mode = Mode.CODE;
+    }
+
+    public async onUiToggleClick() {
+        const code: string = this.deviceCreateOutputFormGroup.get('dataModel').value.schema;
+
+        if (code) {
+            this.schema = JSON.parse(code);
+        }
+        this.mode = Mode.UI;
+    }
+
+    public onDataModelSelected(dataModel: MatAutocompleteSelectedEvent) {
+        this.schema = JSON.parse(dataModel.option.value.schema);
+    }
+
+    public editorInit(editor: any) {
+        this.editorInstance = editor;
+    }
+
     private convertToModel(): DeviceInput {
         const host = this.deviceCreateMetadataFormGroup.get('deviceURL').value
             ? {
@@ -185,8 +216,10 @@ export class DeviceCreateComponent implements OnInit, AfterViewInit {
                 ),
                 credentialForService: this.tokenInput.nativeElement.value,
             },
+            dataModel: (this.deviceCreateOutputFormGroup.get('dataModel').value as DataModelInfoFragment).id,
         };
     }
+
 
     private getAuthorizationCredentials(
         policy: AuthPolicy
@@ -246,11 +279,9 @@ export class DeviceCreateComponent implements OnInit, AfterViewInit {
         }
     }
 
-    private _filterDataTypes(value: string): string[] {
-        const filterValue = value.toLowerCase();
+    private _filterStates(value: DataModelInfoFragment): DataModelInfoFragment[] {
+        const filterValue = value.name.toLowerCase();
 
-        return this.allDataOutputTypes.filter((dataType) =>
-            dataType.toLowerCase().includes(filterValue)
-        );
+        return this.dataModels.filter(state => state.name.toLowerCase().includes(filterValue));
     }
 }

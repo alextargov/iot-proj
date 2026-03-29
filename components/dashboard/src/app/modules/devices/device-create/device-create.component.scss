@@ -90,12 +90,12 @@
         }
     }
 
-    &__data-output {
+    &__data-model {
         display: flex;
         justify-content: space-between;
         height: 100%;
 
-        &-keys,
+        &-schema-viewer,
         &-form {
             width: 45%;
         }
@@ -106,7 +106,7 @@
             }
         }
 
-        &-keys {
+        &-schema-viewer {
             display: flex;
             flex-direction: column;
         }

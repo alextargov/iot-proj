@@ -9,7 +9,7 @@ import { Router } from '@angular/router';
 import { DatamodelService } from '../../../shared/services/datamodel/datamodel.service';
 import { JsonSchemaService } from '../../../shared/services/jsonschema/jsonschema.service';
 
-enum SchemaTypeEnum {
+export enum SchemaTypeEnum {
     Object = 'object',
     Array = 'array',
     String = 'string',
@@ -17,7 +17,7 @@ enum SchemaTypeEnum {
     Boolean = 'boolean',
 }
 
-enum Mode {
+export enum Mode {
     UI = 'ui',
     CODE = 'code',
 }
@@ -68,7 +68,7 @@ export class DatamodelCreateComponent implements OnInit {
         },
     };
 
-    editorInstance!: any;
+    public editorInstance!: any;
 
     constructor(
         private fb: UntypedFormBuilder,
@@ -87,7 +87,7 @@ export class DatamodelCreateComponent implements OnInit {
         this.root = JSON.parse(this.exampleSchema);
     }
 
-    editorInit(editor: any) {
+    public editorInit(editor: any) {
         this.editorInstance = editor;
     }
 
@@ -102,7 +102,7 @@ export class DatamodelCreateComponent implements OnInit {
         const dataModelInput: DataModelInput = {
             name: this.datamodelFormGroup.get('name').value,
             description: this.datamodelFormGroup.get('description').value,
-            schema: this.schemaOutput,
+            schema: this.buildSchema(this.root),
         };
         this.dataModelService
             .createDataModel(dataModelInput)
@@ -122,7 +122,7 @@ export class DatamodelCreateComponent implements OnInit {
                 properties: {},
             };
 
-            const required: string[] = [];
+                const required: string[] = [];
 
             for (const key in field.properties) {
                 const prop = field.properties[key];
@@ -184,12 +184,24 @@ export class DatamodelCreateComponent implements OnInit {
             monacoInstance.editor.setModelMarkers(model, 'owner', markers);
             return;
         }
-
-        this.root = JSON.parse(code);
+        console.log(this.buildSchema(JSON.parse(code)))
+        this.root = this.buildSchema(JSON.parse(code));
         this.mode = Mode.UI;
     }
 
     public onCodeToggleClick() {
+        console.log(this.root);
+        console.log(this.buildSchema(this.root));
+        const a = JSON.stringify(this.buildSchema(this.root), null, 2); // 2 spaces indentation and newlines
+        this.datamodelFormGroup.get('code').setValue(a);
         this.mode = Mode.CODE;
+
+        setTimeout(() => {
+            if (this.editorInstance) {
+                this.editorInstance.getAction('editor.action.formatDocument').run();
+            }
+        })
+
+
     }
 }

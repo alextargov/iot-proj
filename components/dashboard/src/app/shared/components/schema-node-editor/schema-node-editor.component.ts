@@ -26,6 +26,7 @@ export class SchemaNodeEditorComponent implements OnInit {
     @Input() key = '';
     @Input() depth = 0;
     @Input() parentType: 'object' | 'array' | null = null;
+    @Input() isReadOnly = false;
 
     @Output() remove = new EventEmitter<void>();
     @Output() keyChange = new EventEmitter<{

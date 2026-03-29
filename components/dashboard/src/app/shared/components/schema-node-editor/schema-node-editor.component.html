@@ -16,6 +16,7 @@
         <mat-form-field appearance="outline" class="w-32">
             <mat-label>Type</mat-label>
             <mat-select
+                [disabled]="isReadOnly"
                 [(ngModel)]="field.type"
                 (selectionChange)="onTypeChange()"
             >
@@ -49,7 +50,7 @@
             mat-icon-button
             color="warn"
             (click)="remove.emit()"
-            *ngIf="depth > 0"
+            *ngIf="!isReadOnly && depth > 0"
         >
             <mat-icon>delete</mat-icon>
         </button>
@@ -63,11 +64,12 @@
                 [key]="item.key"
                 [depth]="depth + 1"
                 [parentType]="'object'"
+                [isReadOnly]="isReadOnly"
                 (keyChange)="onKeyChange(item.key, $event)"
                 (remove)="removeProperty(item.key)"
             ></app-schema-node-editor>
         </div>
-        <button mat-icon-button color="primary" (click)="addProperty()">
+        <button mat-icon-button color="primary" (click)="addProperty()" *ngIf="!isReadOnly">
             <mat-icon>add</mat-icon>
         </button>
     </div>
@@ -78,6 +80,7 @@
             [field]="field.items!"
             [depth]="depth + 1"
             [parentType]="'array'"
+            [isReadOnly]="isReadOnly"
         ></app-schema-node-editor>
     </div>
 </div>

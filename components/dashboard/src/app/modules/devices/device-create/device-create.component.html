@@ -308,34 +308,63 @@
         </div>
     </mat-step>
     <mat-step>
-        <ng-template matStepLabel>Data Output</ng-template>
+        <ng-template matStepLabel>Data Model</ng-template>
 
         <div class="device-create__container-step">
-            <div class="device-create__data-output">
+            <div class="device-create__data-model">
                 <form
-                    class="device-create__data-output-form"
+                    class="device-create__data-model-form"
                     [formGroup]="deviceCreateOutputFormGroup"
                 >
-                    <h4>Enter outputs for the device:</h4>
+                    <h4>Enter data models for device:</h4>
                     <mat-form-field
-                        class="device-create__data-output-form-field"
+                        class="device-create__data-model-form-field"
                     >
+                        <mat-label>Data Model</mat-label>
+                        <input matInput
+                               aria-label="State"
+                               [matAutocomplete]="auto"
+                               formControlName="dataModel">
+                        <mat-autocomplete #auto="matAutocomplete"  [displayWith]="displayDataModel" (optionSelected)="onDataModelSelected($event)">
+                            <mat-option *ngFor="let dataModel of filteredDataModels | async" [value]="dataModel">
+                                <span>{{dataModel.name}}</span> |
+                                <small>Description: {{dataModel.description}}</small>
+                            </mat-option>
+                        </mat-autocomplete>
                     </mat-form-field>
                 </form>
 
-                <div class="device-create__data-output-keys">
-                    <h4>Enter Data Type keys used by widgets</h4>
-                    <mat-form-field
-                        *ngFor="let dataOutputType of dataOutputTypes"
-                        class="device-create__data-output-keys-field"
+                <div class="device-create__data-model-schema-viewer">
+                    <mat-button-toggle-group value="code" [(value)]="selectedMode"
                     >
-                        <mat-label>{{ dataOutputType.name }}</mat-label>
-                        <input
-                            matInput
-                            type="text"
-                            [(ngModel)]="dataOutputType.key"
-                        />
-                    </mat-form-field>
+                        <mat-button-toggle
+                            value="code"
+                            (click)="onCodeToggleClick()"
+                        >
+                            <mat-icon>code</mat-icon>
+                            Code based
+                        </mat-button-toggle>
+                        <mat-button-toggle value="ui" (click)="onUiToggleClick()">
+                            <mat-icon>table_rows</mat-icon>
+                            UI based
+                        </mat-button-toggle>
+                    </mat-button-toggle-group>
+
+                    <ngx-monaco-editor
+                        *ngIf="mode === 'code'"
+                        [options]="editorOptions"
+                        (onInit)="editorInit($event)"
+                        style="height: 400px"
+                    ></ngx-monaco-editor>
+                    <div *ngIf="mode === 'ui'">
+                        <h1>Dynamic JSON Schema Builder</h1>
+
+                        <app-schema-node-editor
+                            [field]="schema"
+                            [depth]="0"
+                            [isReadOnly]="true"
+                        ></app-schema-node-editor>
+                    </div>
                 </div>
             </div>
 
