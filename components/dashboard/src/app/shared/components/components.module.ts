@@ -1,4 +1,6 @@
 import { NgModule } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { BrowserModule } from '@angular/platform-browser';
@@ -9,21 +11,22 @@ import { AppRoutingModule } from 'src/app/app-routing.module';
 import { ContentHeaderComponent } from './content-header/content-header.component';
 
 import 'blockly/blocks';
-import { NgxBlocklyModule } from 'ngx-blockly';
+import { NgxBlocklyNewModule } from 'ngx-blockly-new';
 import { LoginDialogComponent } from './login/login-dialog.component';
-import { ReactiveFormsModule } from '@angular/forms';
 import { SchemaNodeEditorComponent } from './schema-node-editor/schema-node-editor.component';
 import { CoreModule } from '../../core/core.module';
 
 @NgModule({
     imports: [
+        CommonModule,
+        FormsModule,
         MatIconModule,
         MatToolbarModule,
         BrowserAnimationsModule,
         BrowserModule,
         MaterialModule,
         AppRoutingModule,
-        NgxBlocklyModule,
+        NgxBlocklyNewModule,
         ReactiveFormsModule,
         CoreModule,
     ],

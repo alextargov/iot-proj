@@ -33,6 +33,7 @@ interface SchemaField {
 }
 
 @Component({
+    standalone: false,
     selector: 'app-datamodel-create',
     templateUrl: './datamodel-create.component.html',
     styleUrls: ['./datamodel-create.component.scss'],

@@ -1,43 +1,32 @@
-import { HttpClientModule } from '@angular/common/http';
-import { NgModule } from '@angular/core';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { NgModule, inject } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import {
-    ApolloClientOptions,
     ApolloLink,
     InMemoryCache,
 } from '@apollo/client/core';
 import { setContext } from '@apollo/client/link/context';
 import { onError } from '@apollo/client/link/error';
-import { ApolloModule, APOLLO_OPTIONS } from 'apollo-angular';
+import { provideApollo } from 'apollo-angular';
 import { HttpLink } from 'apollo-angular/http';
 import { environment } from 'src/environments/environment';
 import { AuthService } from '../services/auth/auth.service';
 
-const errorLink = onError(({ graphQLErrors, networkError, response }) => {
-    // React only on graphql errors
-    if (graphQLErrors && graphQLErrors.length > 0) {
-        if (
-            (graphQLErrors[0] as any)?.statusCode >= 400 &&
-            (graphQLErrors[0] as any)?.statusCode < 500
-        ) {
-            console.error(`[Client side error]: ${graphQLErrors[0].message}`);
-        } else {
-            console.error(`[Server side error]: ${graphQLErrors[0].message}`);
-        }
-    }
-    if (networkError) {
-        console.error(`[Network error]: ${networkError.message}`);
+const errorLink = onError(({ error, result }) => {
+    // React on errors
+    if (error) {
+        console.error(`[Apollo Error]: ${error.message}`);
     }
 
-    if (response.errors) {
-        throw new Error('error');
+    if (result?.errors && result.errors.length > 0) {
+        console.error(`[GraphQL Error]: ${result.errors[0].message}`);
     }
 
-    console.log('response', response);
+    console.log('response', result);
 });
 
 const basicContext = (authToken: string) =>
-    setContext((_, { headers }) => {
+    setContext((_, { headers }: any) => {
         const h = {
             ...headers,
             Accept: 'charset=utf-8',
@@ -48,10 +37,11 @@ const basicContext = (authToken: string) =>
             headers: h,
         };
     });
+
 export function createDefaultApollo(
     httpLink: HttpLink,
     authService: AuthService
-): ApolloClientOptions<any> {
+) {
     const cache = new InMemoryCache({});
 
     // create http
@@ -70,20 +60,21 @@ export function createDefaultApollo(
         link: ApolloLink.from([basicContext(authToken), errorLink, http]),
         defaultOptions: {
             watchQuery: {
-                errorPolicy: 'all',
+                errorPolicy: 'all' as const,
             },
         },
     };
 }
 
 @NgModule({
-    imports: [BrowserModule, HttpClientModule, ApolloModule],
+    imports: [BrowserModule],
     providers: [
-        {
-            provide: APOLLO_OPTIONS,
-            useFactory: createDefaultApollo,
-            deps: [HttpLink, AuthService],
-        },
+        provideHttpClient(withInterceptorsFromDi()),
+        provideApollo(() => {
+            const httpLink = inject(HttpLink);
+            const authService = inject(AuthService);
+            return createDefaultApollo(httpLink, authService);
+        }),
     ],
 })
 export class GraphQLModule {}

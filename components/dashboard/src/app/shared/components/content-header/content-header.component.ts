@@ -8,12 +8,13 @@ export interface ContentHeaderButton {
 }
 
 @Component({
+    standalone: false,
     selector: 'app-content-header',
     templateUrl: './content-header.component.html',
     styleUrls: ['./content-header.component.scss'],
 })
 export class ContentHeaderComponent {
-    @Input() public buttons: ContentHeaderButton;
+    @Input() public buttons: ContentHeaderButton[];
     @Input() public title: string;
 
     constructor() {}

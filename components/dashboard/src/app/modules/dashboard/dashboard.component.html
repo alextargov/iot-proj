@@ -4,8 +4,8 @@
         <button
             *ngIf="!isLocked"
             mat-mini-fab
-            (mousedown)="removeAll($event, item)"
-            (touchstart)="removeAll($event, item)"
+            (mousedown)="removeAll($event)"
+            (touchstart)="removeAll($event)"
         >
             <mat-icon>delete</mat-icon>
         </button>

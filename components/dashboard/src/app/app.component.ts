@@ -9,6 +9,7 @@ import { EventBusService } from './shared/services/eventbus/eventbus.service';
 
 @UntilDestroy()
 @Component({
+    standalone: false,
     selector: 'app-root',
     templateUrl: './app.component.html',
     styleUrls: ['./app.component.scss'],

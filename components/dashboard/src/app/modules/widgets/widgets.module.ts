@@ -10,7 +10,7 @@ import { WidgetCreateComponent } from './widget-create/widget-create.component';
 import { WidgetDetailsComponent } from './widget-details/widget-details.component';
 
 import 'blockly/blocks';
-import { NgxBlocklyModule } from 'ngx-blockly';
+import { NgxBlocklyNewModule } from 'ngx-blockly-new';
 import { MatInputModule } from '@angular/material/input';
 import { WidgetDeleteComponent } from './widget-delete/widget-delete.component';
 
@@ -30,7 +30,7 @@ import { WidgetDeleteComponent } from './widget-delete/widget-delete.component';
     imports: [
         CoreModule,
         MaterialModule,
-        NgxBlocklyModule,
+        NgxBlocklyNewModule,
         MatInputModule,
 
         WidgetsRoutingModule,

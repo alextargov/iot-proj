@@ -1,5 +1,5 @@
-import { CustomBlock, Blockly } from 'ngx-blockly';
-import { javascriptGenerator } from 'blockly/javascript';
+import { CustomBlock, Blockly } from 'ngx-blockly-new';
+import { javascriptGenerator, Order } from 'blockly/javascript';
 
 export class DynamicDropdownBlock extends CustomBlock {
     public data: Blockly.MenuOption[];
@@ -39,7 +39,7 @@ export class DynamicDropdownBlock extends CustomBlock {
         }
     }
 
-    public toJavaScriptCode(block: Blockly.Block): string | any[] {
+    public toJavaScriptCode(block: any): string | any[] {
         // TODO: Assemble JavaScript into code variable.
         const deviceId = block.getFieldValue(this.id);
 
@@ -61,7 +61,7 @@ export class DynamicDropdownBlock extends CustomBlock {
         }
 
         if (this.isOutput) {
-            return [code, javascriptGenerator.ORDER_NONE];
+            return [code, Order.NONE];
         } else {
             return code;
         }

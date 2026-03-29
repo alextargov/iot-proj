@@ -11,7 +11,6 @@
 >
     <mat-step
         [stepControl]="detailsFormGroup"
-        [errorMessage]="detailsFormGroup.errors"
     >
         <ng-template matStepLabel>Widget details</ng-template>
 
@@ -84,7 +83,6 @@
                                 *ngFor="let keyword of selectedDevices"
                                 (removed)="removeDevice(keyword)"
                                 [value]="keyword.name"
-                                [selected]="keyword"
                             >
                                 {{ keyword.name }}
                                 <button

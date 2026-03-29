@@ -7,7 +7,7 @@ import { MaterialModule } from 'src/app/shared/material.module';
 import { DatamodelRoutingModule } from './datamodel-routing.module';
 import { DatamodelCreateComponent } from './datamodel-create/datamodel-create.component';
 import { DatamodelListComponent } from './datamodel-list/datamodel-list.component';
-import { MonacoEditorModule } from 'ngx-monaco-editor';
+import { MonacoEditorModule } from 'ngx-monaco-editor-v2';
 import { DatamodelResolver } from './datamodel-resolver.service';
 import { DataModelDeleteComponent } from './datamodel-delete/datamodel-delete.component';
 

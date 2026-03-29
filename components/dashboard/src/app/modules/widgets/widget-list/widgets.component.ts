@@ -13,6 +13,7 @@ import { WidgetStatus } from '../../../shared/services/widget/widget.interface';
 import { WidgetDeleteComponent } from '../widget-delete/widget-delete.component';
 
 @Component({
+    standalone: false,
     selector: 'app-widgets',
     templateUrl: './widgets.component.html',
     styleUrls: ['./widgets.component.scss'],

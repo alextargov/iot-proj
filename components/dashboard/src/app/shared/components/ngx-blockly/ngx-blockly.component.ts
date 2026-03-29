@@ -18,9 +18,10 @@ import {
     VARIABLES_CATEGORY,
     Blockly,
     NgxBlocklyComponent,
-} from 'ngx-blockly';
+} from 'ngx-blockly-new';
 
 @Component({
+    standalone: false,
     selector: 'app-ngx-blockly--',
     templateUrl: './ngx-blockly.component.html',
     styleUrls: ['./ngx-blockly.component.css'],

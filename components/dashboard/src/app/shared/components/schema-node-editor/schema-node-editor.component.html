@@ -65,7 +65,7 @@
                 [depth]="depth + 1"
                 [parentType]="'object'"
                 [isReadOnly]="isReadOnly"
-                (keyChange)="onKeyChange(item.key, $event)"
+                (keyChange)="onKeyChange($event.oldKey, $event.newKey)"
                 (remove)="removeProperty(item.key)"
             ></app-schema-node-editor>
         </div>

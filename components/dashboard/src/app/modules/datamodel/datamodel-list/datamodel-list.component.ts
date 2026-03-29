@@ -16,6 +16,7 @@ import { DataModelDeleteComponent } from '../datamodel-delete/datamodel-delete.c
 import { MatDialog } from '@angular/material/dialog';
 
 @Component({
+    standalone: false,
     selector: 'app-datamodel-list',
     templateUrl: './datamodel-list.component.html',
     styleUrls: ['./datamodel-list.component.scss'],

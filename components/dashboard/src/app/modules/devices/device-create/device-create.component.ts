@@ -29,6 +29,7 @@ import {SchemaField} from "../../../shared/components/schema-node-editor/schema-
 import {MatAutocompleteSelectedEvent} from "@angular/material/autocomplete";
 
 @Component({
+    standalone: false,
     selector: 'app-device-create',
     templateUrl: './device-create.component.html',
     styleUrls: ['./device-create.component.scss'],
@@ -148,7 +149,7 @@ export class DeviceCreateComponent implements OnInit, AfterViewInit {
     }
 
     public onEnableConnectionClick(
-        event: KeyboardEvent,
+        event: Event,
         communication: string
     ) {
         event.stopPropagation();

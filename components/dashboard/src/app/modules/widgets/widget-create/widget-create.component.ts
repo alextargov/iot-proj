@@ -29,7 +29,7 @@ import {
     Separator,
     TEXT_CATEGORY,
     VARIABLES_CATEGORY,
-} from 'ngx-blockly';
+} from 'ngx-blockly-new';
 import { DeviceService } from 'src/app/shared/services/device/device.service';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { Observable } from 'rxjs';
@@ -48,6 +48,7 @@ import { WidgetService } from '../../../shared/services/widget/widget.service';
 import { Router } from '@angular/router';
 
 @Component({
+    standalone: false,
     selector: 'app-widget-create',
     templateUrl: './widget-create.component.html',
     styleUrls: ['./widget-create.component.scss'],

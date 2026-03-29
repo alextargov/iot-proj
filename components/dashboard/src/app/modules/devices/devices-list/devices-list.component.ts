@@ -12,6 +12,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { DeviceDeleteComponent } from '../device-delete/device-delete.component';
 
 @Component({
+    standalone: false,
     selector: 'app-devices-list',
     templateUrl: './devices-list.component.html',
     styleUrls: ['./devices-list.component.scss'],

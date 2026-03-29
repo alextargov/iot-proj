@@ -18,12 +18,12 @@
             "prefix": "app",
             "architect": {
                 "build": {
-                    "builder": "@angular-devkit/build-angular:browser",
+                    "builder": "@angular-devkit/build-angular:application",
                     "options": {
                         "outputPath": "dist/dashboard",
                         "index": "src/index.html",
-                        "main": "src/main.ts",
-                        "polyfills": "src/polyfills.ts",
+                        "browser": "src/main.ts",
+                        "polyfills": ["zone.js"],
                         "tsConfig": "tsconfig.app.json",
                         "inlineStyleLanguage": "scss",
                         "assets": [
@@ -36,7 +36,7 @@
                             }
                         ],
                         "styles": [
-                            "./node_modules/@angular/material/prebuilt-themes/deeppurple-amber.css",
+                            "@angular/material/prebuilt-themes/azure-blue.css",
                             "src/styles.scss",
                             "node_modules/ngx-toastr/toastr.css"
                         ],
@@ -48,7 +48,7 @@
                                 {
                                     "type": "initial",
                                     "maximumWarning": "500kb",
-                                    "maximumError": "3mb"
+                                    "maximumError": "4mb"
                                 },
                                 {
                                     "type": "anyComponentStyle",
@@ -65,12 +65,9 @@
                             "outputHashing": "all"
                         },
                         "development": {
-                            "buildOptimizer": false,
                             "optimization": false,
-                            "vendorChunk": true,
                             "extractLicenses": false,
-                            "sourceMap": true,
-                            "namedChunks": true
+                            "sourceMap": true
                         }
                     },
                     "defaultConfiguration": "production"
@@ -79,10 +76,10 @@
                     "builder": "@angular-devkit/build-angular:dev-server",
                     "configurations": {
                         "production": {
-                            "browserTarget": "dashboard:build:production"
+                            "buildTarget": "dashboard:build:production"
                         },
                         "development": {
-                            "browserTarget": "dashboard:build:development"
+                            "buildTarget": "dashboard:build:development"
                         }
                     },
                     "defaultConfiguration": "development"
@@ -90,20 +87,19 @@
                 "extract-i18n": {
                     "builder": "@angular-devkit/build-angular:extract-i18n",
                     "options": {
-                        "browserTarget": "dashboard:build"
+                        "buildTarget": "dashboard:build"
                     }
                 },
                 "test": {
                     "builder": "@angular-devkit/build-angular:karma",
                     "options": {
-                        "main": "src/test.ts",
-                        "polyfills": "src/polyfills.ts",
+                        "polyfills": ["zone.js", "zone.js/testing"],
                         "tsConfig": "tsconfig.spec.json",
                         "karmaConfig": "karma.conf.js",
                         "inlineStyleLanguage": "scss",
                         "assets": ["src/favicon.ico", "src/assets"],
                         "styles": [
-                            "./node_modules/@angular/material/prebuilt-themes/deeppurple-amber.css",
+                            "@angular/material/prebuilt-themes/azure-blue.css",
                             "src/styles.scss"
                         ],
                         "scripts": []
@@ -120,6 +116,6 @@
     },
     "cli": {
         "schematicCollections": ["@angular-eslint/schematics"],
-        "analytics": "6fdddbc7-c7d0-43ab-8054-543c2d30e0c7"
+        "analytics": false
     }
 }

@@ -18,6 +18,7 @@ export interface SchemaField {
 }
 
 @Component({
+    standalone: false,
     selector: 'app-schema-node-editor',
     templateUrl: './schema-node-editor.component.html',
 })

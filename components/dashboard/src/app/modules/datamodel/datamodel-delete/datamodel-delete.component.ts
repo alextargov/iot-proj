@@ -3,6 +3,7 @@ import { DataModelInfoFragment } from '../../../shared/graphql/generated';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 
 @Component({
+    standalone: false,
     selector: 'app-device-delete',
     templateUrl: './datamodel-delete.component.html',
     styleUrls: ['./datamodel-delete.component.scss'],

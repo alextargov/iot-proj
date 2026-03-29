@@ -6,6 +6,7 @@ import { ToastrService } from '../../services/toastr/toastr.service';
 import { EventBusService } from '../../services/eventbus/eventbus.service';
 
 @Component({
+    standalone: false,
     selector: 'app-login-dialog',
     templateUrl: './login-dialog.component.html',
     styleUrls: ['./login-dialog.component.scss'],

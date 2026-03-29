@@ -24,8 +24,8 @@ export class DatamodelService {
 
     public listDataModels(): Observable<DataModelInfoFragment[]> {
         return this.listDataModelsGql
-            .watch({}, { fetchPolicy: 'network-only' })
-            .valueChanges.pipe(map((res) => res.data?.dataModels ?? []));
+            .watch({ fetchPolicy: 'network-only' })
+            .valueChanges.pipe(map((res) => (res.data?.dataModels ?? []) as DataModelInfoFragment[]));
     }
 
     public createDataModel(

@@ -1,4 +1,4 @@
-import { CustomBlock, Blockly } from 'ngx-blockly';
+import { CustomBlock, Blockly } from 'ngx-blockly-new';
 
 export interface IOperation {
     id: string;
@@ -82,7 +82,7 @@ export class OperationBlock extends CustomBlock {
         }
     }
 
-    public toJavaScriptCode(block: Blockly.Block): string | any[] {
+    public toJavaScriptCode(block: any): string | any[] {
         // TODO: Assemble JavaScript into code variable.
         let code = ``;
 

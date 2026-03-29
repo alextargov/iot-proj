@@ -59,7 +59,7 @@ export class DeviceService {
     public getAllDevices(): Observable<DeviceInfoFragment[]> {
         return this.getAllDevicesGql
             .watch()
-            .valueChanges.pipe(map((res) => res.data?.devices ?? []));
+            .valueChanges.pipe(map((res) => (res.data?.devices ?? []) as DeviceInfoFragment[]));
     }
 
     public createDevice(

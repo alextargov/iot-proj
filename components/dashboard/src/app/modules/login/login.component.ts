@@ -6,6 +6,7 @@ import { ToastrService } from '../../shared/services/toastr/toastr.service';
 import { Router } from '@angular/router';
 
 @Component({
+    standalone: false,
     selector: 'app-login',
     templateUrl: './login.component.html',
     styleUrls: ['./login.component.scss'],

@@ -3,6 +3,7 @@ import { DeviceInfoFragment } from '../../../shared/graphql/generated';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 
 @Component({
+    standalone: false,
     selector: 'app-device-delete',
     templateUrl: './device-delete.component.html',
     styleUrls: ['./device-delete.component.scss'],

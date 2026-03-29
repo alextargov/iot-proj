@@ -38,17 +38,20 @@
         "outDir": "./dist/out-tsc",
         "sourceMap": true,
         "declaration": false,
-        "module": "es2020",
-        "moduleResolution": "node",
+        "module": "ES2022",
+        "moduleResolution": "bundler",
         "emitDecoratorMetadata": true,
         "experimentalDecorators": true,
         "importHelpers": true,
-        "target": "es2020",
+        "target": "ES2022",
+        "useDefineForClassFields": false,
         "typeRoots": ["node_modules/@types"],
-        "lib": ["es2020", "dom"],
-        "paths": {
-            "ngx-blockly": ["dist/ngx-blockly"],
-            "ngx-blockly/*": ["dist/ngx-blockly/*"]
-        }
+        "lib": ["ES2022", "dom"]
+    },
+    "angularCompilerOptions": {
+        "enableI18nLegacyMessageIdFormat": false,
+        "strictInjectionParameters": true,
+        "strictInputAccessModifiers": true,
+        "strictTemplates": true
     }
 }

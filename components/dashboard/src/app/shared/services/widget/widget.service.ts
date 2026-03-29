@@ -29,7 +29,7 @@ export class WidgetService {
     public getAll(): Observable<WidgetInfoFragment[]> {
         return this.getAllWidgetsGql
             .watch()
-            .valueChanges.pipe(map((res) => res.data?.widgets ?? []));
+            .valueChanges.pipe(map((res) => (res.data?.widgets ?? []) as WidgetInfoFragment[]));
     }
 
     public create(

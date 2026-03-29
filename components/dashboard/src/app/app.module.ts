@@ -15,7 +15,7 @@ import { DevicesModule } from './modules/devices/devices.module';
 import { HttpClientModule } from '@angular/common/http';
 import { LoginModule } from './modules/login/login.module';
 import { DatamodelModule } from './modules/datamodel/datamodel.module';
-import { MonacoEditorModule } from 'ngx-monaco-editor';
+import { MonacoEditorModule } from 'ngx-monaco-editor-v2';
 
 @NgModule({
     declarations: [AppComponent],
