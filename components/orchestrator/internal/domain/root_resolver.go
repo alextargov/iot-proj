@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/auth"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/datamodel"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/device"
@@ -38,13 +39,13 @@ func NewRootResolver(persistence persistence.Transactioner, scheduler k8s.Schedu
 	widgetRepo := widget.NewRepository(widgetConv)
 	widgetSvc := widget.NewService(widgetRepo, uuidService)
 
-	deviceRes := device.NewResolver(persistence, deviceSvc, hostSvc, deviceConv, hostConv)
-	widgetRes := widget.NewResolver(persistence, widgetSvc, widgetConv, scheduler)
-
 	dataModelConv := datamodel.NewConverter()
 	dataModelRepo := datamodel.NewRepository(dataModelConv)
 	dataModelSvc := datamodel.NewService(dataModelRepo, uuidService)
 	dataModelRes := datamodel.NewResolver(persistence, dataModelSvc, dataModelConv)
+
+	deviceRes := device.NewResolver(persistence, deviceSvc, hostSvc, dataModelSvc, deviceConv, hostConv, dataModelConv)
+	widgetRes := widget.NewResolver(persistence, widgetSvc, widgetConv, scheduler)
 
 	return &RootResolver{
 		persistence: persistence,
@@ -142,4 +143,8 @@ type deviceResolver struct {
 
 func (r deviceResolver) Host(ctx context.Context, obj *graphql.Device) (*graphql.Host, error) {
 	return r.device.Host(ctx, obj)
+}
+
+func (r deviceResolver) DataModel(ctx context.Context, obj *graphql.Device) (*graphql.DataModel, error) {
+	return r.device.DataModel(ctx, obj)
 }

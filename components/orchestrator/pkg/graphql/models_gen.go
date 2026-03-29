@@ -91,6 +91,7 @@ type DeviceInput struct {
 	Status      DeviceStatus `json:"status"`
 	Host        *HostInput   `json:"host,omitempty"`
 	Auth        *AuthInput   `json:"auth,omitempty"`
+	DataModel   string       `json:"dataModel"`
 }
 
 type DevicePage struct {

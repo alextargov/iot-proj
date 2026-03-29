@@ -3,11 +3,12 @@ package device
 import (
 	"database/sql"
 	"encoding/json"
+	"time"
+
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/model"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/repo"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/graphql"
 	"github.com/pkg/errors"
-	"time"
 )
 
 type hostConv interface {
@@ -45,6 +46,7 @@ func (c *converter) ToEntity(model model.Device) (*Entity, error) {
 		Description: repo.NewNullableString(model.Description),
 		Status:      string(model.Status),
 		Auth:        optionalAuth,
+		DataModelID: model.DataModelID,
 		CreatedAt:   model.CreatedAt,
 		UpdatedAt:   model.UpdatedAt,
 	}, nil
@@ -80,6 +82,7 @@ func (c *converter) InputFromGraphQL(in graphql.DeviceInput) model.DeviceInput {
 		Status:      model.DeviceStatus(in.Status),
 		Host:        c.hostConv.InputFromGraphQL(in.Host),
 		Auth:        c.authConv.InputFromGraphQL(in.Auth),
+		DataModel:   in.DataModel,
 	}
 }
 

@@ -12,6 +12,7 @@ type Entity struct {
 	Description sql.NullString `db:"description"`
 	Status      string         `db:"status"`
 	Auth        sql.NullString `db:"auth"`
+	DataModelID string         `db:"data_model_id"`
 	CreatedAt   *time.Time     `db:"created_at"`
 	UpdatedAt   *time.Time     `db:"updated_at"`
 }

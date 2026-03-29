@@ -29,25 +29,37 @@ type HostSvc interface {
 	DeleteByDeviceID(ctx context.Context, deviceID string) error
 }
 
+type DataModelSvc interface {
+	GetByID(ctx context.Context, id string) (*model.DataModel, error)
+}
+
 type HostConv interface {
 	ToGraphQL(in *model.Host) *graphql.Host
+}
+
+type DataModelConv interface {
+	ToGraphQL(in *model.DataModel) *graphql.DataModel
 }
 
 type Resolver struct {
 	transact        persistence.Transactioner
 	deviceSvc       DeviceSvc
 	hostSvc         HostSvc
+	dataModelSvc    DataModelSvc
 	deviceConverter DeviceConverter
 	hostConv        HostConv
+	dataModelConv   DataModelConv
 }
 
-func NewResolver(transact persistence.Transactioner, deviceSvc DeviceSvc, hostSvc HostSvc, deviceConverter DeviceConverter, hostConv HostConv) *Resolver {
+func NewResolver(transact persistence.Transactioner, deviceSvc DeviceSvc, hostSvc HostSvc, dataModelSvc DataModelSvc, deviceConverter DeviceConverter, hostConv HostConv, dataModelConv DataModelConv) *Resolver {
 	return &Resolver{
 		transact:        transact,
 		deviceSvc:       deviceSvc,
 		hostSvc:         hostSvc,
+		dataModelSvc:    dataModelSvc,
 		deviceConverter: deviceConverter,
 		hostConv:        hostConv,
+		dataModelConv:   dataModelConv,
 	}
 }
 
@@ -184,4 +196,29 @@ func (r *Resolver) Host(ctx context.Context, obj *graphql.Device) (*graphql.Host
 	}
 
 	return r.hostConv.ToGraphQL(host), nil
+}
+
+func (r *Resolver) DataModel(ctx context.Context, obj *graphql.Device) (*graphql.DataModel, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	host, err := r.dataModelSvc.GetByID(ctx, obj.DataModelID)
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return nil, tx.Commit()
+		}
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return r.dataModelConv.ToGraphQL(host), nil
 }

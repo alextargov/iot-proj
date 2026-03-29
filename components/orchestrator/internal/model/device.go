@@ -18,6 +18,7 @@ type DeviceInput struct {
 	Host               *HostInput
 	CommunicationToken *string
 	Auth               *AuthInput
+	DataModel          string
 }
 
 func (di *DeviceInput) ToDevice(id string) Device {
@@ -28,6 +29,7 @@ func (di *DeviceInput) ToDevice(id string) Device {
 		Status:             di.Status,
 		CommunicationToken: di.CommunicationToken,
 		Auth:               di.Auth.ToAuth(),
+		DataModelID:        di.DataModel,
 	}
 }
 
@@ -40,6 +42,7 @@ type Device struct {
 	Host               *Host        `json:"host"`
 	CommunicationToken *string      `json:"communicationToken"`
 	Auth               *Auth        `json:"auth"`
+	DataModelID        string       `json:"dataModelID"`
 	CreatedAt          *time.Time   `json:"createdAt"`
 	UpdatedAt          *time.Time   `json:"updatedAt"`
 }

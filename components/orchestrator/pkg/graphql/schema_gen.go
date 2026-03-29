@@ -81,6 +81,7 @@ type ComplexityRoot struct {
 	Device struct {
 		Auth        func(childComplexity int) int
 		CreatedAt   func(childComplexity int) int
+		DataModel   func(childComplexity int) int
 		Description func(childComplexity int) int
 		Host        func(childComplexity int) int
 		ID          func(childComplexity int) int
@@ -157,6 +158,8 @@ type ComplexityRoot struct {
 
 type DeviceResolver interface {
 	Host(ctx context.Context, obj *Device) (*Host, error)
+
+	DataModel(ctx context.Context, obj *Device) (*DataModel, error)
 }
 type MutationResolver interface {
 	CreateDevice(ctx context.Context, input DeviceInput) (*Device, error)
@@ -315,6 +318,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Device.CreatedAt(childComplexity), true
+
+	case "Device.dataModel":
+		if e.complexity.Device.DataModel == nil {
+			break
+		}
+
+		return e.complexity.Device.DataModel(childComplexity), true
 
 	case "Device.description":
 		if e.complexity.Device.Description == nil {
@@ -2395,6 +2405,61 @@ func (ec *executionContext) fieldContext_Device_auth(_ context.Context, field gr
 	return fc, nil
 }
 
+func (ec *executionContext) _Device_dataModel(ctx context.Context, field graphql.CollectedField, obj *Device) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Device_dataModel(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Device().DataModel(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*DataModel)
+	fc.Result = res
+	return ec.marshalODataModel2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDataModel(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Device_dataModel(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Device",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_DataModel_id(ctx, field)
+			case "name":
+				return ec.fieldContext_DataModel_name(ctx, field)
+			case "description":
+				return ec.fieldContext_DataModel_description(ctx, field)
+			case "schema":
+				return ec.fieldContext_DataModel_schema(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_DataModel_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_DataModel_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DataModel", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Device_createdAt(ctx context.Context, field graphql.CollectedField, obj *Device) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Device_createdAt(ctx, field)
 	if err != nil {
@@ -2530,6 +2595,8 @@ func (ec *executionContext) fieldContext_DevicePage_data(_ context.Context, fiel
 				return ec.fieldContext_Device_host(ctx, field)
 			case "auth":
 				return ec.fieldContext_Device_auth(ctx, field)
+			case "dataModel":
+				return ec.fieldContext_Device_dataModel(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Device_createdAt(ctx, field)
 			case "updatedAt":
@@ -2860,6 +2927,8 @@ func (ec *executionContext) fieldContext_Mutation_createDevice(ctx context.Conte
 				return ec.fieldContext_Device_host(ctx, field)
 			case "auth":
 				return ec.fieldContext_Device_auth(ctx, field)
+			case "dataModel":
+				return ec.fieldContext_Device_dataModel(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Device_createdAt(ctx, field)
 			case "updatedAt":
@@ -2935,6 +3004,8 @@ func (ec *executionContext) fieldContext_Mutation_setDeviceOperation(ctx context
 				return ec.fieldContext_Device_host(ctx, field)
 			case "auth":
 				return ec.fieldContext_Device_auth(ctx, field)
+			case "dataModel":
+				return ec.fieldContext_Device_dataModel(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Device_createdAt(ctx, field)
 			case "updatedAt":
@@ -3715,6 +3786,8 @@ func (ec *executionContext) fieldContext_Query_devices(_ context.Context, field 
 				return ec.fieldContext_Device_host(ctx, field)
 			case "auth":
 				return ec.fieldContext_Device_auth(ctx, field)
+			case "dataModel":
+				return ec.fieldContext_Device_dataModel(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Device_createdAt(ctx, field)
 			case "updatedAt":
@@ -3776,6 +3849,8 @@ func (ec *executionContext) fieldContext_Query_device(ctx context.Context, field
 				return ec.fieldContext_Device_host(ctx, field)
 			case "auth":
 				return ec.fieldContext_Device_auth(ctx, field)
+			case "dataModel":
+				return ec.fieldContext_Device_dataModel(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Device_createdAt(ctx, field)
 			case "updatedAt":
@@ -3848,6 +3923,8 @@ func (ec *executionContext) fieldContext_Query_deviceByIdAndAggregation(ctx cont
 				return ec.fieldContext_Device_host(ctx, field)
 			case "auth":
 				return ec.fieldContext_Device_auth(ctx, field)
+			case "dataModel":
+				return ec.fieldContext_Device_dataModel(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Device_createdAt(ctx, field)
 			case "updatedAt":
@@ -6879,7 +6956,7 @@ func (ec *executionContext) unmarshalInputDeviceInput(ctx context.Context, obj a
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "description", "status", "host", "auth"}
+	fieldsInOrder := [...]string{"name", "description", "status", "host", "auth", "dataModel"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -6921,6 +6998,13 @@ func (ec *executionContext) unmarshalInputDeviceInput(ctx context.Context, obj a
 				return it, err
 			}
 			it.Auth = data
+		case "dataModel":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dataModel"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DataModel = data
 		}
 	}
 
@@ -7457,6 +7541,39 @@ func (ec *executionContext) _Device(ctx context.Context, sel ast.SelectionSet, o
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "auth":
 			out.Values[i] = ec._Device_auth(ctx, field, obj)
+		case "dataModel":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Device_dataModel(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "createdAt":
 			out.Values[i] = ec._Device_createdAt(ctx, field, obj)
 		case "updatedAt":
