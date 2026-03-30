@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 
 import {
     CompactType,
@@ -10,6 +11,7 @@ import {
     PushDirections,
     Resizable,
 } from 'angular-gridster2';
+import { DashboardService, DashboardStats } from '../../shared/services/dashboard/dashboard.service';
 
 interface Safe extends GridsterConfig {
     draggable: Draggable;
@@ -23,14 +25,56 @@ interface Safe extends GridsterConfig {
     templateUrl: './dashboard.component.html',
     styleUrls: ['./dashboard.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    // encapsulation: ViewEncapsulation.None
 })
 export class DashboardComponent implements OnInit {
     public options: Safe;
     public dashboard: Array<GridsterItemConfig>;
     public isLocked: boolean = true;
 
+    public stats: DashboardStats | null = null;
+    public isLoading = true;
+    public error: string | null = null;
+
+    constructor(
+        private readonly dashboardService: DashboardService,
+        private readonly router: Router,
+        private readonly cdr: ChangeDetectorRef
+    ) {}
+
     ngOnInit(): void {
+        this.loadStats();
+        this.initGridsterOptions();
+        this.dashboard = [];
+    }
+
+    private loadStats(): void {
+        this.isLoading = true;
+        this.error = null;
+
+        this.dashboardService.getStats().subscribe({
+            next: (stats) => {
+                this.stats = stats;
+                this.isLoading = false;
+                this.cdr.markForCheck();
+            },
+            error: (err) => {
+                console.error('Failed to load dashboard stats:', err);
+                this.error = 'Failed to load dashboard data. Please try again.';
+                this.isLoading = false;
+                this.cdr.markForCheck();
+            },
+        });
+    }
+
+    public refreshStats(): void {
+        this.loadStats();
+    }
+
+    public navigateTo(path: string): void {
+        this.router.navigate([path]);
+    }
+
+    private initGridsterOptions(): void {
         this.options = {
             gridType: GridType.Fit,
             compactType: CompactType.None,
@@ -91,52 +135,6 @@ export class DashboardComponent implements OnInit {
             disableWarnings: false,
             scrollToNewItems: false,
         };
-
-        this.dashboard = [
-            // { cols: 2, rows: 1, y: 0, x: 0 },
-            // { cols: 2, rows: 2, y: 0, x: 2, hasContent: true },
-            // { cols: 1, rows: 1, y: 0, x: 4 },
-            // { cols: 1, rows: 1, y: 2, x: 5 },
-            // { cols: 1, rows: 1, y: 1, x: 0 },
-            // { cols: 1, rows: 1, y: 1, x: 0 },
-            // {
-            //   cols: 2,
-            //   rows: 2,
-            //   y: 3,
-            //   x: 5,
-            //   minItemRows: 2,
-            //   minItemCols: 2,
-            //   label: 'Min rows & cols = 2'
-            // },
-            // {
-            //   cols: 2,
-            //   rows: 2,
-            //   y: 2,
-            //   x: 0,
-            //   maxItemRows: 2,
-            //   maxItemCols: 2,
-            //   label: 'Max rows & cols = 2'
-            // },
-            // {
-            //   cols: 2,
-            //   rows: 1,
-            //   y: 2,
-            //   x: 2,
-            //   dragEnabled: true,
-            //   resizeEnabled: true,
-            //   label: 'Drag&Resize Enabled'
-            // },
-            // {
-            //   cols: 1,
-            //   rows: 1,
-            //   y: 2,
-            //   x: 4,
-            //   dragEnabled: false,
-            //   resizeEnabled: false,
-            //   label: 'Drag&Resize Disabled'
-            // },
-            // { cols: 1, rows: 1, y: 2, x: 6 }
-        ];
     }
 
     changedOptions(): void {
