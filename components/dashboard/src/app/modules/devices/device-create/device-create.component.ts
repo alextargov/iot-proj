@@ -12,6 +12,7 @@ import {
 } from '@angular/forms';
 
 import { MatStepper } from '@angular/material/stepper';
+import { Router } from '@angular/router';
 import { DeviceService } from '../../../shared/services/device/device.service';
 import { AuthPolicy } from '../../../shared/services/device/device.interface';
 import { ToastrService } from '../../../shared/services/toastr/toastr.service';
@@ -87,18 +88,21 @@ export class DeviceCreateComponent implements OnInit, AfterViewInit {
         private fb: UntypedFormBuilder,
         private deviceService: DeviceService,
         private dataModelService: DatamodelService,
-        private toast: ToastrService
+        private toast: ToastrService,
+        private router: Router
     ) {
 
     }
 
     public ngOnInit(): void {
+        const duplicateData = history.state?.duplicate;
+
         this.deviceCreateMetadataFormGroup = this.fb.group({
-            name: ['', [Validators.required, Validators.maxLength(128)]],
-            description: ['', [Validators.required, Validators.maxLength(512)]],
-            deviceURL: [''],
-            turnOnEndpoint: [''],
-            turnOffEndpoint: [''],
+            name: [duplicateData?.name || '', [Validators.required, Validators.maxLength(128)]],
+            description: [duplicateData?.description || '', [Validators.required, Validators.maxLength(512)]],
+            deviceURL: [duplicateData?.host?.url || ''],
+            turnOnEndpoint: [duplicateData?.host?.turnOnEndpoint || ''],
+            turnOffEndpoint: [duplicateData?.host?.turnOffEndpoint || ''],
         });
         this.deviceCreateAuthorizationFormGroup = this.fb.group({
             communicationToDevice: [false],

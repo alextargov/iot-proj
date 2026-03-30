@@ -137,6 +137,7 @@ export class WidgetCreateComponent implements OnInit {
     public label: Label = new Label('ExampleLabel', 'TestLabel');
     public workspaceXML: string;
     public workspaceCode: string;
+    private duplicateWorkspace: string | null = null;
 
     public config: BlocklyConfig = {
         trashcan: true,
@@ -175,26 +176,44 @@ export class WidgetCreateComponent implements OnInit {
     ) {}
 
     ngOnInit(): void {
+        const duplicateData = history.state?.duplicate;
+
         this.detailsFormGroup = this.formBuilder.group({
             name: [
-                '',
+                duplicateData?.name || '',
                 [
                     Validators.required,
                     Validators.maxLength(this.NAME_MAX_LENGTH),
                 ],
             ],
             description: [
-                '',
+                duplicateData?.description || '',
                 Validators.maxLength(this.DESCRIPTION_MAX_LENGTH),
             ],
             isActive: [true],
             device: [''],
         });
 
+        // Store duplicate data for later use when devices are loaded
+        const duplicateDeviceIds = duplicateData?.deviceIds || [];
+        this.duplicateWorkspace = duplicateData?.workspace || null;
+        if (duplicateData?.code) {
+            this.workspaceCode = duplicateData.code;
+        }
+
         this.deviceService.getAllDevices().subscribe({
             next: (deviceList) => {
                 this.devices = deviceList;
                 console.log('Devices loaded:', deviceList);
+
+                // Pre-select devices from duplicate data
+                if (duplicateDeviceIds.length > 0) {
+                    deviceList.forEach((device) => {
+                        if (duplicateDeviceIds.includes(device.id)) {
+                            this.selectedDevices.add(device);
+                        }
+                    });
+                }
 
             const toolbox = new BlocklyToolbox();
 
@@ -333,20 +352,12 @@ export class WidgetCreateComponent implements OnInit {
         setTimeout(() => {
             console.log(this.blocklyComponent);
             this.blocklyComponent.resize();
-            //       this.blocklyComponent.fromXml(`<xml xmlns="https://developers.google.com/blockly/xml">
-            //   <block type="controls_if" id="aWfzI?F$qXe8;y,6=j[V" x="29" y="8"></block>
-            //   <block type="repeatForBlock" id="hnF\`HuTwmUu*cN_:i(?P" x="33" y="14">
-            //     <field name="intervalValue">1</field>
-            //     <field name="intervalType">0</field>
-            //   </block>
-            // </xml>`)
 
-            // this.blocklyComponent.fromXml(`<xml><block type="repeatForBlock" id="7PXEeoJd08$_MK)!I_9h" x="29" y="77"><field name="intervalValue">1</field><field name="intervalType">0</field><statement name="do"><block type="controls_if" id="G[@TMT,$5@:DP^}W4!WT"><value name="IF0"><block type="logic_compare" id="Gn.!bPr*p,SUE1Rlx+Hl"><field name="OP">EQ</field><value name="A"><block type="deviceDropdownOutput" id="Qs399?AkV%1|{|7$511+"><field name="selectedDeviceOutput">b2e8f85c-3caa-4d2e-8c0e-641385d3ddbc</field><value name="aggregation"><block type="aggregation_0" id="}g]322#ioc%aWV_kDWbt"></block></value></block></value><value name="B"><block type="math_number" id="I1Fu27{Ht:\`x/m;!+@]x"><field name="NUM">0</field></block></value></block></value><statement name="DO0"><block type="operation_2" id="GYL@Pb3M].LCx=|2B[x!"><value name="operation"><block type="text" id="Er,nBi;6#T(Bjg(]FU%d"><field name="TEXT">alex</field></block></value></block></statement></block></statement></block></xml>`)
-
-            // Blockly.Xml.domToWorkspace(
-            //   Blockly.Xml.textToDom(`<xml><block type="repeatForBlock" id="7PXEeoJd08$_MK)!I_9h" x="29" y="77"><field name="intervalValue">1</field><field name="intervalType">0</field><statement name="do"><block type="controls_if" id="G[@TMT,$5@:DP^}W4!WT"><value name="IF0"><block type="logic_compare" id="Gn.!bPr*p,SUE1Rlx+Hl"><field name="OP">EQ</field><value name="A"><block type="deviceDropdownOutput" id="Qs399?AkV%1|{|7$511+"><field name="selectedDeviceOutput">b2e8f85c-3caa-4d2e-8c0e-641385d3ddbc</field><value name="aggregation"><block type="aggregation_0" id="}g]322#ioc%aWV_kDWbt"></block></value></block></value><value name="B"><block type="math_number" id="I1Fu27{Ht:\`x/m;!+@]x"><field name="NUM">0</field></block></value></block></value><statement name="DO0"><block type="operation_2" id="GYL@Pb3M].LCx=|2B[x!"><value name="operation"><block type="text" id="Er,nBi;6#T(Bjg(]FU%d"><field name="TEXT">alex</field></block></value></block></statement></block></statement></block></xml>`),
-            //   this.blocklyComponent.workspace
-            // );
+            // Restore workspace from duplicate data if available
+            if (this.duplicateWorkspace) {
+                this.blocklyComponent.fromXml(this.duplicateWorkspace);
+                this.duplicateWorkspace = null; // Only restore once
+            }
         }, 100);
     }
 

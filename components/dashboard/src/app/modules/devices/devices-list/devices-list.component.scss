@@ -15,7 +15,15 @@
         &-definition {
             &-actions {
                 display: flex;
-                justify-content: space-between;
+                gap: 0.5rem;
+
+                mat-icon {
+                    cursor: pointer;
+                }
+
+                &-duplicate:hover {
+                    color: #1976d2;
+                }
 
                 &-edit:hover {
                     color: blue;

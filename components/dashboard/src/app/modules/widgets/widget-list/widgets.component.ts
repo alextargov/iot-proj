@@ -115,4 +115,18 @@ export class WidgetsComponent implements OnInit {
             }
         });
     }
+
+    public onDuplicate(widget: WidgetInfoFragment): void {
+        this.router.navigate(['widgets/create'], {
+            state: {
+                duplicate: {
+                    name: `${widget.name} (Copy)`,
+                    description: widget.description,
+                    code: widget.code,
+                    workspace: widget.workspace,
+                    deviceIds: widget.deviceIds,
+                },
+            },
+        });
+    }
 }

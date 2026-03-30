@@ -109,13 +109,19 @@
             >
                 <div class="widget-list__table-definition-actions">
                     <mat-icon
+                        class="widget-list__table-definition-actions-duplicate"
+                        matTooltip="Duplicate"
+                        (click)="onDuplicate(element)"
+                        >content_copy</mat-icon
+                    >
+                    <mat-icon
                         class="widget-list__table-definition-actions-edit"
-                        tooltip="Edit"
+                        matTooltip="Edit"
                         >edit</mat-icon
                     >
                     <mat-icon
                         class="widget-list__table-definition-actions-delete"
-                        tooltip="Delete"
+                        matTooltip="Delete"
                         (click)="onDelete(element)"
                         >delete</mat-icon
                     >

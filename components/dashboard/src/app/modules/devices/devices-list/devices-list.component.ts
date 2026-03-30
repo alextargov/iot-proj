@@ -126,4 +126,16 @@ export class DevicesListComponent implements OnInit, AfterViewInit {
             }
         });
     }
+
+    public onDuplicate(device: DeviceInfoFragment): void {
+        this.router.navigate(['devices/create'], {
+            state: {
+                duplicate: {
+                    name: `${device.name} (Copy)`,
+                    description: device.description,
+                    host: device.host,
+                },
+            },
+        });
+    }
 }
