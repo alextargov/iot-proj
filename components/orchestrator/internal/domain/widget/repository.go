@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/model"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/pagination"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/repo"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/logger"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/resource"
@@ -27,20 +28,22 @@ type EntityConverter interface {
 }
 
 type repository struct {
-	creator      repo.CreatorGlobal
-	singleGetter repo.SingleGetter
-	deleter      repo.Deleter
-	lister       repo.Lister
-	conv         EntityConverter
+	creator         repo.CreatorGlobal
+	singleGetter    repo.SingleGetter
+	pageableQuerier repo.PageableQuerier
+	deleter         repo.Deleter
+	lister          repo.Lister
+	conv            EntityConverter
 }
 
 func NewRepository(converter EntityConverter) *repository {
 	return &repository{
-		creator:      repo.NewCreatorGlobal(resource.Widget, tableName, tableColumns),
-		singleGetter: repo.NewSingleGetterWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
-		deleter:      repo.NewDeleter(tableName),
-		lister:       repo.NewListerWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
-		conv:         converter,
+		creator:         repo.NewCreatorGlobal(resource.Widget, tableName, tableColumns),
+		singleGetter:    repo.NewSingleGetterWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
+		pageableQuerier: repo.NewPageableQuerierWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
+		deleter:         repo.NewDeleter(tableName),
+		lister:          repo.NewListerWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
+		conv:            converter,
 	}
 }
 
@@ -98,6 +101,23 @@ func (r *repository) ListAll(ctx context.Context, tenantID string) ([]*model.Wid
 	}
 
 	return r.multipleFromEntities(entities)
+}
+
+// ListPage returns a page of widgets for the given tenant
+func (r *repository) ListPage(ctx context.Context, tenantID string, pageSize int, cursor string) ([]*model.Widget, *pagination.Page, int, error) {
+	var entities EntityCollection
+
+	page, totalCount, err := r.pageableQuerier.List(ctx, resource.Widget, tenantID, pageSize, cursor, "created_at", &entities)
+	if err != nil {
+		return nil, nil, 0, err
+	}
+
+	items, err := r.multipleFromEntities(entities)
+	if err != nil {
+		return nil, nil, 0, err
+	}
+
+	return items, page, totalCount, nil
 }
 
 // Delete missing godoc

@@ -2,8 +2,10 @@ package widget
 
 import (
 	"context"
+
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/k8s"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/model"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/pagination"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/graphql"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/persistence"
 )
@@ -16,6 +18,7 @@ type WidgetConverter interface {
 
 type WidgetSvc interface {
 	ListAll(ctx context.Context) ([]*model.Widget, error)
+	ListPage(ctx context.Context, pageSize int, cursor string) ([]*model.Widget, *pagination.Page, int, error)
 	Create(ctx context.Context, widget model.WidgetInput) (string, error)
 	Delete(ctx context.Context, id string) error
 	GetByID(ctx context.Context, id string) (*model.Widget, error)
@@ -67,6 +70,46 @@ func (r *Resolver) Widgets(ctx context.Context) ([]*graphql.Widget, error) {
 	}
 
 	return r.widgetConverter.MultipleToGraphQL(widgets), nil
+}
+
+func (r *Resolver) WidgetsPage(ctx context.Context, first *int, after *string) (*graphql.WidgetPage, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	pageSize := 20
+	if first != nil {
+		pageSize = *first
+	}
+
+	cursor := ""
+	if after != nil {
+		cursor = *after
+	}
+
+	widgets, page, totalCount, err := r.widgetSvc.ListPage(ctx, pageSize, cursor)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return &graphql.WidgetPage{
+		Data:       r.widgetConverter.MultipleToGraphQL(widgets),
+		TotalCount: totalCount,
+		PageInfo: &graphql.PageInfo{
+			StartCursor: page.StartCursor,
+			EndCursor:   page.EndCursor,
+			HasNextPage: page.HasNextPage,
+		},
+	}, nil
 }
 
 func (r *Resolver) Widget(ctx context.Context, id string) (*graphql.Widget, error) {

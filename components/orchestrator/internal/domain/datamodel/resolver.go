@@ -83,7 +83,27 @@ func (r *Resolver) CreateDataModel(ctx context.Context, input graphql.DataModelI
 }
 
 func (r *Resolver) UpdateDataModel(ctx context.Context, id string, input graphql.DataModelInput) (*graphql.DataModel, error) {
-	return nil, nil
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	modelInput := r.converter.InputFromGraphQL(input)
+
+	dataModel, err := r.service.UpdateDataModel(ctx, id, modelInput)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return r.converter.ToGraphQL(dataModel), nil
 }
 
 func (r *Resolver) DeleteDataModel(ctx context.Context, id string) (string, error) {

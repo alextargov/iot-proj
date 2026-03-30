@@ -2,7 +2,9 @@ package device
 
 import (
 	"context"
+
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/model"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/pagination"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/tenant"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/logger"
 	"github.com/pkg/errors"
@@ -14,6 +16,7 @@ type DeviceRepository interface {
 	Get(ctx context.Context, id, tnt string) (*model.Device, error)
 	ListByIDs(ctx context.Context, tenant string, ids []string) ([]*model.Device, error)
 	ListAll(ctx context.Context, tenantID string) ([]*model.Device, error)
+	ListPage(ctx context.Context, tenantID string, pageSize int, cursor string) ([]*model.Device, *pagination.Page, int, error)
 	ListAllGlobal(ctx context.Context) ([]*model.Device, error)
 	Update(ctx context.Context, model model.Device) error
 	Delete(ctx context.Context, id, tenantID string) error
@@ -64,6 +67,15 @@ func (s *service) ListAll(ctx context.Context) ([]*model.Device, error) {
 	}
 
 	return s.deviceRepo.ListAll(ctx, tnt)
+}
+
+func (s *service) ListPage(ctx context.Context, pageSize int, cursor string) ([]*model.Device, *pagination.Page, int, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, nil, 0, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	return s.deviceRepo.ListPage(ctx, tnt, pageSize, cursor)
 }
 
 func (s *service) ListAllGlobal(ctx context.Context) ([]*model.Device, error) {

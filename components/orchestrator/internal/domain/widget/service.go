@@ -2,8 +2,10 @@ package widget
 
 import (
 	"context"
+
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/apperrors"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/model"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/pagination"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/tenant"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/logger"
 	"github.com/pkg/errors"
@@ -14,6 +16,7 @@ type WidgetRepository interface {
 	Get(ctx context.Context, id, tnt string) (*model.Widget, error)
 	ListByIDs(ctx context.Context, tenant string, ids []string) ([]*model.Widget, error)
 	ListAll(ctx context.Context, tenantID string) ([]*model.Widget, error)
+	ListPage(ctx context.Context, tenantID string, pageSize int, cursor string) ([]*model.Widget, *pagination.Page, int, error)
 	Delete(ctx context.Context, id, tenantID string) error
 }
 
@@ -51,6 +54,15 @@ func (s *service) ListAll(ctx context.Context) ([]*model.Widget, error) {
 	}
 
 	return s.widgetRepo.ListAll(ctx, tnt)
+}
+
+func (s *service) ListPage(ctx context.Context, pageSize int, cursor string) ([]*model.Widget, *pagination.Page, int, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, nil, 0, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	return s.widgetRepo.ListPage(ctx, tnt, pageSize, cursor)
 }
 
 func (s *service) Create(ctx context.Context, widget model.WidgetInput) (string, error) {

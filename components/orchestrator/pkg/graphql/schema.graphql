@@ -94,6 +94,12 @@ type DevicePage implements Pageable {
     totalCount: Int!
 }
 
+type WidgetPage implements Pageable {
+    data: [Widget!]!
+    pageInfo: PageInfo!
+    totalCount: Int!
+}
+
 type Widget {
     id: ID!
     name: String!
@@ -184,11 +190,14 @@ input DataModelInput {
 
 type Query {
     devices: [Device]!
+    devicesPage(first: Int = 20, after: PageCursor): DevicePage!
     device(id: ID!): Device
     deviceByIdAndAggregation(id: ID!, aggregation: AggregationType!): Device
     widgets: [Widget]!
+    widgetsPage(first: Int = 20, after: PageCursor): WidgetPage!
     widget(id: ID!): Widget
     dataModels: [DataModel]!
+    testDeviceConnection(url: String!): Boolean!
 }
 
 type Mutation {
@@ -201,4 +210,5 @@ type Mutation {
     createDataModel(input: DataModelInput!): DataModel!
     deleteDataModel(id: ID!): String!
     updateDataModel(id: ID!, input: DataModelInput!): DataModel!
+    generateDeviceToken: String!
 }

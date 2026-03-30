@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/model"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/pagination"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/repo"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/logger"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/resource"
@@ -30,6 +31,7 @@ type repository struct {
 	creator               repo.CreatorGlobal
 	existQuerierGlobal    repo.ExistQuerierGlobal
 	singleGetter          repo.SingleGetter
+	pageableQuerier       repo.PageableQuerier
 	pageableQuerierGlobal repo.PageableQuerierGlobal
 	updaterGlobal         repo.UpdaterGlobal
 	deleterGlobal         repo.DeleterGlobal
@@ -44,6 +46,7 @@ func NewRepository(converter EntityConverter) *repository {
 		creator:               repo.NewCreatorGlobal(resource.Device, tableName, tableColumns),
 		existQuerierGlobal:    repo.NewExistQuerierGlobal(resource.Device, tableName),
 		singleGetter:          repo.NewSingleGetterWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
+		pageableQuerier:       repo.NewPageableQuerierWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
 		pageableQuerierGlobal: repo.NewPageableQuerierGlobal(resource.Device, tableName, tableColumns),
 		updaterGlobal:         repo.NewUpdaterGlobal(resource.Device, tableName, updatableTableColumns, idTableColumns),
 		deleterGlobal:         repo.NewDeleterGlobal(resource.Device, tableName),
@@ -113,6 +116,23 @@ func (r *repository) ListAll(ctx context.Context, tenantID string) ([]*model.Dev
 	}
 
 	return r.multipleFromEntities(entities)
+}
+
+// ListPage returns a page of devices for the given tenant
+func (r *repository) ListPage(ctx context.Context, tenantID string, pageSize int, cursor string) ([]*model.Device, *pagination.Page, int, error) {
+	var entities EntityCollection
+
+	page, totalCount, err := r.pageableQuerier.List(ctx, resource.Device, tenantID, pageSize, cursor, "created_at", &entities)
+	if err != nil {
+		return nil, nil, 0, err
+	}
+
+	items, err := r.multipleFromEntities(entities)
+	if err != nil {
+		return nil, nil, 0, err
+	}
+
+	return items, page, totalCount, nil
 }
 
 // ListAllGlobal missing godoc

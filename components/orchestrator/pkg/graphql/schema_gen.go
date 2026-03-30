@@ -105,15 +105,16 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		CreateDataModel    func(childComplexity int, input DataModelInput) int
-		CreateDevice       func(childComplexity int, input DeviceInput) int
-		CreateWidget       func(childComplexity int, input WidgetInput) int
-		DeleteDataModel    func(childComplexity int, id string) int
-		DeleteDevice       func(childComplexity int, id string) int
-		DeleteWidget       func(childComplexity int, id string) int
-		SetDeviceOperation func(childComplexity int, id string, op OperationType) int
-		SetOperation       func(childComplexity int, op OperationType, data any) int
-		UpdateDataModel    func(childComplexity int, id string, input DataModelInput) int
+		CreateDataModel     func(childComplexity int, input DataModelInput) int
+		CreateDevice        func(childComplexity int, input DeviceInput) int
+		CreateWidget        func(childComplexity int, input WidgetInput) int
+		DeleteDataModel     func(childComplexity int, id string) int
+		DeleteDevice        func(childComplexity int, id string) int
+		DeleteWidget        func(childComplexity int, id string) int
+		GenerateDeviceToken func(childComplexity int) int
+		SetDeviceOperation  func(childComplexity int, id string, op OperationType) int
+		SetOperation        func(childComplexity int, op OperationType, data any) int
+		UpdateDataModel     func(childComplexity int, id string, input DataModelInput) int
 	}
 
 	OAuthCredentialData struct {
@@ -133,8 +134,11 @@ type ComplexityRoot struct {
 		Device                   func(childComplexity int, id string) int
 		DeviceByIDAndAggregation func(childComplexity int, id string, aggregation AggregationType) int
 		Devices                  func(childComplexity int) int
+		DevicesPage              func(childComplexity int, first *int, after *string) int
+		TestDeviceConnection     func(childComplexity int, url string) int
 		Widget                   func(childComplexity int, id string) int
 		Widgets                  func(childComplexity int) int
+		WidgetsPage              func(childComplexity int, first *int, after *string) int
 		__resolve__service       func(childComplexity int) int
 	}
 
@@ -149,6 +153,12 @@ type ComplexityRoot struct {
 		TenantID    func(childComplexity int) int
 		UpdatedAt   func(childComplexity int) int
 		Workspace   func(childComplexity int) int
+	}
+
+	WidgetPage struct {
+		Data       func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
 	}
 
 	_Service struct {
@@ -171,14 +181,18 @@ type MutationResolver interface {
 	CreateDataModel(ctx context.Context, input DataModelInput) (*DataModel, error)
 	DeleteDataModel(ctx context.Context, id string) (string, error)
 	UpdateDataModel(ctx context.Context, id string, input DataModelInput) (*DataModel, error)
+	GenerateDeviceToken(ctx context.Context) (string, error)
 }
 type QueryResolver interface {
 	Devices(ctx context.Context) ([]*Device, error)
+	DevicesPage(ctx context.Context, first *int, after *string) (*DevicePage, error)
 	Device(ctx context.Context, id string) (*Device, error)
 	DeviceByIDAndAggregation(ctx context.Context, id string, aggregation AggregationType) (*Device, error)
 	Widgets(ctx context.Context) ([]*Widget, error)
+	WidgetsPage(ctx context.Context, first *int, after *string) (*WidgetPage, error)
 	Widget(ctx context.Context, id string) (*Widget, error)
 	DataModels(ctx context.Context) ([]*DataModel, error)
+	TestDeviceConnection(ctx context.Context, url string) (bool, error)
 }
 
 type executableSchema struct {
@@ -496,6 +510,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Mutation.DeleteWidget(childComplexity, args["id"].(string)), true
 
+	case "Mutation.generateDeviceToken":
+		if e.complexity.Mutation.GenerateDeviceToken == nil {
+			break
+		}
+
+		return e.complexity.Mutation.GenerateDeviceToken(childComplexity), true
+
 	case "Mutation.setDeviceOperation":
 		if e.complexity.Mutation.SetDeviceOperation == nil {
 			break
@@ -612,6 +633,30 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Query.Devices(childComplexity), true
 
+	case "Query.devicesPage":
+		if e.complexity.Query.DevicesPage == nil {
+			break
+		}
+
+		args, err := ec.field_Query_devicesPage_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.DevicesPage(childComplexity, args["first"].(*int), args["after"].(*string)), true
+
+	case "Query.testDeviceConnection":
+		if e.complexity.Query.TestDeviceConnection == nil {
+			break
+		}
+
+		args, err := ec.field_Query_testDeviceConnection_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.TestDeviceConnection(childComplexity, args["url"].(string)), true
+
 	case "Query.widget":
 		if e.complexity.Query.Widget == nil {
 			break
@@ -630,6 +675,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.Widgets(childComplexity), true
+
+	case "Query.widgetsPage":
+		if e.complexity.Query.WidgetsPage == nil {
+			break
+		}
+
+		args, err := ec.field_Query_widgetsPage_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.WidgetsPage(childComplexity, args["first"].(*int), args["after"].(*string)), true
 
 	case "Query._service":
 		if e.complexity.Query.__resolve__service == nil {
@@ -707,6 +764,27 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Widget.Workspace(childComplexity), true
+
+	case "WidgetPage.data":
+		if e.complexity.WidgetPage.Data == nil {
+			break
+		}
+
+		return e.complexity.WidgetPage.Data(childComplexity), true
+
+	case "WidgetPage.pageInfo":
+		if e.complexity.WidgetPage.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.WidgetPage.PageInfo(childComplexity), true
+
+	case "WidgetPage.totalCount":
+		if e.complexity.WidgetPage.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.WidgetPage.TotalCount(childComplexity), true
 
 	case "_Service.sdl":
 		if e.complexity._Service.SDL == nil {
@@ -1295,6 +1373,85 @@ func (ec *executionContext) field_Query_device_argsID(
 	return zeroVal, nil
 }
 
+func (ec *executionContext) field_Query_devicesPage_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Query_devicesPage_argsFirst(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["first"] = arg0
+	arg1, err := ec.field_Query_devicesPage_argsAfter(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["after"] = arg1
+	return args, nil
+}
+func (ec *executionContext) field_Query_devicesPage_argsFirst(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*int, error) {
+	if _, ok := rawArgs["first"]; !ok {
+		var zeroVal *int
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
+	if tmp, ok := rawArgs["first"]; ok {
+		return ec.unmarshalOInt2ᚖint(ctx, tmp)
+	}
+
+	var zeroVal *int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_devicesPage_argsAfter(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*string, error) {
+	if _, ok := rawArgs["after"]; !ok {
+		var zeroVal *string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
+	if tmp, ok := rawArgs["after"]; ok {
+		return ec.unmarshalOPageCursor2ᚖstring(ctx, tmp)
+	}
+
+	var zeroVal *string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_testDeviceConnection_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Query_testDeviceConnection_argsURL(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["url"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Query_testDeviceConnection_argsURL(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["url"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("url"))
+	if tmp, ok := rawArgs["url"]; ok {
+		return ec.unmarshalNString2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
 func (ec *executionContext) field_Query_widget_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -1320,6 +1477,57 @@ func (ec *executionContext) field_Query_widget_argsID(
 	}
 
 	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_widgetsPage_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Query_widgetsPage_argsFirst(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["first"] = arg0
+	arg1, err := ec.field_Query_widgetsPage_argsAfter(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["after"] = arg1
+	return args, nil
+}
+func (ec *executionContext) field_Query_widgetsPage_argsFirst(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*int, error) {
+	if _, ok := rawArgs["first"]; !ok {
+		var zeroVal *int
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
+	if tmp, ok := rawArgs["first"]; ok {
+		return ec.unmarshalOInt2ᚖint(ctx, tmp)
+	}
+
+	var zeroVal *int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_widgetsPage_argsAfter(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*string, error) {
+	if _, ok := rawArgs["after"]; !ok {
+		var zeroVal *string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
+	if tmp, ok := rawArgs["after"]; ok {
+		return ec.unmarshalOPageCursor2ᚖstring(ctx, tmp)
+	}
+
+	var zeroVal *string
 	return zeroVal, nil
 }
 
@@ -3469,6 +3677,50 @@ func (ec *executionContext) fieldContext_Mutation_updateDataModel(ctx context.Co
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_generateDeviceToken(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_generateDeviceToken(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().GenerateDeviceToken(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_generateDeviceToken(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _OAuthCredentialData_clientId(ctx context.Context, field graphql.CollectedField, obj *OAuthCredentialData) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_OAuthCredentialData_clientId(ctx, field)
 	if err != nil {
@@ -3799,6 +4051,69 @@ func (ec *executionContext) fieldContext_Query_devices(_ context.Context, field 
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_devicesPage(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_devicesPage(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().DevicesPage(rctx, fc.Args["first"].(*int), fc.Args["after"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*DevicePage)
+	fc.Result = res
+	return ec.marshalNDevicePage2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDevicePage(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_devicesPage(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "data":
+				return ec.fieldContext_DevicePage_data(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_DevicePage_pageInfo(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_DevicePage_totalCount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DevicePage", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_devicesPage_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_device(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_device(ctx, field)
 	if err != nil {
@@ -4013,6 +4328,69 @@ func (ec *executionContext) fieldContext_Query_widgets(_ context.Context, field 
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_widgetsPage(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_widgetsPage(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().WidgetsPage(rctx, fc.Args["first"].(*int), fc.Args["after"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*WidgetPage)
+	fc.Result = res
+	return ec.marshalNWidgetPage2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐWidgetPage(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_widgetsPage(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "data":
+				return ec.fieldContext_WidgetPage_data(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_WidgetPage_pageInfo(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_WidgetPage_totalCount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type WidgetPage", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_widgetsPage_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_widget(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_widget(ctx, field)
 	if err != nil {
@@ -4141,6 +4519,61 @@ func (ec *executionContext) fieldContext_Query_dataModels(_ context.Context, fie
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DataModel", field.Name)
 		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_testDeviceConnection(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_testDeviceConnection(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().TestDeviceConnection(rctx, fc.Args["url"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_testDeviceConnection(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_testDeviceConnection_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -4747,6 +5180,168 @@ func (ec *executionContext) fieldContext_Widget_updatedAt(_ context.Context, fie
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Timestamp does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _WidgetPage_data(ctx context.Context, field graphql.CollectedField, obj *WidgetPage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_WidgetPage_data(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Data, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*Widget)
+	fc.Result = res
+	return ec.marshalNWidget2ᚕᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐWidgetᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_WidgetPage_data(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "WidgetPage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Widget_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Widget_name(ctx, field)
+			case "description":
+				return ec.fieldContext_Widget_description(ctx, field)
+			case "status":
+				return ec.fieldContext_Widget_status(ctx, field)
+			case "tenantId":
+				return ec.fieldContext_Widget_tenantId(ctx, field)
+			case "code":
+				return ec.fieldContext_Widget_code(ctx, field)
+			case "workspace":
+				return ec.fieldContext_Widget_workspace(ctx, field)
+			case "deviceIds":
+				return ec.fieldContext_Widget_deviceIds(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Widget_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Widget_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Widget", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _WidgetPage_pageInfo(ctx context.Context, field graphql.CollectedField, obj *WidgetPage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_WidgetPage_pageInfo(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*PageInfo)
+	fc.Result = res
+	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐPageInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_WidgetPage_pageInfo(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "WidgetPage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "startCursor":
+				return ec.fieldContext_PageInfo_startCursor(ctx, field)
+			case "endCursor":
+				return ec.fieldContext_PageInfo_endCursor(ctx, field)
+			case "hasNextPage":
+				return ec.fieldContext_PageInfo_hasNextPage(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PageInfo", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _WidgetPage_totalCount(ctx context.Context, field graphql.CollectedField, obj *WidgetPage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_WidgetPage_totalCount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_WidgetPage_totalCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "WidgetPage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -7227,6 +7822,13 @@ func (ec *executionContext) _Pageable(ctx context.Context, sel ast.SelectionSet,
 	switch obj := (obj).(type) {
 	case nil:
 		return graphql.Null
+	case WidgetPage:
+		return ec._WidgetPage(ctx, sel, &obj)
+	case *WidgetPage:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._WidgetPage(ctx, sel, obj)
 	case DevicePage:
 		return ec._DevicePage(ctx, sel, &obj)
 	case *DevicePage:
@@ -7780,6 +8382,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "generateDeviceToken":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_generateDeviceToken(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7942,6 +8551,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "devicesPage":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_devicesPage(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "device":
 			field := field
 
@@ -8002,6 +8633,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "widgetsPage":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_widgetsPage(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "widget":
 			field := field
 
@@ -8031,6 +8684,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_dataModels(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "testDeviceConnection":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_testDeviceConnection(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -8145,6 +8820,55 @@ func (ec *executionContext) _Widget(ctx context.Context, sel ast.SelectionSet, o
 			out.Values[i] = ec._Widget_createdAt(ctx, field, obj)
 		case "updatedAt":
 			out.Values[i] = ec._Widget_updatedAt(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var widgetPageImplementors = []string{"WidgetPage", "Pageable"}
+
+func (ec *executionContext) _WidgetPage(ctx context.Context, sel ast.SelectionSet, obj *WidgetPage) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, widgetPageImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("WidgetPage")
+		case "data":
+			out.Values[i] = ec._WidgetPage_data(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "pageInfo":
+			out.Values[i] = ec._WidgetPage_pageInfo(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalCount":
+			out.Values[i] = ec._WidgetPage_totalCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -8723,6 +9447,20 @@ func (ec *executionContext) unmarshalNDeviceInput2githubᚗcomᚋalextargovᚋio
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalNDevicePage2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDevicePage(ctx context.Context, sel ast.SelectionSet, v DevicePage) graphql.Marshaler {
+	return ec._DevicePage(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNDevicePage2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDevicePage(ctx context.Context, sel ast.SelectionSet, v *DevicePage) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._DevicePage(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNDeviceStatus2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDeviceStatus(ctx context.Context, v any) (DeviceStatus, error) {
 	var res DeviceStatus
 	err := res.UnmarshalGQL(v)
@@ -8869,6 +9607,50 @@ func (ec *executionContext) marshalNWidget2ᚕᚖgithubᚗcomᚋalextargovᚋiot
 	return ret
 }
 
+func (ec *executionContext) marshalNWidget2ᚕᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐWidgetᚄ(ctx context.Context, sel ast.SelectionSet, v []*Widget) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNWidget2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐWidget(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
 func (ec *executionContext) marshalNWidget2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐWidget(ctx context.Context, sel ast.SelectionSet, v *Widget) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -8882,6 +9664,20 @@ func (ec *executionContext) marshalNWidget2ᚖgithubᚗcomᚋalextargovᚋiotᚑ
 func (ec *executionContext) unmarshalNWidgetInput2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐWidgetInput(ctx context.Context, v any) (WidgetInput, error) {
 	res, err := ec.unmarshalInputWidgetInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNWidgetPage2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐWidgetPage(ctx context.Context, sel ast.SelectionSet, v WidgetPage) graphql.Marshaler {
+	return ec._WidgetPage(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNWidgetPage2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐWidgetPage(ctx context.Context, sel ast.SelectionSet, v *WidgetPage) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._WidgetPage(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNWidgetStatus2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐWidgetStatus(ctx context.Context, v any) (WidgetStatus, error) {
@@ -9290,12 +10086,48 @@ func (ec *executionContext) unmarshalOHostInput2ᚖgithubᚗcomᚋalextargovᚋi
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v any) (*int, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalInt(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.SelectionSet, v *int) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	_ = sel
+	_ = ctx
+	res := graphql.MarshalInt(*v)
+	return res
+}
+
 func (ec *executionContext) unmarshalOOAuthCredentialDataInput2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐOAuthCredentialDataInput(ctx context.Context, v any) (*OAuthCredentialDataInput, error) {
 	if v == nil {
 		return nil, nil
 	}
 	res, err := ec.unmarshalInputOAuthCredentialDataInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOPageCursor2ᚖstring(ctx context.Context, v any) (*string, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalString(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOPageCursor2ᚖstring(ctx context.Context, sel ast.SelectionSet, v *string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	_ = sel
+	_ = ctx
+	res := graphql.MarshalString(*v)
+	return res
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v any) (string, error) {

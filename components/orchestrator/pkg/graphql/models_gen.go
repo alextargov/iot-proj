@@ -169,6 +169,16 @@ type WidgetInput struct {
 	DeviceIds   []string     `json:"deviceIds,omitempty"`
 }
 
+type WidgetPage struct {
+	Data       []*Widget `json:"data"`
+	PageInfo   *PageInfo `json:"pageInfo"`
+	TotalCount int       `json:"totalCount"`
+}
+
+func (WidgetPage) IsPageable()                 {}
+func (this WidgetPage) GetPageInfo() *PageInfo { return this.PageInfo }
+func (this WidgetPage) GetTotalCount() int     { return this.TotalCount }
+
 type AggregationType string
 
 const (

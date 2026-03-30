@@ -2,6 +2,10 @@ package domain
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
+	"net/http"
+	"time"
 
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/auth"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/datamodel"
@@ -77,6 +81,10 @@ func (r *queryResolver) Devices(ctx context.Context) ([]*graphql.Device, error) 
 	return r.device.Devices(ctx)
 }
 
+func (r *queryResolver) DevicesPage(ctx context.Context, first *int, after *string) (*graphql.DevicePage, error) {
+	return r.device.DevicesPage(ctx, first, after)
+}
+
 func (r *queryResolver) Device(ctx context.Context, id string) (*graphql.Device, error) {
 	return r.device.Device(ctx, id)
 }
@@ -93,8 +101,26 @@ func (r *queryResolver) Widgets(ctx context.Context) ([]*graphql.Widget, error) 
 	return r.widget.Widgets(ctx)
 }
 
+func (r *queryResolver) WidgetsPage(ctx context.Context, first *int, after *string) (*graphql.WidgetPage, error) {
+	return r.widget.WidgetsPage(ctx, first, after)
+}
+
 func (r *queryResolver) DataModels(ctx context.Context) ([]*graphql.DataModel, error) {
 	return r.dataModel.DataModels(ctx)
+}
+
+func (r *queryResolver) TestDeviceConnection(ctx context.Context, url string) (bool, error) {
+	client := &http.Client{
+		Timeout: 5 * time.Second,
+	}
+
+	resp, err := client.Get(url)
+	if err != nil {
+		return false, nil
+	}
+	defer resp.Body.Close()
+
+	return resp.StatusCode >= 200 && resp.StatusCode < 400, nil
 }
 
 type mutationResolver struct {
@@ -135,6 +161,14 @@ func (r *mutationResolver) UpdateDataModel(ctx context.Context, id string, in gr
 
 func (r *mutationResolver) DeleteDataModel(ctx context.Context, id string) (string, error) {
 	return r.dataModel.DeleteDataModel(ctx, id)
+}
+
+func (r *mutationResolver) GenerateDeviceToken(ctx context.Context) (string, error) {
+	bytes := make([]byte, 32)
+	if _, err := rand.Read(bytes); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(bytes), nil
 }
 
 type deviceResolver struct {

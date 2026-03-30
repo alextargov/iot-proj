@@ -5,6 +5,7 @@ import (
 
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/apperrors"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/model"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/pagination"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/graphql"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/persistence"
 )
@@ -17,6 +18,7 @@ type DeviceConverter interface {
 
 type DeviceSvc interface {
 	ListAll(ctx context.Context) ([]*model.Device, error)
+	ListPage(ctx context.Context, pageSize int, cursor string) ([]*model.Device, *pagination.Page, int, error)
 	Create(ctx context.Context, device model.DeviceInput) (string, error)
 	Update(ctx context.Context, device model.DeviceInput) error
 	Exists(ctx context.Context, id string) (bool, error)
@@ -83,6 +85,46 @@ func (r *Resolver) Devices(ctx context.Context) ([]*graphql.Device, error) {
 	}
 
 	return r.deviceConverter.MultipleToGraphQL(devices), nil
+}
+
+func (r *Resolver) DevicesPage(ctx context.Context, first *int, after *string) (*graphql.DevicePage, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	pageSize := 20
+	if first != nil {
+		pageSize = *first
+	}
+
+	cursor := ""
+	if after != nil {
+		cursor = *after
+	}
+
+	devices, page, totalCount, err := r.deviceSvc.ListPage(ctx, pageSize, cursor)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return &graphql.DevicePage{
+		Data:       r.deviceConverter.MultipleToGraphQL(devices),
+		TotalCount: totalCount,
+		PageInfo: &graphql.PageInfo{
+			StartCursor: page.StartCursor,
+			EndCursor:   page.EndCursor,
+			HasNextPage: page.HasNextPage,
+		},
+	}, nil
 }
 
 func (r *Resolver) Device(ctx context.Context, id string) (*graphql.Device, error) {
