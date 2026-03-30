@@ -13,13 +13,12 @@
                 formControlName="username"
                 required
             />
-            <mat-error *ngIf="loginFormGroup?.get('username')?.errors?.required"
-                >Name is required</mat-error
-            >
-            <mat-error
-                *ngIf="loginFormGroup?.get('username')?.errors?.maxlength"
-                >Max length is {{ NAME_MAX_LENGTH }}</mat-error
-            >
+            @if (loginFormGroup?.get('username')?.errors?.required) {
+                <mat-error>Name is required</mat-error>
+            }
+            @if (loginFormGroup?.get('username')?.errors?.maxlength) {
+                <mat-error>Max length is {{ NAME_MAX_LENGTH }}</mat-error>
+            }
         </mat-form-field>
 
         <mat-form-field
@@ -34,9 +33,9 @@
                 formControlName="password"
                 required
             />
-            <mat-error *ngIf="loginFormGroup?.get('password')?.errors?.required"
-                >Password is required</mat-error
-            >
+            @if (loginFormGroup?.get('password')?.errors?.required) {
+                <mat-error>Password is required</mat-error>
+            }
         </mat-form-field>
 
         <div class="login-dialog--content-actions">

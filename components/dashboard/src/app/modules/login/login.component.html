@@ -11,16 +11,12 @@
                     formControlName="username"
                     placeholder="Enter your username"
                 />
-                <mat-error
-                    *ngIf="loginForm.get('username')?.hasError('required')"
-                >
-                    Email is required
-                </mat-error>
-                <mat-error
-                    *ngIf="loginForm.get('username')?.hasError('username')"
-                >
-                    Please enter a valid username
-                </mat-error>
+                @if (loginForm.get('username')?.hasError('required')) {
+                    <mat-error>Email is required</mat-error>
+                }
+                @if (loginForm.get('username')?.hasError('username')) {
+                    <mat-error>Please enter a valid username</mat-error>
+                }
             </mat-form-field>
 
             <mat-form-field appearance="fill" class="full-width">
@@ -31,11 +27,9 @@
                     formControlName="password"
                     placeholder="Enter your password"
                 />
-                <mat-error
-                    *ngIf="loginForm.get('password')?.hasError('required')"
-                >
-                    Password is required
-                </mat-error>
+                @if (loginForm.get('password')?.hasError('required')) {
+                    <mat-error>Password is required</mat-error>
+                }
             </mat-form-field>
 
             <button

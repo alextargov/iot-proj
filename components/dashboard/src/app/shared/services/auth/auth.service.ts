@@ -13,13 +13,12 @@ interface ILoginResponse {
     updatedAt: Date;
 }
 
-// interface IUser {
-//     id: string;
-//     token: string;
-//     username: string;
-//     createdAt: Date;
-//     updatedAt: Date;
-// }
+interface JwtPayload {
+    Username: string;
+    exp: number;
+    iat: number;
+    iss: string;
+}
 
 @Injectable({
     providedIn: 'root',
@@ -73,10 +72,17 @@ export class AuthService {
     }
 
     public getToken(): string | null {
-        return (
+        const token =
             sessionStorage.getItem(this.TOKEN_KEY) ||
-            localStorage.getItem(this.TOKEN_KEY)
-        );
+            localStorage.getItem(this.TOKEN_KEY);
+
+        if (token && this.isTokenExpired(token)) {
+            console.warn('JWT token is expired, clearing session');
+            this.logout();
+            return null;
+        }
+
+        return token;
     }
 
     public logout(): void {
@@ -86,6 +92,49 @@ export class AuthService {
         this.clearSessionStorage();
         this.isAuthenticated = false;
         this.authToken = null;
+    }
+
+    private decodeJwtPayload(token: string): JwtPayload | null {
+        try {
+            const parts = token.split('.');
+            if (parts.length !== 3) {
+                return null;
+            }
+
+            // Decode base64url payload
+            const payload = parts[1];
+            const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(
+                atob(base64)
+                    .split('')
+                    .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+                    .join('')
+            );
+
+            return JSON.parse(jsonPayload);
+        } catch (e) {
+            console.error('Failed to decode JWT:', e);
+            return null;
+        }
+    }
+
+    private isTokenExpired(token: string): boolean {
+        const payload = this.decodeJwtPayload(token);
+        if (!payload || !payload.exp) {
+            // If we can't decode or no exp, assume expired
+            return true;
+        }
+
+        // exp is in seconds, Date.now() is in milliseconds
+        const now = Math.floor(Date.now() / 1000);
+        const isExpired = payload.exp < now;
+
+        if (isExpired) {
+            const expDate = new Date(payload.exp * 1000);
+            console.warn(`Token expired at: ${expDate.toISOString()}`);
+        }
+
+        return isExpired;
     }
 
     private setUserSession(user: ILoginResponse): void {
