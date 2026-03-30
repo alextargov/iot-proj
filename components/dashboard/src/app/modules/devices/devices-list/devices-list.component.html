@@ -1,6 +1,12 @@
 <app-content-header title="Devices" [buttons]="buttons"></app-content-header>
 
 <div class="device-list__container">
+    <mat-form-field class="device-list__search" appearance="outline">
+        <mat-label>Search devices</mat-label>
+        <input matInput (keyup)="applyFilter($event)" placeholder="Filter by name or description" #searchInput>
+        <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field>
+
     <table class="device-list__table" mat-table [dataSource]="dataSource">
         <!-- Position Column -->
         <ng-container matColumnDef="name">
@@ -136,6 +142,26 @@
 
         <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
         <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+
+        <tr class="mat-row" *matNoDataRow>
+            <td class="mat-cell device-list__empty" [attr.colspan]="displayedColumns.length">
+                @if (dataSource.filter) {
+                    <div class="device-list__empty-content">
+                        <mat-icon>search_off</mat-icon>
+                        <span>No devices match "{{ dataSource.filter }}"</span>
+                    </div>
+                } @else {
+                    <div class="device-list__empty-content">
+                        <mat-icon>devices</mat-icon>
+                        <span>No devices yet</span>
+                        <button mat-stroked-button color="primary" (click)="onAddClick()">
+                            <mat-icon>add</mat-icon>
+                            Create your first device
+                        </button>
+                    </div>
+                }
+            </td>
+        </tr>
     </table>
 
     <mat-paginator

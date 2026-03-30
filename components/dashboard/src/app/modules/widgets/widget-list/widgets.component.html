@@ -1,6 +1,12 @@
 <app-content-header title="Widgets" [buttons]="buttons"></app-content-header>
 
 <div class="widget-list__container">
+    <mat-form-field class="widget-list__search" appearance="outline">
+        <mat-label>Search widgets</mat-label>
+        <input matInput (keyup)="applyFilter($event)" placeholder="Filter by name or description" #searchInput>
+        <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field>
+
     <table class="widget-list__table" mat-table [dataSource]="dataSource">
         <ng-container matColumnDef="name">
             <th
@@ -131,6 +137,26 @@
 
         <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
         <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+
+        <tr class="mat-row" *matNoDataRow>
+            <td class="mat-cell widget-list__empty" [attr.colspan]="displayedColumns.length">
+                @if (dataSource.filter) {
+                    <div class="widget-list__empty-content">
+                        <mat-icon>search_off</mat-icon>
+                        <span>No widgets match "{{ dataSource.filter }}"</span>
+                    </div>
+                } @else {
+                    <div class="widget-list__empty-content">
+                        <mat-icon>widgets</mat-icon>
+                        <span>No widgets yet</span>
+                        <button mat-stroked-button color="primary" (click)="onAddClick()">
+                            <mat-icon>add</mat-icon>
+                            Create your first widget
+                        </button>
+                    </div>
+                }
+            </td>
+        </tr>
     </table>
 
     <mat-paginator

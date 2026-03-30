@@ -72,11 +72,28 @@ export class WidgetsComponent implements OnInit {
     ) {}
 
     public ngOnInit(): void {
+        this.dataSource.filterPredicate = (data: WidgetInfoFragment, filter: string) => {
+            const searchStr = filter.toLowerCase();
+            return (
+                data.name.toLowerCase().includes(searchStr) ||
+                (data.description?.toLowerCase().includes(searchStr) ?? false)
+            );
+        };
+
         this.widgetService.getAll().subscribe((widgetList) => {
             console.log('ngOnInit');
 
             this.dataSource.data = widgetList;
         });
+    }
+
+    public applyFilter(event: Event): void {
+        const filterValue = (event.target as HTMLInputElement).value;
+        this.dataSource.filter = filterValue.trim().toLowerCase();
+
+        if (this.dataSource.paginator) {
+            this.dataSource.paginator.firstPage();
+        }
     }
 
     public getStatusConfig(status: string): StatusConfig {

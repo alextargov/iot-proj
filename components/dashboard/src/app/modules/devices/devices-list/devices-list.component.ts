@@ -83,9 +83,26 @@ export class DevicesListComponent implements OnInit, AfterViewInit {
     ) {}
 
     public ngOnInit(): void {
+        this.dataSource.filterPredicate = (data: DeviceInfoFragment, filter: string) => {
+            const searchStr = filter.toLowerCase();
+            return (
+                data.name.toLowerCase().includes(searchStr) ||
+                (data.description?.toLowerCase().includes(searchStr) ?? false)
+            );
+        };
+
         this.deviceService.getAllDevices().subscribe((deviceList) => {
             this.dataSource.data = deviceList;
         });
+    }
+
+    public applyFilter(event: Event): void {
+        const filterValue = (event.target as HTMLInputElement).value;
+        this.dataSource.filter = filterValue.trim().toLowerCase();
+
+        if (this.dataSource.paginator) {
+            this.dataSource.paginator.firstPage();
+        }
     }
 
     public getStatusConfig(status: string): StatusConfig {
