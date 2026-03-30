@@ -9,148 +9,201 @@
     orientation="horizontal"
     class="widget-create__container"
 >
-    <mat-step
-        [stepControl]="detailsFormGroup"
-    >
+    <mat-step [stepControl]="detailsFormGroup">
         <ng-template matStepLabel>Widget details</ng-template>
 
         <div class="widget-create__step">
-            <div class="widget-create__details">
-                <form
-                    [formGroup]="detailsFormGroup"
-                    class="widget-create__details-form"
-                >
-                    <mat-form-field class="widget-create__detailsForm-field">
-                        <mat-label>Name</mat-label>
-                        <input
-                            matInput
-                            placeholder="Widget name"
-                            formControlName="name"
-                            required
-                        />
-                        @if (detailsFormGroup?.get('name')?.errors?.required) {
-                            <mat-error>Name is required</mat-error>
-                        }
-                        @if (detailsFormGroup?.get('name')?.errors?.maxlength) {
-                            <mat-error>Max length is {{ NAME_MAX_LENGTH }}</mat-error>
-                        }
-                    </mat-form-field>
-                    <mat-form-field class="widget-create__detailsForm-field">
-                        <mat-label>Description</mat-label>
-                        <input
-                            matInput
-                            placeholder="Widget description"
-                            formControlName="description"
-                        />
-                        @if (detailsFormGroup?.get('description')?.errors?.maxlength) {
-                            <mat-error>Max length is {{ DESCRIPTION_MAX_LENGTH }}</mat-error>
-                        }
-                    </mat-form-field>
-                    <div class="widget-create__detailsForm-field">
-                        <mat-slide-toggle formControlName="isActive">{{
-                            detailsFormGroup?.get('isActive').value
-                                ? 'Active'
-                                : 'Inactive'
-                        }}</mat-slide-toggle>
-                    </div>
-                </form>
-
-                <form
-                    [formGroup]="detailsFormGroup"
-                    class="widget-create__details-devices"
-                >
-                    <mat-form-field
-                        class="widget-create__details-devices-select"
-                        appearance="fill"
+            <div class="widget-create__step-content">
+                <div class="widget-create__details">
+                    <form
+                        [formGroup]="detailsFormGroup"
+                        class="widget-create__details-form"
                     >
-                        <mat-label>Select devices for widget logic</mat-label>
-                        <mat-chip-grid
-                            #chipGrid
-                            aria-label="Select devices for widget logic"
+                        <mat-form-field class="widget-create__detailsForm-field">
+                            <mat-label>Name</mat-label>
+                            <input
+                                matInput
+                                placeholder="Widget name"
+                                formControlName="name"
+                                required
+                            />
+                            @if (detailsFormGroup?.get('name')?.errors?.required) {
+                                <mat-error>Name is required</mat-error>
+                            }
+                            @if (detailsFormGroup?.get('name')?.errors?.maxlength) {
+                                <mat-error>Max length is {{ NAME_MAX_LENGTH }}</mat-error>
+                            }
+                        </mat-form-field>
+                        <mat-form-field class="widget-create__detailsForm-field">
+                            <mat-label>Description</mat-label>
+                            <input
+                                matInput
+                                placeholder="Widget description"
+                                formControlName="description"
+                            />
+                            @if (detailsFormGroup?.get('description')?.errors?.maxlength) {
+                                <mat-error>Max length is {{ DESCRIPTION_MAX_LENGTH }}</mat-error>
+                            }
+                        </mat-form-field>
+                        <div class="widget-create__detailsForm-field">
+                            <mat-slide-toggle formControlName="isActive">{{
+                                detailsFormGroup?.get('isActive').value
+                                    ? 'Active'
+                                    : 'Inactive'
+                            }}</mat-slide-toggle>
+                        </div>
+                    </form>
+
+                    <form
+                        [formGroup]="detailsFormGroup"
+                        class="widget-create__details-devices"
+                    >
+                        <mat-form-field
+                            class="widget-create__details-devices-select"
+                            appearance="fill"
                         >
-                            @for (keyword of selectedDevices; track keyword.id) {
-                                <mat-chip-row
-                                    (removed)="removeDevice(keyword)"
-                                    [value]="keyword.name"
-                                >
-                                    {{ keyword.name }}
-                                    <button
-                                        matChipRemove
-                                        [attr.aria-label]="'remove ' + keyword"
+                            <mat-label>Select devices for widget logic</mat-label>
+                            <mat-chip-grid
+                                #chipGrid
+                                aria-label="Select devices for widget logic"
+                            >
+                                @for (keyword of selectedDevices; track keyword.id) {
+                                    <mat-chip-row
+                                        (removed)="removeDevice(keyword)"
+                                        [value]="keyword.name"
                                     >
-                                        <mat-icon>cancel</mat-icon>
-                                    </button>
-                                </mat-chip-row>
-                            }
-                        </mat-chip-grid>
-                        <input
-                            placeholder="New device..."
-                            #deviceInput
-                            formControlName="device"
-                            [matChipInputFor]="chipGrid"
-                            [matAutocomplete]="auto"
-                            [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
-                        />
-                        <mat-autocomplete
-                            #auto="matAutocomplete"
-                            (optionSelected)="selected($event)"
-                        >
-                            @for (device of filteredDevices | async; track device.id) {
-                                <mat-option [value]="device">
-                                    {{ device.name }}
-                                </mat-option>
-                            }
-                        </mat-autocomplete>
-                    </mat-form-field>
-                </form>
+                                        {{ keyword.name }}
+                                        <button
+                                            matChipRemove
+                                            [attr.aria-label]="'remove ' + keyword"
+                                        >
+                                            <mat-icon>cancel</mat-icon>
+                                        </button>
+                                    </mat-chip-row>
+                                }
+                            </mat-chip-grid>
+                            <input
+                                placeholder="New device..."
+                                #deviceInput
+                                formControlName="device"
+                                [matChipInputFor]="chipGrid"
+                                [matAutocomplete]="auto"
+                                [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+                            />
+                            <mat-autocomplete
+                                #auto="matAutocomplete"
+                                (optionSelected)="selected($event)"
+                            >
+                                @for (device of filteredDevices | async; track device.id) {
+                                    <mat-option [value]="device">
+                                        {{ device.name }}
+                                    </mat-option>
+                                }
+                            </mat-autocomplete>
+                        </mat-form-field>
+                    </form>
+                </div>
             </div>
 
-            <div class="widget-create__container-navigations">
+            <div class="widget-create__step-footer">
+                <span></span>
                 <button
-                    mat-button
+                    mat-flat-button
+                    color="primary"
                     matStepperNext
                     (click)="onNavigateToBlockly()"
                 >
                     Next
+                    <mat-icon iconPositionEnd>arrow_forward</mat-icon>
                 </button>
             </div>
         </div>
     </mat-step>
-    <mat-step class="widget-create__logic">
-        <ng-template matStepLabel>Widget logic</ng-template>
-        <div class="widget-create__step">
-            @if (isLoaded) {
-                <ngx-blockly
-                    class="widget-create__logic-blockly"
-                    #blockly
-                    [config]="config"
-                    [readOnly]="readOnly"
-                    [customBlocks]="customBlocks"
-                    (workspaceChange)="workspaceChange($event)"
-                    (javascriptCode)="onCode($event)"
-                >
-                </ngx-blockly>
-            }
 
-            <div class="widget-create__container-navigations">
-                <button mat-button matStepperPrevious>Back</button>
-                <button mat-button matStepperNext>Next</button>
+    <mat-step>
+        <ng-template matStepLabel>Widget logic</ng-template>
+
+        <div class="widget-create__step">
+            <div class="widget-create__step-content">
+                @if (isLoaded) {
+                    <ngx-blockly
+                        class="widget-create__logic-blockly"
+                        #blockly
+                        [config]="config"
+                        [readOnly]="readOnly"
+                        [customBlocks]="customBlocks"
+                        (workspaceChange)="workspaceChange($event)"
+                        (javascriptCode)="onCode($event)"
+                    >
+                    </ngx-blockly>
+                }
+            </div>
+
+            <div class="widget-create__step-footer">
+                <button mat-stroked-button matStepperPrevious>
+                    <mat-icon>arrow_back</mat-icon>
+                    Back
+                </button>
+                <button mat-flat-button color="primary" matStepperNext>
+                    Next
+                    <mat-icon iconPositionEnd>arrow_forward</mat-icon>
+                </button>
             </div>
         </div>
     </mat-step>
+
     <mat-step>
-        <ng-template matStepLabel>Done</ng-template>
-        <p>You are now done.</p>
-        <div class="widget-create__container-navigations">
-            <button
-                mat-button
-                matStepperPrevious
-                (click)="onNavigateToBlockly()"
-            >
-                Back
-            </button>
-            <button mat-button (click)="stepper.reset()">Reset</button>
-            <button mat-button (click)="onSaveClick()">Save</button>
+        <ng-template matStepLabel>Review & Save</ng-template>
+
+        <div class="widget-create__step">
+            <div class="widget-create__step-content">
+                <div class="widget-create__review">
+                    <mat-card>
+                        <mat-card-header>
+                            <mat-card-title>Widget Summary</mat-card-title>
+                        </mat-card-header>
+                        <mat-card-content>
+                            <div class="widget-create__review-item">
+                                <span class="widget-create__review-label">Name:</span>
+                                <span>{{ detailsFormGroup?.get('name')?.value || '-' }}</span>
+                            </div>
+                            <div class="widget-create__review-item">
+                                <span class="widget-create__review-label">Description:</span>
+                                <span>{{ detailsFormGroup?.get('description')?.value || '-' }}</span>
+                            </div>
+                            <div class="widget-create__review-item">
+                                <span class="widget-create__review-label">Status:</span>
+                                <span>{{ detailsFormGroup?.get('isActive')?.value ? 'Active' : 'Inactive' }}</span>
+                            </div>
+                            <div class="widget-create__review-item">
+                                <span class="widget-create__review-label">Selected Devices:</span>
+                                <span>{{ selectedDevices.size > 0 ? selectedDevices.size + ' device(s)' : 'None' }}</span>
+                            </div>
+                            <div class="widget-create__review-item">
+                                <span class="widget-create__review-label">Logic Configured:</span>
+                                <span>{{ workspaceCode ? 'Yes' : 'No' }}</span>
+                            </div>
+                        </mat-card-content>
+                    </mat-card>
+                </div>
+            </div>
+
+            <div class="widget-create__step-footer">
+                <div class="widget-create__step-footer-left">
+                    <button mat-stroked-button matStepperPrevious (click)="onNavigateToBlockly()">
+                        <mat-icon>arrow_back</mat-icon>
+                        Back
+                    </button>
+                    <button mat-stroked-button color="warn" (click)="stepper.reset()">
+                        <mat-icon>refresh</mat-icon>
+                        Reset
+                    </button>
+                </div>
+                <button mat-flat-button color="primary" (click)="onSaveClick()">
+                    <mat-icon>save</mat-icon>
+                    Save Widget
+                </button>
+            </div>
         </div>
     </mat-step>
 </mat-stepper>
