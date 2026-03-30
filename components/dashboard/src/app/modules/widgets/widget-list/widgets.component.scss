@@ -37,34 +37,68 @@
             }
 
             &-status {
-                width: 5%;
-            }
-
-            &-url {
-                width: 15%;
+                width: 10%;
             }
 
             &-createdAt {
-                width: 14%;
+                width: 20%;
             }
 
             &-actions {
-                width: 6%;
+                width: 10%;
             }
         }
+    }
+}
 
-        &-status {
-            &-error {
-                color: red;
-            }
+// Status Badge Styles
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    white-space: nowrap;
 
-            &-okay {
-                color: green;
-            }
+    &__icon {
+        font-size: 1rem;
+        width: 1rem;
+        height: 1rem;
+    }
 
-            &-initial {
-                color: gray;
-            }
+    &__label {
+        line-height: 1;
+    }
+
+    // Active status - green
+    &.status--active {
+        background-color: #e8f5e9;
+        color: #2e7d32;
+
+        .status-badge__icon {
+            color: #2e7d32;
+        }
+    }
+
+    // Inactive status - gray
+    &.status--inactive {
+        background-color: #f5f5f5;
+        color: #757575;
+
+        .status-badge__icon {
+            color: #757575;
+        }
+    }
+
+    // Unknown status - gray
+    &.status--unknown {
+        background-color: #f5f5f5;
+        color: #757575;
+
+        .status-badge__icon {
+            color: #757575;
         }
     }
 }

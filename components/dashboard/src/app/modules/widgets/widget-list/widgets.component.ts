@@ -5,12 +5,19 @@ import { MatTableDataSource } from '@angular/material/table';
 import {
     DeviceInfoFragment,
     WidgetInfoFragment,
+    WidgetStatus,
 } from '../../../shared/graphql/generated';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatDialog } from '@angular/material/dialog';
 import { WidgetService } from '../../../shared/services/widget/widget.service';
-import { WidgetStatus } from '../../../shared/services/widget/widget.interface';
 import { WidgetDeleteComponent } from '../widget-delete/widget-delete.component';
+
+interface StatusConfig {
+    icon: string;
+    label: string;
+    cssClass: string;
+    tooltip: string;
+}
 
 @Component({
     standalone: false,
@@ -37,6 +44,21 @@ export class WidgetsComponent implements OnInit {
         },
     ];
 
+    private readonly statusConfigs: Record<string, StatusConfig> = {
+        [WidgetStatus.Active]: {
+            icon: 'check_circle',
+            label: 'Active',
+            cssClass: 'status--active',
+            tooltip: 'Widget is running',
+        },
+        [WidgetStatus.Inactive]: {
+            icon: 'pause_circle',
+            label: 'Inactive',
+            cssClass: 'status--inactive',
+            tooltip: 'Widget is not running',
+        },
+    };
+
     @ViewChild(MatPaginator) public paginator: MatPaginator;
 
     public ngAfterViewInit() {
@@ -57,12 +79,15 @@ export class WidgetsComponent implements OnInit {
         });
     }
 
-    public getStatus(status: WidgetStatus) {
-        if (status === WidgetStatus.ACTIVE) {
-            return 'check_circle';
-        }
-
-        return 'circle';
+    public getStatusConfig(status: string): StatusConfig {
+        return (
+            this.statusConfigs[status] || {
+                icon: 'help',
+                label: 'Unknown',
+                cssClass: 'status--unknown',
+                tooltip: 'Unknown status',
+            }
+        );
     }
 
     public async onAddClick(): Promise<void> {
