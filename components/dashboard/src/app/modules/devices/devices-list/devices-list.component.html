@@ -56,8 +56,8 @@
             </td>
         </ng-container>
 
-        <!-- Symbol Column -->
-        <ng-container matColumnDef="isRunning">
+        <!-- Status Column -->
+        <ng-container matColumnDef="status">
             <th
                 class="device-list__table-header device-list__table-header-status"
                 mat-header-cell
@@ -70,18 +70,14 @@
                 mat-cell
                 *matCellDef="let element"
             >
-                <mat-icon
-                    [ngClass]="{
-                        'device-list__table-status-okay':
-                            element.status === 'ACTIVE',
-                        'device-list__table-status-initial':
-                            element.status === 'INITIAL',
-                        'device-list__table-status-error':
-                            element.status === 'ERROR' ||
-                            element.status === 'UNREACHABLE'
-                    }"
-                    >{{ getStatus(element.status) }}</mat-icon
+                <span
+                    class="status-badge"
+                    [ngClass]="getStatusConfig(element.status).cssClass"
+                    [matTooltip]="getStatusConfig(element.status).tooltip"
                 >
+                    <mat-icon class="status-badge__icon">{{ getStatusConfig(element.status).icon }}</mat-icon>
+                    <span class="status-badge__label">{{ getStatusConfig(element.status).label }}</span>
+                </span>
             </td>
         </ng-container>
 
