@@ -24,7 +24,7 @@ import { DataModelDeleteComponent } from './datamodel-delete/datamodel-delete.co
         DatamodelRoutingModule,
         SharedModule,
         MonacoEditorModule.forRoot({
-            baseUrl: '/assets/monaco/min/vs/loader.js', // 👈 must match output path above
+            baseUrl: '/assets/monaco-editor/min/vs',
         }),
     ],
     providers: [DatamodelResolver],

@@ -158,8 +158,19 @@ export class DatamodelCreateComponent implements OnInit {
 
         const monacoInstance = (window as any)
             .monaco as typeof import('monaco-editor');
-        const model = this.editorInstance.getModel();
-        if (!model) return;
+        const model = this.editorInstance?.getModel();
+        if (!model) {
+            try {
+                const isValid = await this.jsonSchemaService.validateSchema(code);
+                if (isValid) {
+                    this.root = JSON.parse(code);
+                    this.mode = Mode.UI;
+                }
+            } catch {
+                this.selectedMode = Mode.CODE;
+            }
+            return;
+        }
 
         try {
             const isValid = await this.jsonSchemaService.validateSchema(code);

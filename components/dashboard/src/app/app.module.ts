@@ -38,7 +38,7 @@ import { MonacoEditorModule } from 'ngx-monaco-editor-v2';
         MaterialModule,
 
         MonacoEditorModule.forRoot({
-            baseUrl: '', // 👈 must match output path above
+            baseUrl: '/assets/monaco-editor/min/vs',
         }),
     ],
     providers: [

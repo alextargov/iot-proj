@@ -199,7 +199,8 @@ export class DeviceCreateComponent implements OnInit, AfterViewInit {
     }
 
     public async onUiToggleClick() {
-        const code: string = this.deviceCreateOutputFormGroup.get('dataModel').value.schema;
+        const dataModel = this.deviceCreateOutputFormGroup.get('dataModel').value;
+        const code: string = dataModel?.schema;
 
         if (code) {
             this.schema = JSON.parse(code);
