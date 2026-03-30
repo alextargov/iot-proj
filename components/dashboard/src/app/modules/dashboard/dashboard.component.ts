@@ -5,7 +5,7 @@ import {
     DisplayGrid,
     Draggable,
     GridsterConfig,
-    GridsterItem,
+    GridsterItemConfig,
     GridType,
     PushDirections,
     Resizable,
@@ -27,7 +27,7 @@ interface Safe extends GridsterConfig {
 })
 export class DashboardComponent implements OnInit {
     public options: Safe;
-    public dashboard: Array<GridsterItem>;
+    public dashboard: Array<GridsterItemConfig>;
     public isLocked: boolean = true;
 
     ngOnInit(): void {

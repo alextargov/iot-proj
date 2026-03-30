@@ -4,7 +4,7 @@ import { SharedModule } from '../../shared/shared.module';
 import { CoreModule } from '../../core/core.module';
 import { DashboardComponent } from './dashboard.component';
 import { DashboardRoutingModule } from './dashboard-routing.module';
-import { GridsterModule } from 'angular-gridster2';
+import { Gridster, GridsterItem } from 'angular-gridster2';
 import { MaterialModule } from 'src/app/shared/material.module';
 
 @NgModule({
@@ -12,7 +12,8 @@ import { MaterialModule } from 'src/app/shared/material.module';
     exports: [DashboardComponent],
     imports: [
         CoreModule,
-        GridsterModule,
+        Gridster,
+        GridsterItem,
         MaterialModule,
 
         SharedModule,

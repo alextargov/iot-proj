@@ -11,25 +11,23 @@ import {
 import { COMMA, ENTER } from '@angular/cdk/keycodes';
 
 import {
-    Blockly,
-    Button,
-    Category,
-    COLOUR_CATEGORY,
+    BlocklyComponent,
+    BlocklyConfig,
+    BlocklyToolbox,
     CustomBlock,
-    FUNCTIONS_CATEGORY,
+    Category,
+    Separator,
+    Button,
     Label,
-    LISTS_CATEGORY,
     LOGIC_CATEGORY,
     LOOP_CATEGORY,
     MATH_CATEGORY,
-    NgxBlocklyComponent,
-    NgxBlocklyConfig,
-    NgxBlocklyGenerator,
-    NgxBlocklyToolbox,
-    Separator,
     TEXT_CATEGORY,
+    LISTS_CATEGORY,
+    COLOUR_CATEGORY,
     VARIABLES_CATEGORY,
-} from 'ngx-blockly-new';
+    FUNCTIONS_CATEGORY,
+} from '../../../shared/blockly';
 import { DeviceService } from 'src/app/shared/services/device/device.service';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { Observable } from 'rxjs';
@@ -140,18 +138,13 @@ export class WidgetCreateComponent implements OnInit {
     public workspaceXML: string;
     public workspaceCode: string;
 
-    public config: NgxBlocklyConfig = {
+    public config: BlocklyConfig = {
         trashcan: true,
-        generators: [NgxBlocklyGenerator.JAVASCRIPT],
-        defaultBlocks: true,
         move: {
             scrollbars: true,
             wheel: true,
         },
         oneBasedIndex: true,
-        plugins: {
-            toolbox: NgxBlocklyToolbox,
-        },
         zoom: {
             controls: true,
             wheel: true,
@@ -163,11 +156,10 @@ export class WidgetCreateComponent implements OnInit {
         css: true,
     };
 
-    private blocklyComponent: NgxBlocklyComponent;
+    private blocklyComponent: BlocklyComponent;
 
-    // @ViewChild('blockly', { static: false }) blocklyComponent: NgxBlocklyComponent
     @ViewChild('blockly', { static: false }) set blockly(
-        content: NgxBlocklyComponent
+        content: BlocklyComponent
     ) {
         if (content) {
             this.blocklyComponent = content;
@@ -199,15 +191,11 @@ export class WidgetCreateComponent implements OnInit {
             device: [''],
         });
 
-        const workspace = new Blockly.WorkspaceSvg(new Blockly.Options({}));
-        const toolbox: NgxBlocklyToolbox = new NgxBlocklyToolbox(workspace);
-
         this.deviceService.getAllDevices().subscribe((deviceList) => {
             this.devices = deviceList;
             console.log(deviceList);
 
-            const workspace = new Blockly.WorkspaceSvg(new Blockly.Options({}));
-            const toolbox: NgxBlocklyToolbox = new NgxBlocklyToolbox(workspace);
+            const toolbox = new BlocklyToolbox();
 
             const dynamicDropdownDevices = deviceList.map((device) => [
                 device.name,
@@ -256,17 +244,17 @@ export class WidgetCreateComponent implements OnInit {
                 TEXT_CATEGORY,
                 LISTS_CATEGORY,
                 COLOUR_CATEGORY,
-                new Category('Repeats', '%{BKY_LOGIC_HUE}', repeats),
+                new Category('Repeats', '#5b80a5', repeats),
                 new Separator(),
                 VARIABLES_CATEGORY,
                 FUNCTIONS_CATEGORY,
                 new Separator(),
-                new Category('Devices', '%{BKY_LOGIC_HUE}', deviceBlocks),
+                new Category('Devices', '#5b80a5', deviceBlocks),
                 new Category('Aggregations', '#00AFFF', aggregations),
                 new Category('Operations', '#00AA00', operations),
             ];
 
-            this.config.toolbox = toolbox.toXML();
+            this.config.toolbox = toolbox.toJSON();
 
             this.isLoaded = true;
 

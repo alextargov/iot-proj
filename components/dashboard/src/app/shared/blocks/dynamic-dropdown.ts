@@ -1,18 +1,23 @@
-import { CustomBlock, Blockly } from 'ngx-blockly-new';
-import { javascriptGenerator, Order } from 'blockly/javascript';
+import { CustomBlock, Blockly, Order } from '../blockly';
 
 export class DynamicDropdownBlock extends CustomBlock {
-    public data: Blockly.MenuOption[];
+    public data: any[];
     public readonly id: string;
     public readonly isOutput: boolean;
 
-    constructor(type, obj, ...args) {
+    constructor(type: string, obj: any, ...args: any[]) {
         super(type, null, obj);
 
-        if (args.length > 0) {
-            this.id = args[0].id;
-            this.data = args[0].data;
-            this.isOutput = args[0].isOutput;
+        // Data comes from obj (second parameter) or args[0]
+        const config = obj || (args.length > 0 ? args[0] : {});
+
+        this.id = config.id;
+        this.data = config.data || [];
+        this.isOutput = config.isOutput;
+
+        // Ensure data is never empty (Blockly requires at least one option)
+        if (!this.data || this.data.length === 0) {
+            this.data = [['No devices available', 'none']];
         }
 
         this.class = DynamicDropdownBlock;
@@ -40,7 +45,6 @@ export class DynamicDropdownBlock extends CustomBlock {
     }
 
     public toJavaScriptCode(block: any): string | any[] {
-        // TODO: Assemble JavaScript into code variable.
         const deviceId = block.getFieldValue(this.id);
 
         const aggregationId = this.block.getChildren(true).length

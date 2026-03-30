@@ -1,4 +1,4 @@
-import { CustomBlock, Blockly } from 'ngx-blockly-new';
+import { CustomBlock, Blockly } from '../blockly';
 
 export interface IOperation {
     id: string;
@@ -21,19 +21,20 @@ export class OperationBlock extends CustomBlock {
     private readonly additionalText: string;
     private readonly hasSecondInput: boolean;
 
-    constructor(type, obj, ...args) {
+    constructor(type: string, obj: any, ...args: any[]) {
         super(type, null, obj);
 
-        if (args.length > 0) {
-            this.id = args[0].id;
-            this.name = args[0].name;
-            this.hasInput = args[0].hasInput;
-            this.hasOutputConnection = args[0].hasOutputConnection;
-            this.hasPrevConnection = args[0].hasPrevConnection;
-            this.hasNextConnection = args[0].hasNextConnection;
-            this.additionalText = args[0].additionalText;
-            this.hasSecondInput = args[0].hasSecondInput;
-        }
+        // Data comes from obj (second parameter) or args[0]
+        const config = obj || (args.length > 0 ? args[0] : {});
+
+        this.id = config.id;
+        this.name = config.name;
+        this.hasInput = config.hasInput;
+        this.hasOutputConnection = config.hasOutputConnection;
+        this.hasPrevConnection = config.hasPrevConnection;
+        this.hasNextConnection = config.hasNextConnection;
+        this.additionalText = config.additionalText;
+        this.hasSecondInput = config.hasSecondInput;
 
         this.class = OperationBlock;
     }
@@ -83,18 +84,16 @@ export class OperationBlock extends CustomBlock {
     }
 
     public toJavaScriptCode(block: any): string | any[] {
-        // TODO: Assemble JavaScript into code variable.
         let code = ``;
 
         const textChildren = block
             .getChildren(true)
-            .map((child) => `'${child.getFieldValue('TEXT')}'`);
+            .map((child: any) => `'${child.getFieldValue('TEXT')}'`);
         if (this.hasInput && textChildren.length) {
             code = `await setOperation("${this.id}", [${textChildren.join(
                 ', '
             )}])`;
         }
         return code;
-        // return [code, Blockly[NgxBlocklyGenerator.JAVASCRIPT].ORDER_NONE]
     }
 }

@@ -1,19 +1,19 @@
-import { CustomBlock, Blockly } from 'ngx-blockly-new';
-import { javascriptGenerator, Order } from 'blockly/javascript';
+import { CustomBlock, Blockly, Order } from '../blockly';
 
 export class AggregationBlock extends CustomBlock {
     private id: string;
     private name: string;
     private options: any[];
 
-    constructor(type, obj, ...args) {
+    constructor(type: string, obj: any, ...args: any[]) {
         super(type, null, obj);
 
-        if (args.length > 0) {
-            this.id = args[0].id;
-            this.name = args[0].name;
-            this.options = args[0].options;
-        }
+        // Data comes from obj (second parameter) or args[0]
+        const config = obj || (args.length > 0 ? args[0] : {});
+
+        this.id = config.id;
+        this.name = config.name;
+        this.options = config.options;
 
         this.class = AggregationBlock;
     }
@@ -41,9 +41,7 @@ export class AggregationBlock extends CustomBlock {
     }
 
     public toJavaScriptCode(block: any): string | any[] {
-        // TODO: Assemble JavaScript into code variable.
         var code = ``;
-
         return [code, Order.NONE];
     }
 }

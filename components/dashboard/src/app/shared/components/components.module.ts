@@ -11,7 +11,7 @@ import { AppRoutingModule } from 'src/app/app-routing.module';
 import { ContentHeaderComponent } from './content-header/content-header.component';
 
 import 'blockly/blocks';
-import { NgxBlocklyNewModule } from 'ngx-blockly-new';
+import { BlocklyModule } from '../blockly';
 import { LoginDialogComponent } from './login/login-dialog.component';
 import { SchemaNodeEditorComponent } from './schema-node-editor/schema-node-editor.component';
 import { CoreModule } from '../../core/core.module';
@@ -26,7 +26,7 @@ import { CoreModule } from '../../core/core.module';
         BrowserModule,
         MaterialModule,
         AppRoutingModule,
-        NgxBlocklyNewModule,
+        BlocklyModule,
         ReactiveFormsModule,
         CoreModule,
     ],
