@@ -42,6 +42,20 @@ query GetAllDevices {
     }
 }
 
+query GetDevicesPage($first: Int, $after: PageCursor) {
+    devicesPage(first: $first, after: $after) {
+        data {
+            ...DeviceInfo
+        }
+        pageInfo {
+            startCursor
+            endCursor
+            hasNextPage
+        }
+        totalCount
+    }
+}
+
 mutation CreateDevice($input: DeviceInput!) {
     createDevice(input: $input) {
         ...DeviceInfo
@@ -50,4 +64,12 @@ mutation CreateDevice($input: DeviceInput!) {
 
 mutation DeleteDevice($id: String!) {
     deleteDevice(id: $id)
+}
+
+mutation GenerateDeviceToken {
+    generateDeviceToken
+}
+
+query TestDeviceConnection($url: String!) {
+    testDeviceConnection(url: $url)
 }

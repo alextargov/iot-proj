@@ -42,6 +42,20 @@
                             <mat-label>Turn Off Endpoint</mat-label>
                             <input matInput formControlName="turnOffEndpoint" />
                         </mat-form-field>
+                        <button
+                            mat-stroked-button
+                            type="button"
+                            [disabled]="!deviceCreateMetadataFormGroup.get('deviceURL')?.value || isTestingConnection"
+                            (click)="onTestConnectionClick()"
+                        >
+                            @if (!isTestingConnection) {
+                                <mat-icon>wifi_tethering</mat-icon>
+                            }
+                            @if (isTestingConnection) {
+                                <mat-spinner diameter="20"></mat-spinner>
+                            }
+                            {{ isTestingConnection ? 'Testing...' : 'Test Connection' }}
+                        </button>
                     </div>
                 </div>
             </form>
@@ -81,16 +95,12 @@
                             #mep1="matExpansionPanel"
                         >
                             <mat-expansion-panel-header>
-                                <mat-icon
-                                    (click)="mep1.expanded = !mep1.expanded"
-                                    *ngIf="mep1.expanded"
-                                    >expand_less</mat-icon
-                                >
-                                <mat-icon
-                                    (click)="mep1.expanded = !mep1.expanded"
-                                    *ngIf="!mep1.expanded"
-                                    >expand_more</mat-icon
-                                >
+                                @if (mep1.expanded) {
+                                    <mat-icon (click)="mep1.expanded = !mep1.expanded">expand_less</mat-icon>
+                                }
+                                @if (!mep1.expanded) {
+                                    <mat-icon (click)="mep1.expanded = !mep1.expanded">expand_more</mat-icon>
+                                }
                                 <mat-panel-title>
                                     <div
                                         matTooltip="Communication: Service to Device"
@@ -130,13 +140,9 @@
                                                 selectedAuthorizationPolicy
                                             "
                                         >
-                                            <mat-option
-                                                *ngFor="
-                                                    let authPolicy of authorizationPolicies
-                                                "
-                                                [value]="authPolicy"
-                                                >{{ authPolicy }}</mat-option
-                                            >
+                                            @for (policy of authorizationPolicies; track policy) {
+                                                <mat-option [value]="policy">{{ policy }}</mat-option>
+                                            }
                                         </mat-select>
                                     </mat-form-field>
                                 </div>
@@ -144,97 +150,81 @@
                                 <div
                                     class="device-create__authorization-items-accordion-content-right"
                                 >
-                                    <div
-                                        class="device-create__authorization-items-form"
-                                        *ngIf="
-                                            selectedAuthorizationPolicy ===
-                                            authPolicy.Basic
-                                        "
-                                    >
-                                        <mat-form-field appearance="fill">
-                                            <mat-label>Username</mat-label>
-                                            <input
-                                                matInput
-                                                formControlName="authCredentialsBasicUsername"
-                                            />
-                                        </mat-form-field>
-                                        <mat-form-field appearance="fill">
-                                            <mat-label>Password</mat-label>
-                                            <input
-                                                matInput
-                                                formControlName="authCredentialsBasicPassword"
-                                            />
-                                        </mat-form-field>
-                                    </div>
+                                    @if (selectedAuthorizationPolicy === authPolicy.Basic) {
+                                        <div class="device-create__authorization-items-form">
+                                            <mat-form-field appearance="fill">
+                                                <mat-label>Username</mat-label>
+                                                <input
+                                                    matInput
+                                                    formControlName="authCredentialsBasicUsername"
+                                                />
+                                            </mat-form-field>
+                                            <mat-form-field appearance="fill">
+                                                <mat-label>Password</mat-label>
+                                                <input
+                                                    matInput
+                                                    formControlName="authCredentialsBasicPassword"
+                                                />
+                                            </mat-form-field>
+                                        </div>
+                                    }
 
-                                    <div
-                                        class="device-create__authorization-items-form"
-                                        *ngIf="
-                                            selectedAuthorizationPolicy ===
-                                            authPolicy.OAuth
-                                        "
-                                    >
-                                        <mat-form-field appearance="fill">
-                                            <mat-label>Client ID</mat-label>
-                                            <input
-                                                matInput
-                                                formControlName="authCredentialsOAuthClientID"
-                                            />
-                                        </mat-form-field>
-                                        <mat-form-field appearance="fill">
-                                            <mat-label>Client Secret</mat-label>
-                                            <input
-                                                matInput
-                                                formControlName="authCredentialsOAuthClientSecret"
-                                            />
-                                        </mat-form-field>
-                                    </div>
+                                    @if (selectedAuthorizationPolicy === authPolicy.OAuth) {
+                                        <div class="device-create__authorization-items-form">
+                                            <mat-form-field appearance="fill">
+                                                <mat-label>Client ID</mat-label>
+                                                <input
+                                                    matInput
+                                                    formControlName="authCredentialsOAuthClientID"
+                                                />
+                                            </mat-form-field>
+                                            <mat-form-field appearance="fill">
+                                                <mat-label>Client Secret</mat-label>
+                                                <input
+                                                    matInput
+                                                    formControlName="authCredentialsOAuthClientSecret"
+                                                />
+                                            </mat-form-field>
+                                        </div>
+                                    }
 
-                                    <div
-                                        class="device-create__authorization-items-form"
-                                        *ngIf="
-                                            selectedAuthorizationPolicy ===
-                                            authPolicy.Certificate
-                                        "
-                                    >
-                                        <mat-form-field appearance="fill">
-                                            <mat-label>Client ID</mat-label>
-                                            <input
-                                                matInput
-                                                formControlName="authCredentialsCertificateClientID"
-                                            />
-                                        </mat-form-field>
-                                        <mat-form-field appearance="fill">
-                                            <mat-label>Client Secret</mat-label>
-                                            <input
-                                                matInput
-                                                formControlName="authCredentialsCertificateClientSecret"
-                                            />
-                                        </mat-form-field>
-                                        <mat-form-field appearance="fill">
-                                            <mat-label>Certificate</mat-label>
-                                            <input
-                                                matInput
-                                                formControlName="authCredentialsCertificateClientCert"
-                                            />
-                                        </mat-form-field>
-                                    </div>
+                                    @if (selectedAuthorizationPolicy === authPolicy.Certificate) {
+                                        <div class="device-create__authorization-items-form">
+                                            <mat-form-field appearance="fill">
+                                                <mat-label>Client ID</mat-label>
+                                                <input
+                                                    matInput
+                                                    formControlName="authCredentialsCertificateClientID"
+                                                />
+                                            </mat-form-field>
+                                            <mat-form-field appearance="fill">
+                                                <mat-label>Client Secret</mat-label>
+                                                <input
+                                                    matInput
+                                                    formControlName="authCredentialsCertificateClientSecret"
+                                                />
+                                            </mat-form-field>
+                                            <mat-form-field appearance="fill">
+                                                <mat-label>Certificate</mat-label>
+                                                <input
+                                                    matInput
+                                                    formControlName="authCredentialsCertificateClientCert"
+                                                />
+                                            </mat-form-field>
+                                        </div>
+                                    }
 
-                                    <div
-                                        class="device-create__authorization-items-form"
-                                        *ngIf="
-                                            selectedAuthorizationPolicy ===
-                                            authPolicy.Bearer
-                                        "
-                                    >
-                                        <mat-form-field appearance="fill">
-                                            <mat-label>Bearer Token</mat-label>
-                                            <input
-                                                matInput
-                                                formControlName="authCredentialsBearerToken"
-                                            />
-                                        </mat-form-field>
-                                    </div>
+                                    @if (selectedAuthorizationPolicy === authPolicy.Bearer) {
+                                        <div class="device-create__authorization-items-form">
+                                            <mat-form-field appearance="fill">
+                                                <mat-label>Bearer Token</mat-label>
+                                                <input
+                                                    matInput
+                                                    formControlName="authCredentialsBearerToken"
+                                                />
+                                            </mat-form-field>
+                                        </div>
+                                    }
                                 </div>
                             </div>
                         </mat-expansion-panel>
@@ -245,16 +235,12 @@
                             #mep2="matExpansionPanel"
                         >
                             <mat-expansion-panel-header>
-                                <mat-icon
-                                    (click)="mep2.expanded = !mep2.expanded"
-                                    *ngIf="mep2.expanded"
-                                    >expand_less</mat-icon
-                                >
-                                <mat-icon
-                                    (click)="mep2.expanded = !mep2.expanded"
-                                    *ngIf="!mep2.expanded"
-                                    >expand_more</mat-icon
-                                >
+                                @if (mep2.expanded) {
+                                    <mat-icon (click)="mep2.expanded = !mep2.expanded">expand_less</mat-icon>
+                                }
+                                @if (!mep2.expanded) {
+                                    <mat-icon (click)="mep2.expanded = !mep2.expanded">expand_more</mat-icon>
+                                }
                                 <mat-panel-title>
                                     <div
                                         matTooltip="Communication: Device to Service"
@@ -325,11 +311,13 @@
                                aria-label="State"
                                [matAutocomplete]="auto"
                                formControlName="dataModel">
-                        <mat-autocomplete #auto="matAutocomplete"  [displayWith]="displayDataModel" (optionSelected)="onDataModelSelected($event)">
-                            <mat-option *ngFor="let dataModel of filteredDataModels | async" [value]="dataModel">
-                                <span>{{dataModel.name}}</span> |
-                                <small>Description: {{dataModel.description}}</small>
-                            </mat-option>
+                        <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayDataModel" (optionSelected)="onDataModelSelected($event)">
+                            @for (dataModel of filteredDataModels | async; track dataModel.id) {
+                                <mat-option [value]="dataModel">
+                                    <span>{{dataModel.name}}</span> |
+                                    <small>Description: {{dataModel.description}}</small>
+                                </mat-option>
+                            }
                         </mat-autocomplete>
                     </mat-form-field>
                 </form>
@@ -350,21 +338,24 @@
                         </mat-button-toggle>
                     </mat-button-toggle-group>
 
-                    <ngx-monaco-editor
-                        *ngIf="mode === 'code'"
-                        [options]="editorOptions"
-                        (onInit)="editorInit($event)"
-                        style="height: 400px"
-                    ></ngx-monaco-editor>
-                    <div *ngIf="mode === 'ui'">
-                        <h1>Dynamic JSON Schema Builder</h1>
+                    @if (mode === 'code') {
+                        <ngx-monaco-editor
+                            [options]="editorOptions"
+                            (onInit)="editorInit($event)"
+                            style="height: 400px"
+                        ></ngx-monaco-editor>
+                    }
+                    @if (mode === 'ui') {
+                        <div>
+                            <h1>Dynamic JSON Schema Builder</h1>
 
-                        <app-schema-node-editor
-                            [field]="schema"
-                            [depth]="0"
-                            [isReadOnly]="true"
-                        ></app-schema-node-editor>
-                    </div>
+                            <app-schema-node-editor
+                                [field]="schema"
+                                [depth]="0"
+                                [isReadOnly]="true"
+                            ></app-schema-node-editor>
+                        </div>
+                    }
                 </div>
             </div>
 

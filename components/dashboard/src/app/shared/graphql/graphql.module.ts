@@ -1,4 +1,4 @@
-import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClient, withInterceptorsFromDi, HttpHeaders } from '@angular/common/http';
 import { NgModule, inject } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import {
@@ -12,29 +12,33 @@ import { HttpLink } from 'apollo-angular/http';
 import { environment } from 'src/environments/environment';
 import { AuthService } from '../services/auth/auth.service';
 
-const errorLink = onError(({ error, result }) => {
-    // React on errors
-    if (error) {
-        console.error(`[Apollo Error]: ${error.message}`);
+const errorLink = onError(({ graphQLErrors, networkError }: any) => {
+    if (graphQLErrors) {
+        graphQLErrors.forEach(({ message, path }: any) => {
+            console.error(`[GraphQL Error]: Message: ${message}, Path: ${path}`);
+        });
     }
 
-    if (result?.errors && result.errors.length > 0) {
-        console.error(`[GraphQL Error]: ${result.errors[0].message}`);
+    if (networkError) {
+        console.error(`[Network Error]: ${networkError.message}`);
+        if (networkError.status === 401 || networkError.statusCode === 401) {
+            console.warn('Authentication failed - token may be expired. Please log in again.');
+        }
     }
-
-    console.log('response', result);
 });
 
-const basicContext = (authToken: string) =>
+// Dynamic auth context - fetches token on EACH request
+const createAuthLink = (authService: AuthService) =>
     setContext((_, { headers }: any) => {
-        const h = {
-            ...headers,
-            Accept: 'charset=utf-8',
-            Authorization: `Bearer ${authToken}`,
-            'Content-Type': 'application/json',
-        };
+        // Get fresh token for each request
+        const authToken = authService.getToken();
+
         return {
-            headers: h,
+            headers: new HttpHeaders({
+                Accept: 'charset=utf-8',
+                'Content-Type': 'application/json',
+                ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+            }),
         };
     });
 
@@ -50,14 +54,14 @@ export function createDefaultApollo(
         withCredentials: true,
     });
 
-    const authToken = authService.getToken();
-    console.log(authToken);
+    // Auth link that fetches token dynamically on each request
+    const authLink = createAuthLink(authService);
 
     return {
         connectToDevTools: !environment.production,
         assumeImmutableResults: true,
         cache,
-        link: ApolloLink.from([basicContext(authToken), errorLink, http]),
+        link: ApolloLink.from([authLink, errorLink, http]),
         defaultOptions: {
             watchQuery: {
                 errorPolicy: 'all' as const,

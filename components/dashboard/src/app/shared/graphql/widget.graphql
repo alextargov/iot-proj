@@ -17,6 +17,20 @@ query GetAllWidgets {
     }
 }
 
+query GetWidgetsPage($first: Int, $after: PageCursor) {
+    widgetsPage(first: $first, after: $after) {
+        data {
+            ...WidgetInfo
+        }
+        pageInfo {
+            startCursor
+            endCursor
+            hasNextPage
+        }
+        totalCount
+    }
+}
+
 mutation CreateWidget($input: WidgetInput!) {
     createWidget(input: $input) {
         ...WidgetInfo

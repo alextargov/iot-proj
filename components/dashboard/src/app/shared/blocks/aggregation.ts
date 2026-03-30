@@ -1,5 +1,11 @@
 import { CustomBlock, Blockly, Order } from '../blockly';
 
+export enum AggregationType {
+    SUM = 'SUM',
+    AVERAGE = 'AVERAGE',
+    LAST_WEEK = 'LAST_WEEK',
+}
+
 export class AggregationBlock extends CustomBlock {
     private id: string;
     private name: string;
@@ -41,7 +47,8 @@ export class AggregationBlock extends CustomBlock {
     }
 
     public toJavaScriptCode(block: any): string | any[] {
-        var code = ``;
-        return [code, Order.NONE];
+        const mode = block.getFieldValue('MODE') || AggregationType.SUM;
+        const code = `await getAggregation("${this.id}", "${mode}")`;
+        return [code, Order.FUNCTION_CALL];
     }
 }

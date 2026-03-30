@@ -37,6 +37,7 @@ import { CoreModule } from '../../core/core.module';
         SchemaNodeEditorComponent,
     ],
     exports: [
+        CommonModule,
         NgxBlocklyComponent1,
         ContentHeaderComponent,
         LoginDialogComponent,

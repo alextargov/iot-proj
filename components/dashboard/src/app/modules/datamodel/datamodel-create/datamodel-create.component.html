@@ -35,35 +35,38 @@
                     </mat-button-toggle>
                 </mat-button-toggle-group>
 
-                <ngx-monaco-editor
-                    *ngIf="mode === 'code'"
-                    formControlName="code"
-                    [options]="editorOptions"
-                    (onInit)="editorInit($event)"
-                    style="height: 400px"
-                ></ngx-monaco-editor>
-                <div *ngIf="mode === 'ui'">
-                    <h1>Dynamic JSON Schema Builder</h1>
+                @if (mode === 'code') {
+                    <ngx-monaco-editor
+                        formControlName="code"
+                        [options]="editorOptions"
+                        (onInit)="editorInit($event)"
+                        style="height: 400px"
+                    ></ngx-monaco-editor>
+                }
+                @if (mode === 'ui') {
+                    <div>
+                        <h1>Dynamic JSON Schema Builder</h1>
 
-                    <app-schema-node-editor
-                        [field]="root"
-                        [depth]="0"
-                    ></app-schema-node-editor>
+                        <app-schema-node-editor
+                            [field]="root"
+                            [depth]="0"
+                        ></app-schema-node-editor>
 
-                    <button
-                        mat-raised-button
-                        color="primary"
-                        (click)="generateSchema()"
-                        class="mt-4"
-                    >
-                        Generate Schema
-                    </button>
+                        <button
+                            mat-raised-button
+                            color="primary"
+                            (click)="generateSchema()"
+                            class="mt-4"
+                        >
+                            Generate Schema
+                        </button>
 
-                    <mat-card class="mt-4">
-                        <h3>Generated Schema:</h3>
-                        <pre>{{ schemaOutput | json }}</pre>
-                    </mat-card>
-                </div>
+                        <mat-card class="mt-4">
+                            <h3>Generated Schema:</h3>
+                            <pre>{{ schemaOutput | json }}</pre>
+                        </mat-card>
+                    </div>
+                }
             </div>
         </div>
     </form>

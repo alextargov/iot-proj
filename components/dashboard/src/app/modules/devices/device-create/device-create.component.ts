@@ -15,7 +15,6 @@ import { MatStepper } from '@angular/material/stepper';
 import { DeviceService } from '../../../shared/services/device/device.service';
 import { AuthPolicy } from '../../../shared/services/device/device.interface';
 import { ToastrService } from '../../../shared/services/toastr/toastr.service';
-import { v4 as uuidv4 } from 'uuid';
 import {
     CredentialDataInput, DataModelInfoFragment,
     DeviceInput,
@@ -58,6 +57,7 @@ export class DeviceCreateComponent implements OnInit, AfterViewInit {
     public schema: SchemaField = { type: SchemaTypeEnum.Object, properties: {} };
     public mode: 'ui' | 'code' = 'code';
     public selectedMode: Mode = Mode.CODE;
+    public isTestingConnection = false;
     public editorInstance!: any;
     public editorOptions = {
         theme: 'vs-dark',
@@ -148,6 +148,29 @@ export class DeviceCreateComponent implements OnInit, AfterViewInit {
         });
     }
 
+    public onTestConnectionClick(): void {
+        const url = this.deviceCreateMetadataFormGroup.get('deviceURL')?.value;
+        if (!url) {
+            return;
+        }
+
+        this.isTestingConnection = true;
+        this.deviceService.testDeviceConnection(url).subscribe({
+            next: (isReachable) => {
+                this.isTestingConnection = false;
+                if (isReachable) {
+                    this.toast.showSuccess('Device is reachable');
+                } else {
+                    this.toast.showError('Device is not reachable');
+                }
+            },
+            error: () => {
+                this.isTestingConnection = false;
+                this.toast.showError('Failed to test connection');
+            },
+        });
+    }
+
     public onEnableConnectionClick(
         event: Event,
         communication: string
@@ -160,9 +183,9 @@ export class DeviceCreateComponent implements OnInit, AfterViewInit {
                     'communicationToServer'
                 ).value
             ) {
-                // TODO: Invoke server to generate a token
-
-                this.tokenInput.nativeElement.value = uuidv4();
+                this.deviceService.generateDeviceToken().subscribe((token) => {
+                    this.tokenInput.nativeElement.value = token;
+                });
             }
         });
     }

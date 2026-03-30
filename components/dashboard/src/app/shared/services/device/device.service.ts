@@ -12,7 +12,28 @@ import {
 } from '../../graphql/generated';
 import { DeviceInput } from '../../graphql/generated';
 import { FetchResult } from '@apollo/client/core';
-import { Apollo } from 'apollo-angular';
+import { Apollo, gql } from 'apollo-angular';
+
+// Temporary inline definitions until types are regenerated
+const GenerateDeviceTokenDocument = gql`
+    mutation GenerateDeviceToken {
+        generateDeviceToken
+    }
+`;
+
+const TestDeviceConnectionDocument = gql`
+    query TestDeviceConnection($url: String!) {
+        testDeviceConnection(url: $url)
+    }
+`;
+
+interface GenerateDeviceTokenMutation {
+    generateDeviceToken: string;
+}
+
+interface TestDeviceConnectionQuery {
+    testDeviceConnection: boolean;
+}
 
 @Injectable({
     providedIn: 'root',
@@ -58,8 +79,8 @@ export class DeviceService {
 
     public getAllDevices(): Observable<DeviceInfoFragment[]> {
         return this.getAllDevicesGql
-            .watch()
-            .valueChanges.pipe(map((res) => (res.data?.devices ?? []) as DeviceInfoFragment[]));
+            .fetch({ fetchPolicy: 'network-only' })
+            .pipe(map((res) => (res.data?.devices ?? []) as DeviceInfoFragment[]));
     }
 
     public createDevice(
@@ -82,5 +103,23 @@ export class DeviceService {
                 id,
             },
         });
+    }
+
+    public generateDeviceToken(): Observable<string> {
+        return this.apollo
+            .mutate<GenerateDeviceTokenMutation>({
+                mutation: GenerateDeviceTokenDocument,
+            })
+            .pipe(map((res) => res.data?.generateDeviceToken ?? ''));
+    }
+
+    public testDeviceConnection(url: string): Observable<boolean> {
+        return this.apollo
+            .query<TestDeviceConnectionQuery>({
+                query: TestDeviceConnectionDocument,
+                variables: { url },
+                fetchPolicy: 'network-only',
+            })
+            .pipe(map((res) => res.data?.testDeviceConnection ?? false));
     }
 }

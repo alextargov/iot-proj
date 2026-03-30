@@ -28,18 +28,12 @@
                             formControlName="name"
                             required
                         />
-                        <mat-error
-                            *ngIf="
-                                detailsFormGroup?.get('name')?.errors?.required
-                            "
-                            >Name is required</mat-error
-                        >
-                        <mat-error
-                            *ngIf="
-                                detailsFormGroup?.get('name')?.errors?.maxlength
-                            "
-                            >Max length is {{ NAME_MAX_LENGTH }}</mat-error
-                        >
+                        @if (detailsFormGroup?.get('name')?.errors?.required) {
+                            <mat-error>Name is required</mat-error>
+                        }
+                        @if (detailsFormGroup?.get('name')?.errors?.maxlength) {
+                            <mat-error>Max length is {{ NAME_MAX_LENGTH }}</mat-error>
+                        }
                     </mat-form-field>
                     <mat-form-field class="widget-create__detailsForm-field">
                         <mat-label>Description</mat-label>
@@ -48,14 +42,9 @@
                             placeholder="Widget description"
                             formControlName="description"
                         />
-                        <mat-error
-                            *ngIf="
-                                detailsFormGroup?.get('description')?.errors
-                                    ?.maxlength
-                            "
-                            >>Max length is
-                            {{ DESCRIPTION_MAX_LENGTH }}</mat-error
-                        >
+                        @if (detailsFormGroup?.get('description')?.errors?.maxlength) {
+                            <mat-error>Max length is {{ DESCRIPTION_MAX_LENGTH }}</mat-error>
+                        }
                     </mat-form-field>
                     <div class="widget-create__detailsForm-field">
                         <mat-slide-toggle formControlName="isActive">{{
@@ -79,19 +68,20 @@
                             #chipGrid
                             aria-label="Select devices for widget logic"
                         >
-                            <mat-chip-row
-                                *ngFor="let keyword of selectedDevices"
-                                (removed)="removeDevice(keyword)"
-                                [value]="keyword.name"
-                            >
-                                {{ keyword.name }}
-                                <button
-                                    matChipRemove
-                                    [attr.aria-label]="'remove ' + keyword"
+                            @for (keyword of selectedDevices; track keyword.id) {
+                                <mat-chip-row
+                                    (removed)="removeDevice(keyword)"
+                                    [value]="keyword.name"
                                 >
-                                    <mat-icon>cancel</mat-icon>
-                                </button>
-                            </mat-chip-row>
+                                    {{ keyword.name }}
+                                    <button
+                                        matChipRemove
+                                        [attr.aria-label]="'remove ' + keyword"
+                                    >
+                                        <mat-icon>cancel</mat-icon>
+                                    </button>
+                                </mat-chip-row>
+                            }
                         </mat-chip-grid>
                         <input
                             placeholder="New device..."
@@ -105,12 +95,11 @@
                             #auto="matAutocomplete"
                             (optionSelected)="selected($event)"
                         >
-                            <mat-option
-                                *ngFor="let device of filteredDevices | async"
-                                [value]="device"
-                            >
-                                {{ device.name }}
-                            </mat-option>
+                            @for (device of filteredDevices | async; track device.id) {
+                                <mat-option [value]="device">
+                                    {{ device.name }}
+                                </mat-option>
+                            }
                         </mat-autocomplete>
                     </mat-form-field>
                 </form>
@@ -130,17 +119,18 @@
     <mat-step class="widget-create__logic">
         <ng-template matStepLabel>Widget logic</ng-template>
         <div class="widget-create__step">
-            <ngx-blockly
-                *ngIf="isLoaded"
-                class="widget-create__logic-blockly"
-                #blockly
-                [config]="config"
-                [readOnly]="readOnly"
-                [customBlocks]="customBlocks"
-                (workspaceChange)="workspaceChange($event)"
-                (javascriptCode)="onCode($event)"
-            >
-            </ngx-blockly>
+            @if (isLoaded) {
+                <ngx-blockly
+                    class="widget-create__logic-blockly"
+                    #blockly
+                    [config]="config"
+                    [readOnly]="readOnly"
+                    [customBlocks]="customBlocks"
+                    (workspaceChange)="workspaceChange($event)"
+                    (javascriptCode)="onCode($event)"
+                >
+                </ngx-blockly>
+            }
 
             <div class="widget-create__container-navigations">
                 <button mat-button matStepperPrevious>Back</button>

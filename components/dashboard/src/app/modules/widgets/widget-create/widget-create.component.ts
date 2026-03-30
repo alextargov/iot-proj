@@ -191,9 +191,10 @@ export class WidgetCreateComponent implements OnInit {
             device: [''],
         });
 
-        this.deviceService.getAllDevices().subscribe((deviceList) => {
-            this.devices = deviceList;
-            console.log(deviceList);
+        this.deviceService.getAllDevices().subscribe({
+            next: (deviceList) => {
+                this.devices = deviceList;
+                console.log('Devices loaded:', deviceList);
 
             const toolbox = new BlocklyToolbox();
 
@@ -266,6 +267,14 @@ export class WidgetCreateComponent implements OnInit {
                         fruit ? this._filter(fruit) : this.devices.slice()
                     )
                 );
+            },
+            error: (err) => {
+                console.error('Failed to load devices:', err);
+                this.toast.showError('Failed to load devices. Please check authentication.');
+                // Still mark as loaded so UI doesn't hang forever
+                this.devices = [];
+                this.isLoaded = true;
+            },
         });
     }
 

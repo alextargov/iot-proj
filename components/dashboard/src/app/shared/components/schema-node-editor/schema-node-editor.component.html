@@ -1,7 +1,7 @@
 <div class="pl-4" [style.margin-left.px]="depth * 20">
     <div class="flex items-center gap-2 mb-2">
         <!-- Key input and Required checkbox (only for object properties, not arrays or root) -->
-        <ng-container *ngIf="depth > 0 && parentType === 'object'">
+        @if (depth > 0 && parentType === 'object') {
             <mat-form-field appearance="outline" class="w-32">
                 <mat-label>Key</mat-label>
                 <input
@@ -10,7 +10,7 @@
                     (ngModelChange)="onKeyChange(oldKey, $event)"
                 />
             </mat-form-field>
-        </ng-container>
+        }
 
         <!-- Type selector -->
         <mat-form-field appearance="outline" class="w-32">
@@ -29,58 +29,57 @@
             </mat-select>
         </mat-form-field>
 
-        <mat-checkbox
-            *ngIf="depth > 0 && parentType !== 'array'"
-            [(ngModel)]="field.required"
-            >Required</mat-checkbox
-        >
+        @if (depth > 0 && parentType !== 'array') {
+            <mat-checkbox [(ngModel)]="field.required">Required</mat-checkbox>
+        }
 
         <!-- Description -->
-        <mat-form-field
-            appearance="outline"
-            class="w-64"
-            *ngIf="isDescriptionFeatureEnabled"
-        >
-            <mat-label>Description</mat-label>
-            <input matInput [(ngModel)]="field.description" />
-        </mat-form-field>
+        @if (isDescriptionFeatureEnabled) {
+            <mat-form-field appearance="outline" class="w-64">
+                <mat-label>Description</mat-label>
+                <input matInput [(ngModel)]="field.description" />
+            </mat-form-field>
+        }
 
         <!-- Delete icon (non-root only) -->
-        <button
-            mat-icon-button
-            color="warn"
-            (click)="remove.emit()"
-            *ngIf="!isReadOnly && depth > 0"
-        >
-            <mat-icon>delete</mat-icon>
-        </button>
+        @if (!isReadOnly && depth > 0) {
+            <button mat-icon-button color="warn" (click)="remove.emit()">
+                <mat-icon>delete</mat-icon>
+            </button>
+        }
     </div>
 
     <!-- Object: recursively show properties -->
-    <div *ngIf="field.type === 'object'">
-        <div *ngFor="let item of field.properties | keyvalue">
-            <app-schema-node-editor
-                [field]="field.properties![item.key]"
-                [key]="item.key"
-                [depth]="depth + 1"
-                [parentType]="'object'"
-                [isReadOnly]="isReadOnly"
-                (keyChange)="onKeyChange($event.oldKey, $event.newKey)"
-                (remove)="removeProperty(item.key)"
-            ></app-schema-node-editor>
+    @if (field.type === 'object') {
+        <div>
+            @for (item of field.properties | keyvalue; track item.key) {
+                <app-schema-node-editor
+                    [field]="field.properties![item.key]"
+                    [key]="item.key"
+                    [depth]="depth + 1"
+                    [parentType]="'object'"
+                    [isReadOnly]="isReadOnly"
+                    (keyChange)="onKeyChange($event.oldKey, $event.newKey)"
+                    (remove)="removeProperty(item.key)"
+                ></app-schema-node-editor>
+            }
+            @if (!isReadOnly) {
+                <button mat-icon-button color="primary" (click)="addProperty()">
+                    <mat-icon>add</mat-icon>
+                </button>
+            }
         </div>
-        <button mat-icon-button color="primary" (click)="addProperty()" *ngIf="!isReadOnly">
-            <mat-icon>add</mat-icon>
-        </button>
-    </div>
+    }
 
     <!-- Array: show items -->
-    <div *ngIf="field.type === 'array'">
-        <app-schema-node-editor
-            [field]="field.items!"
-            [depth]="depth + 1"
-            [parentType]="'array'"
-            [isReadOnly]="isReadOnly"
-        ></app-schema-node-editor>
-    </div>
+    @if (field.type === 'array') {
+        <div>
+            <app-schema-node-editor
+                [field]="field.items!"
+                [depth]="depth + 1"
+                [parentType]="'array'"
+                [isReadOnly]="isReadOnly"
+            ></app-schema-node-editor>
+        </div>
+    }
 </div>
