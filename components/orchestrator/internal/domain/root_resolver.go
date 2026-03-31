@@ -13,12 +13,19 @@ import (
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/host"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/widget"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/k8s"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/model"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/uuid"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/graphql"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/persistence"
 )
 
 var _ graphql.ResolverRoot = &RootResolver{}
+
+// CronScheduler defines the interface for widget cron scheduling
+type CronScheduler interface {
+	AddJob(ctx context.Context, w *model.Widget) error
+	RemoveJob(ctx context.Context, widgetID string)
+}
 
 type RootResolver struct {
 	persistence persistence.Transactioner
@@ -27,7 +34,7 @@ type RootResolver struct {
 	dataModel   *datamodel.Resolver
 }
 
-func NewRootResolver(persistence persistence.Transactioner, scheduler k8s.Scheduler) *RootResolver {
+func NewRootResolver(persistence persistence.Transactioner, scheduler k8s.Scheduler, cronScheduler CronScheduler) *RootResolver {
 	uuidService := uuid.NewService()
 	authConv := auth.NewConverter()
 
@@ -49,7 +56,7 @@ func NewRootResolver(persistence persistence.Transactioner, scheduler k8s.Schedu
 	dataModelRes := datamodel.NewResolver(persistence, dataModelSvc, dataModelConv)
 
 	deviceRes := device.NewResolver(persistence, deviceSvc, hostSvc, dataModelSvc, deviceConv, hostConv, dataModelConv)
-	widgetRes := widget.NewResolver(persistence, widgetSvc, widgetConv, scheduler)
+	widgetRes := widget.NewResolver(persistence, widgetSvc, widgetConv, scheduler, cronScheduler)
 
 	return &RootResolver{
 		persistence: persistence,

@@ -109,6 +109,8 @@ type Widget {
     code: String!
     workspace: String!
     deviceIds: [String!]
+    schedule: String
+    lastExecutedAt: Timestamp
     createdAt: Timestamp
     updatedAt: Timestamp
 }
@@ -145,6 +147,7 @@ input WidgetInput {
     code: String!
     workspace: String!
     deviceIds: [String!]
+    schedule: String
 }
 
 

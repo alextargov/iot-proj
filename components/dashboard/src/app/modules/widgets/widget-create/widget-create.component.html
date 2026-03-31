@@ -137,6 +137,42 @@
                         }
                     </div>
                 </div>
+
+                <!-- Schedule Section -->
+                <div class="widget-create__schedule">
+                    <h3 class="widget-create__schedule-title">
+                        <mat-icon>schedule</mat-icon>
+                        Scheduled Execution
+                    </h3>
+                    <mat-slide-toggle [(ngModel)]="enableScheduling" [ngModelOptions]="{standalone: true}">
+                        Enable scheduled execution
+                    </mat-slide-toggle>
+
+                    @if (enableScheduling) {
+                        <div class="widget-create__schedule-options">
+                            <mat-form-field appearance="fill" class="widget-create__schedule-preset">
+                                <mat-label>Run frequency</mat-label>
+                                <mat-select (selectionChange)="onPresetChange($event.value)">
+                                    @for (preset of schedulePresets; track preset.value) {
+                                        <mat-option [value]="preset">
+                                            {{ preset.label }}
+                                        </mat-option>
+                                    }
+                                </mat-select>
+                                <mat-hint>{{ selectedPreset?.description || 'Select how often the widget should run' }}</mat-hint>
+                            </mat-form-field>
+
+                            @if (selectedPreset?.value === 'custom') {
+                                <mat-form-field appearance="fill" class="widget-create__schedule-custom">
+                                    <mat-label>Cron expression</mat-label>
+                                    <input matInput [(ngModel)]="customSchedule" [ngModelOptions]="{standalone: true}"
+                                           placeholder="*/5 * * * *">
+                                    <mat-hint>Format: minute hour day month weekday</mat-hint>
+                                </mat-form-field>
+                            }
+                        </div>
+                    }
+                </div>
             </div>
 
             <div class="widget-create__step-footer">
@@ -216,6 +252,10 @@
                             <div class="widget-create__review-item">
                                 <span class="widget-create__review-label">Logic Configured:</span>
                                 <span>{{ workspaceCode ? 'Yes' : 'No' }}</span>
+                            </div>
+                            <div class="widget-create__review-item">
+                                <span class="widget-create__review-label">Schedule:</span>
+                                <span>{{ enableScheduling ? (selectedPreset?.label || 'Not set') : 'Manual (no schedule)' }}</span>
                             </div>
                         </mat-card-content>
                     </mat-card>

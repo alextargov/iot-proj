@@ -149,16 +149,18 @@ type TokenCredentialDataInput struct {
 }
 
 type Widget struct {
-	ID          string       `json:"id"`
-	Name        string       `json:"name"`
-	Description *string      `json:"description,omitempty"`
-	Status      WidgetStatus `json:"status"`
-	TenantID    string       `json:"tenantId"`
-	Code        string       `json:"code"`
-	Workspace   string       `json:"workspace"`
-	DeviceIds   []string     `json:"deviceIds,omitempty"`
-	CreatedAt   *Timestamp   `json:"createdAt,omitempty"`
-	UpdatedAt   *Timestamp   `json:"updatedAt,omitempty"`
+	ID             string       `json:"id"`
+	Name           string       `json:"name"`
+	Description    *string      `json:"description,omitempty"`
+	Status         WidgetStatus `json:"status"`
+	TenantID       string       `json:"tenantId"`
+	Code           string       `json:"code"`
+	Workspace      string       `json:"workspace"`
+	DeviceIds      []string     `json:"deviceIds,omitempty"`
+	Schedule       *string      `json:"schedule,omitempty"`
+	LastExecutedAt *Timestamp   `json:"lastExecutedAt,omitempty"`
+	CreatedAt      *Timestamp   `json:"createdAt,omitempty"`
+	UpdatedAt      *Timestamp   `json:"updatedAt,omitempty"`
 }
 
 type WidgetInput struct {
@@ -168,6 +170,7 @@ type WidgetInput struct {
 	Code        string       `json:"code"`
 	Workspace   string       `json:"workspace"`
 	DeviceIds   []string     `json:"deviceIds,omitempty"`
+	Schedule    *string      `json:"schedule,omitempty"`
 }
 
 type WidgetPage struct {

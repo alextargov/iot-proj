@@ -17,7 +17,7 @@ const (
 )
 
 var (
-	updatableTableColumns = []string{"name", "description", "user_id", "status", "device_ids", "created_at", "updated_at"}
+	updatableTableColumns = []string{"name", "description", "user_id", "status", "device_ids", "schedule", "last_executed_at", "created_at", "updated_at"}
 	idTableColumns        = []string{"id"}
 	tableColumns          = append(idTableColumns, updatableTableColumns...)
 )
@@ -33,6 +33,8 @@ type repository struct {
 	pageableQuerier repo.PageableQuerier
 	deleter         repo.Deleter
 	lister          repo.Lister
+	listerGlobal    repo.ListerGlobal
+	updater         repo.UpdaterGlobal
 	conv            EntityConverter
 }
 
@@ -43,6 +45,8 @@ func NewRepository(converter EntityConverter) *repository {
 		pageableQuerier: repo.NewPageableQuerierWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
 		deleter:         repo.NewDeleter(tableName),
 		lister:          repo.NewListerWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
+		listerGlobal:    repo.NewListerGlobal(resource.Widget, tableName, tableColumns),
+		updater:         repo.NewUpdaterGlobal(resource.Widget, tableName, []string{"last_executed_at"}, []string{"id"}),
 		conv:            converter,
 	}
 }
@@ -136,4 +140,24 @@ func (r *repository) multipleFromEntities(entities EntityCollection) ([]*model.W
 		items = append(items, m)
 	}
 	return items, nil
+}
+
+// GetScheduledWidgets returns all widgets that have a schedule configured
+func (r *repository) GetScheduledWidgets(ctx context.Context) ([]*model.Widget, error) {
+	var entities EntityCollection
+
+	err := r.listerGlobal.ListGlobal(ctx, &entities, repo.NewNotNullCondition("schedule"))
+	if err != nil {
+		return nil, err
+	}
+
+	return r.multipleFromEntities(entities)
+}
+
+// UpdateLastExecuted updates the last_executed_at timestamp for a widget
+func (r *repository) UpdateLastExecuted(ctx context.Context, id string, timestamp time.Time) error {
+	return r.updater.UpdateSingleGlobal(ctx, &Entity{
+		ID:             id,
+		LastExecutedAt: &timestamp,
+	})
 }

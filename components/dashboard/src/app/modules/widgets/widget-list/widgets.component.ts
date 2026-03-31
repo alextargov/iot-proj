@@ -11,6 +11,7 @@ import { MatPaginator } from '@angular/material/paginator';
 import { MatDialog } from '@angular/material/dialog';
 import { WidgetService } from '../../../shared/services/widget/widget.service';
 import { WidgetDeleteComponent } from '../widget-delete/widget-delete.component';
+import { formatSchedule } from '../../../shared/constants/schedule-presets';
 
 interface StatusConfig {
     icon: string;
@@ -29,11 +30,14 @@ export class WidgetsComponent implements OnInit {
     displayedColumns: string[] = [
         'name',
         'description',
+        'schedule',
         'status',
         'createdAt',
         'actions',
     ];
     dataSource = new MatTableDataSource<WidgetInfoFragment>();
+
+    public formatSchedule = formatSchedule;
 
     public buttons: ContentHeaderButton[] = [
         {
@@ -142,6 +146,7 @@ export class WidgetsComponent implements OnInit {
                     code: widget.code,
                     workspace: widget.workspace,
                     deviceIds: widget.deviceIds,
+                    schedule: widget.schedule,
                 },
             },
         });

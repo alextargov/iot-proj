@@ -6,7 +6,7 @@ const config: CodegenConfig = {
             'http://127.0.0.1:8080/graphql': {
                 headers: {
                     Authorization:
-                        'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VybmFtZSI6ImFsZXgiLCJleHAiOjE3NzQ5NDQwOTgsImlhdCI6MTc3NDkyOTY5OCwiaXNzIjoib3JjaGVzdHJhdG9yIn0.blJjK54rUFXOrga_aACXpqk4k5f1l4GPdk9v75mG4Bg',
+                        'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VybmFtZSI6ImFsZXgiLCJleHAiOjE3NzQ5OTA0MDEsImlhdCI6MTc3NDk3NjAwMSwiaXNzIjoib3JjaGVzdHJhdG9yIn0.wukaA2y5JvXVVuaT3M2RWz3Bm1oA4lz51Ac-1uUS6qY',
                 },
             },
         },

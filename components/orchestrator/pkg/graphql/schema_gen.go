@@ -143,16 +143,18 @@ type ComplexityRoot struct {
 	}
 
 	Widget struct {
-		Code        func(childComplexity int) int
-		CreatedAt   func(childComplexity int) int
-		Description func(childComplexity int) int
-		DeviceIds   func(childComplexity int) int
-		ID          func(childComplexity int) int
-		Name        func(childComplexity int) int
-		Status      func(childComplexity int) int
-		TenantID    func(childComplexity int) int
-		UpdatedAt   func(childComplexity int) int
-		Workspace   func(childComplexity int) int
+		Code           func(childComplexity int) int
+		CreatedAt      func(childComplexity int) int
+		Description    func(childComplexity int) int
+		DeviceIds      func(childComplexity int) int
+		ID             func(childComplexity int) int
+		LastExecutedAt func(childComplexity int) int
+		Name           func(childComplexity int) int
+		Schedule       func(childComplexity int) int
+		Status         func(childComplexity int) int
+		TenantID       func(childComplexity int) int
+		UpdatedAt      func(childComplexity int) int
+		Workspace      func(childComplexity int) int
 	}
 
 	WidgetPage struct {
@@ -728,12 +730,26 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Widget.ID(childComplexity), true
 
+	case "Widget.lastExecutedAt":
+		if e.complexity.Widget.LastExecutedAt == nil {
+			break
+		}
+
+		return e.complexity.Widget.LastExecutedAt(childComplexity), true
+
 	case "Widget.name":
 		if e.complexity.Widget.Name == nil {
 			break
 		}
 
 		return e.complexity.Widget.Name(childComplexity), true
+
+	case "Widget.schedule":
+		if e.complexity.Widget.Schedule == nil {
+			break
+		}
+
+		return e.complexity.Widget.Schedule(childComplexity), true
 
 	case "Widget.status":
 		if e.complexity.Widget.Status == nil {
@@ -3391,6 +3407,10 @@ func (ec *executionContext) fieldContext_Mutation_createWidget(ctx context.Conte
 				return ec.fieldContext_Widget_workspace(ctx, field)
 			case "deviceIds":
 				return ec.fieldContext_Widget_deviceIds(ctx, field)
+			case "schedule":
+				return ec.fieldContext_Widget_schedule(ctx, field)
+			case "lastExecutedAt":
+				return ec.fieldContext_Widget_lastExecutedAt(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Widget_createdAt(ctx, field)
 			case "updatedAt":
@@ -4301,6 +4321,10 @@ func (ec *executionContext) fieldContext_Query_widgets(_ context.Context, field 
 				return ec.fieldContext_Widget_workspace(ctx, field)
 			case "deviceIds":
 				return ec.fieldContext_Widget_deviceIds(ctx, field)
+			case "schedule":
+				return ec.fieldContext_Widget_schedule(ctx, field)
+			case "lastExecutedAt":
+				return ec.fieldContext_Widget_lastExecutedAt(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Widget_createdAt(ctx, field)
 			case "updatedAt":
@@ -4427,6 +4451,10 @@ func (ec *executionContext) fieldContext_Query_widget(ctx context.Context, field
 				return ec.fieldContext_Widget_workspace(ctx, field)
 			case "deviceIds":
 				return ec.fieldContext_Widget_deviceIds(ctx, field)
+			case "schedule":
+				return ec.fieldContext_Widget_schedule(ctx, field)
+			case "lastExecutedAt":
+				return ec.fieldContext_Widget_lastExecutedAt(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Widget_createdAt(ctx, field)
 			case "updatedAt":
@@ -5087,6 +5115,88 @@ func (ec *executionContext) fieldContext_Widget_deviceIds(_ context.Context, fie
 	return fc, nil
 }
 
+func (ec *executionContext) _Widget_schedule(ctx context.Context, field graphql.CollectedField, obj *Widget) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Widget_schedule(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Schedule, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Widget_schedule(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Widget",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Widget_lastExecutedAt(ctx context.Context, field graphql.CollectedField, obj *Widget) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Widget_lastExecutedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LastExecutedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Timestamp)
+	fc.Result = res
+	return ec.marshalOTimestamp2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Widget_lastExecutedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Widget",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Timestamp does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Widget_createdAt(ctx context.Context, field graphql.CollectedField, obj *Widget) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Widget_createdAt(ctx, field)
 	if err != nil {
@@ -5224,6 +5334,10 @@ func (ec *executionContext) fieldContext_WidgetPage_data(_ context.Context, fiel
 				return ec.fieldContext_Widget_workspace(ctx, field)
 			case "deviceIds":
 				return ec.fieldContext_Widget_deviceIds(ctx, field)
+			case "schedule":
+				return ec.fieldContext_Widget_schedule(ctx, field)
+			case "lastExecutedAt":
+				return ec.fieldContext_Widget_lastExecutedAt(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Widget_createdAt(ctx, field)
 			case "updatedAt":
@@ -7713,7 +7827,7 @@ func (ec *executionContext) unmarshalInputWidgetInput(ctx context.Context, obj a
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "description", "status", "code", "workspace", "deviceIds"}
+	fieldsInOrder := [...]string{"name", "description", "status", "code", "workspace", "deviceIds", "schedule"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -7762,6 +7876,13 @@ func (ec *executionContext) unmarshalInputWidgetInput(ctx context.Context, obj a
 				return it, err
 			}
 			it.DeviceIds = data
+		case "schedule":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("schedule"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Schedule = data
 		}
 	}
 
@@ -8776,6 +8897,10 @@ func (ec *executionContext) _Widget(ctx context.Context, sel ast.SelectionSet, o
 			}
 		case "deviceIds":
 			out.Values[i] = ec._Widget_deviceIds(ctx, field, obj)
+		case "schedule":
+			out.Values[i] = ec._Widget_schedule(ctx, field, obj)
+		case "lastExecutedAt":
+			out.Values[i] = ec._Widget_lastExecutedAt(ctx, field, obj)
 		case "createdAt":
 			out.Values[i] = ec._Widget_createdAt(ctx, field, obj)
 		case "updatedAt":

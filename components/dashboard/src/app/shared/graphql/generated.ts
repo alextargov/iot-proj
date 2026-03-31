@@ -300,7 +300,9 @@ export type Widget = {
   description?: Maybe<Scalars['String']['output']>;
   deviceIds?: Maybe<Array<Scalars['String']['output']>>;
   id: Scalars['ID']['output'];
+  lastExecutedAt?: Maybe<Scalars['Timestamp']['output']>;
   name: Scalars['String']['output'];
+  schedule?: Maybe<Scalars['String']['output']>;
   status: WidgetStatus;
   tenantId: Scalars['ID']['output'];
   updatedAt?: Maybe<Scalars['Timestamp']['output']>;
@@ -312,6 +314,7 @@ export type WidgetInput = {
   description?: InputMaybe<Scalars['String']['input']>;
   deviceIds?: InputMaybe<Array<Scalars['String']['input']>>;
   name: Scalars['String']['input'];
+  schedule?: InputMaybe<Scalars['String']['input']>;
   status: WidgetStatus;
   workspace: Scalars['String']['input'];
 };
@@ -415,12 +418,12 @@ export type TestDeviceConnectionQueryVariables = Exact<{
 
 export type TestDeviceConnectionQuery = { __typename?: 'Query', testDeviceConnection: boolean };
 
-export type WidgetInfoFragment = { __typename?: 'Widget', id: string, name: string, description?: string | null, status: WidgetStatus, tenantId: string, code: string, workspace: string, deviceIds?: Array<string> | null, createdAt?: any | null, updatedAt?: any | null };
+export type WidgetInfoFragment = { __typename?: 'Widget', id: string, name: string, description?: string | null, status: WidgetStatus, tenantId: string, code: string, workspace: string, deviceIds?: Array<string> | null, schedule?: string | null, lastExecutedAt?: any | null, createdAt?: any | null, updatedAt?: any | null };
 
 export type GetAllWidgetsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetAllWidgetsQuery = { __typename?: 'Query', widgets: Array<{ __typename?: 'Widget', id: string, name: string, description?: string | null, status: WidgetStatus, tenantId: string, code: string, workspace: string, deviceIds?: Array<string> | null, createdAt?: any | null, updatedAt?: any | null } | null> };
+export type GetAllWidgetsQuery = { __typename?: 'Query', widgets: Array<{ __typename?: 'Widget', id: string, name: string, description?: string | null, status: WidgetStatus, tenantId: string, code: string, workspace: string, deviceIds?: Array<string> | null, schedule?: string | null, lastExecutedAt?: any | null, createdAt?: any | null, updatedAt?: any | null } | null> };
 
 export type GetWidgetsPageQueryVariables = Exact<{
   first?: InputMaybe<Scalars['Int']['input']>;
@@ -428,14 +431,14 @@ export type GetWidgetsPageQueryVariables = Exact<{
 }>;
 
 
-export type GetWidgetsPageQuery = { __typename?: 'Query', widgetsPage: { __typename?: 'WidgetPage', totalCount: number, data: Array<{ __typename?: 'Widget', id: string, name: string, description?: string | null, status: WidgetStatus, tenantId: string, code: string, workspace: string, deviceIds?: Array<string> | null, createdAt?: any | null, updatedAt?: any | null }>, pageInfo: { __typename?: 'PageInfo', startCursor: any, endCursor: any, hasNextPage: boolean } } };
+export type GetWidgetsPageQuery = { __typename?: 'Query', widgetsPage: { __typename?: 'WidgetPage', totalCount: number, data: Array<{ __typename?: 'Widget', id: string, name: string, description?: string | null, status: WidgetStatus, tenantId: string, code: string, workspace: string, deviceIds?: Array<string> | null, schedule?: string | null, lastExecutedAt?: any | null, createdAt?: any | null, updatedAt?: any | null }>, pageInfo: { __typename?: 'PageInfo', startCursor: any, endCursor: any, hasNextPage: boolean } } };
 
 export type CreateWidgetMutationVariables = Exact<{
   input: WidgetInput;
 }>;
 
 
-export type CreateWidgetMutation = { __typename?: 'Mutation', createWidget: { __typename?: 'Widget', id: string, name: string, description?: string | null, status: WidgetStatus, tenantId: string, code: string, workspace: string, deviceIds?: Array<string> | null, createdAt?: any | null, updatedAt?: any | null } };
+export type CreateWidgetMutation = { __typename?: 'Mutation', createWidget: { __typename?: 'Widget', id: string, name: string, description?: string | null, status: WidgetStatus, tenantId: string, code: string, workspace: string, deviceIds?: Array<string> | null, schedule?: string | null, lastExecutedAt?: any | null, createdAt?: any | null, updatedAt?: any | null } };
 
 export type DeleteWidgetMutationVariables = Exact<{
   id: Scalars['ID']['input'];
@@ -504,6 +507,8 @@ export const WidgetInfoFragmentDoc = gql`
   code
   workspace
   deviceIds
+  schedule
+  lastExecutedAt
   createdAt
   updatedAt
 }

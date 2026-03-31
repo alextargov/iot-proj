@@ -7,6 +7,7 @@ import (
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/model"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/pagination"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/graphql"
+	"github.com/alextargov/iot-proj/components/orchestrator/pkg/logger"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/persistence"
 )
 
@@ -33,20 +34,28 @@ type HostConv interface {
 	ToGraphQL(in *model.Host) *graphql.Host
 }
 
+// CronScheduler defines the interface for widget cron scheduling
+type CronScheduler interface {
+	AddJob(ctx context.Context, w *model.Widget) error
+	RemoveJob(ctx context.Context, widgetID string)
+}
+
 type Resolver struct {
 	transact        persistence.Transactioner
 	widgetSvc       WidgetSvc
 	hostSvc         HostSvc
 	widgetConverter WidgetConverter
 	scheduler       k8s.Scheduler
+	cronScheduler   CronScheduler
 }
 
-func NewResolver(transact persistence.Transactioner, widgetSvc WidgetSvc, widgetConverter WidgetConverter, scheduler k8s.Scheduler) *Resolver {
+func NewResolver(transact persistence.Transactioner, widgetSvc WidgetSvc, widgetConverter WidgetConverter, scheduler k8s.Scheduler, cronScheduler CronScheduler) *Resolver {
 	return &Resolver{
 		transact:        transact,
 		widgetSvc:       widgetSvc,
 		widgetConverter: widgetConverter,
 		scheduler:       scheduler,
+		cronScheduler:   cronScheduler,
 	}
 }
 
@@ -170,6 +179,13 @@ func (r *Resolver) CreateWidget(ctx context.Context, input graphql.WidgetInput) 
 		return nil, err
 	}
 
+	if r.cronScheduler != nil && widget.Schedule != nil && widget.Status == model.DeviceStatusActive {
+		if err := r.cronScheduler.AddJob(ctx, widget); err != nil {
+			logger.C(ctx).Errorf("error while adding a cron scheduler job: %v", err)
+			// The widget was created successfully, cron job can be added later
+		}
+	}
+
 	return r.widgetConverter.ToGraphQL(widget), nil
 }
 
@@ -193,6 +209,10 @@ func (r *Resolver) DeleteWidget(ctx context.Context, id string) (string, error) 
 	err = tx.Commit()
 	if err != nil {
 		return "", err
+	}
+
+	if r.cronScheduler != nil {
+		r.cronScheduler.RemoveJob(ctx, id)
 	}
 
 	return id, nil

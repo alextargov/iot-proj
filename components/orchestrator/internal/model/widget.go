@@ -16,6 +16,7 @@ type WidgetInput struct {
 	Code        string
 	Workspace   string
 	DeviceIDs   []string
+	Schedule    *string
 }
 
 func (wi *WidgetInput) ToWidget(id string) Widget {
@@ -27,18 +28,21 @@ func (wi *WidgetInput) ToWidget(id string) Widget {
 		Code:        wi.Code,
 		Workspace:   wi.Workspace,
 		DeviceIDs:   wi.DeviceIDs,
+		Schedule:    wi.Schedule,
 	}
 }
 
 type Widget struct {
-	ID          string       `json:"id"`
-	TenantID    string       `json:"tenantID"`
-	Name        string       `json:"name"`
-	Description *string      `json:"description"`
-	Status      WidgetStatus `json:"status"`
-	Code        string       `json:"code"`
-	Workspace   string       `json:"workspace"`
-	DeviceIDs   []string     `json:"devices"`
-	CreatedAt   *time.Time   `json:"createdAt"`
-	UpdatedAt   *time.Time   `json:"updatedAt"`
+	ID             string       `json:"id"`
+	TenantID       string       `json:"tenantID"`
+	Name           string       `json:"name"`
+	Description    *string      `json:"description"`
+	Status         WidgetStatus `json:"status"`
+	Code           string       `json:"code"`
+	Workspace      string       `json:"workspace"`
+	DeviceIDs      []string     `json:"devices"`
+	Schedule       *string      `json:"schedule"`
+	LastExecutedAt *time.Time   `json:"lastExecutedAt"`
+	CreatedAt      *time.Time   `json:"createdAt"`
+	UpdatedAt      *time.Time   `json:"updatedAt"`
 }

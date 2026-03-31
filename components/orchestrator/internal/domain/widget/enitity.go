@@ -6,14 +6,16 @@ import (
 )
 
 type Entity struct {
-	ID          string         `db:"id"`
-	TenantID    string         `db:"user_id"`
-	Name        string         `db:"name"`
-	Description sql.NullString `db:"description"`
-	Status      string         `db:"status"`
-	DeviceIDs   sql.NullString `db:"device_ids"`
-	CreatedAt   *time.Time     `db:"created_at"`
-	UpdatedAt   *time.Time     `db:"updated_at"`
+	ID             string         `db:"id"`
+	TenantID       string         `db:"user_id"`
+	Name           string         `db:"name"`
+	Description    sql.NullString `db:"description"`
+	Status         string         `db:"status"`
+	DeviceIDs      sql.NullString `db:"device_ids"`
+	Schedule       sql.NullString `db:"schedule"`
+	LastExecutedAt *time.Time     `db:"last_executed_at"`
+	CreatedAt      *time.Time     `db:"created_at"`
+	UpdatedAt      *time.Time     `db:"updated_at"`
 }
 
 type EntityCollection []Entity

@@ -7,6 +7,8 @@ fragment WidgetInfo on Widget {
     code
     workspace
     deviceIds
+    schedule
+    lastExecutedAt
     createdAt
     updatedAt
 }

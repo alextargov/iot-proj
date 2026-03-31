@@ -42,6 +42,26 @@
             </td>
         </ng-container>
 
+        <ng-container matColumnDef="schedule">
+            <th
+                class="widget-list__table-header widget-list__table-header-schedule"
+                mat-header-cell
+                *matHeaderCellDef
+            >
+                Schedule
+            </th>
+            <td
+                class="widget-list__table-definition"
+                mat-cell
+                *matCellDef="let element"
+            >
+                <span class="widget-list__schedule" [class.widget-list__schedule--manual]="!element.schedule">
+                    <mat-icon>{{ element.schedule ? 'schedule' : 'touch_app' }}</mat-icon>
+                    {{ formatSchedule(element.schedule) }}
+                </span>
+            </td>
+        </ng-container>
+
         <ng-container matColumnDef="url">
             <th
                 class="widget-list__table-header widget-list__table-header-url"

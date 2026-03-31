@@ -49,6 +49,10 @@ import {
     TEMPLATE_CATEGORIES,
     WidgetTemplate,
 } from '../../../shared/templates/widget-templates';
+import {
+    SCHEDULE_PRESETS,
+    SchedulePreset,
+} from '../../../shared/constants/schedule-presets';
 
 @Component({
     standalone: false,
@@ -72,6 +76,12 @@ export class WidgetCreateComponent implements OnInit {
     public templates = WIDGET_TEMPLATES;
     public templateCategories = TEMPLATE_CATEGORIES;
     public selectedTemplate: WidgetTemplate | null = null;
+
+    // Schedule selection
+    public schedulePresets = SCHEDULE_PRESETS;
+    public selectedPreset: SchedulePreset | null = null;
+    public customSchedule: string = '';
+    public enableScheduling: boolean = false;
 
     private readonly aggregationOperations: any[] = [
         {
@@ -345,7 +355,20 @@ export class WidgetCreateComponent implements OnInit {
             deviceIds: Array.from(this.selectedDevices.values()).map(
                 (device) => device.id
             ),
+            schedule: this.getScheduleValue(),
         };
+    }
+
+    private getScheduleValue(): string | null {
+        if (!this.enableScheduling) return null;
+        if (this.selectedPreset?.value === 'custom') {
+            return this.customSchedule || null;
+        }
+        return this.selectedPreset?.value || null;
+    }
+
+    public onPresetChange(preset: SchedulePreset): void {
+        this.selectedPreset = preset;
     }
 
     private _filter(value: string): DeviceInfoFragment[] {

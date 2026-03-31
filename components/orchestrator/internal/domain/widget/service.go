@@ -2,6 +2,7 @@ package widget
 
 import (
 	"context"
+	"time"
 
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/apperrors"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/model"
@@ -18,6 +19,8 @@ type WidgetRepository interface {
 	ListAll(ctx context.Context, tenantID string) ([]*model.Widget, error)
 	ListPage(ctx context.Context, tenantID string, pageSize int, cursor string) ([]*model.Widget, *pagination.Page, int, error)
 	Delete(ctx context.Context, id, tenantID string) error
+	GetScheduledWidgets(ctx context.Context) ([]*model.Widget, error)
+	UpdateLastExecuted(ctx context.Context, id string, timestamp time.Time) error
 }
 
 type UUIDService interface {
@@ -97,4 +100,14 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	}
 
 	return s.widgetRepo.Delete(ctx, id, tnt)
+}
+
+// GetScheduledWidgets returns all widgets that have a schedule configured
+func (s *service) GetScheduledWidgets(ctx context.Context) ([]*model.Widget, error) {
+	return s.widgetRepo.GetScheduledWidgets(ctx)
+}
+
+// UpdateLastExecuted updates the last execution timestamp for a widget
+func (s *service) UpdateLastExecuted(ctx context.Context, id string) error {
+	return s.widgetRepo.UpdateLastExecuted(ctx, id, time.Now())
 }

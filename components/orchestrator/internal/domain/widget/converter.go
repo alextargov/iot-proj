@@ -24,14 +24,16 @@ func (c *converter) ToEntity(model model.Widget) (*Entity, error) {
 	}
 
 	return &Entity{
-		ID:          model.ID,
-		TenantID:    model.TenantID,
-		Name:        model.Name,
-		Description: repo.NewNullableString(model.Description),
-		Status:      string(model.Status),
-		DeviceIDs:   deviceIDs,
-		CreatedAt:   model.CreatedAt,
-		UpdatedAt:   model.UpdatedAt,
+		ID:             model.ID,
+		TenantID:       model.TenantID,
+		Name:           model.Name,
+		Description:    repo.NewNullableString(model.Description),
+		Status:         string(model.Status),
+		DeviceIDs:      deviceIDs,
+		Schedule:       repo.NewNullableString(model.Schedule),
+		LastExecutedAt: model.LastExecutedAt,
+		CreatedAt:      model.CreatedAt,
+		UpdatedAt:      model.UpdatedAt,
 	}, nil
 }
 
@@ -47,14 +49,16 @@ func (c *converter) FromEntity(entity *Entity) (*model.Widget, error) {
 	}
 
 	return &model.Widget{
-		ID:          entity.ID,
-		Name:        entity.Name,
-		Description: repo.StringPtrFromNullableString(entity.Description),
-		TenantID:    entity.TenantID,
-		Status:      model.WidgetStatus(entity.Status),
-		DeviceIDs:   deviceIDs,
-		CreatedAt:   entity.CreatedAt,
-		UpdatedAt:   entity.UpdatedAt,
+		ID:             entity.ID,
+		Name:           entity.Name,
+		Description:    repo.StringPtrFromNullableString(entity.Description),
+		TenantID:       entity.TenantID,
+		Status:         model.WidgetStatus(entity.Status),
+		DeviceIDs:      deviceIDs,
+		Schedule:       repo.StringPtrFromNullableString(entity.Schedule),
+		LastExecutedAt: entity.LastExecutedAt,
+		CreatedAt:      entity.CreatedAt,
+		UpdatedAt:      entity.UpdatedAt,
 	}, nil
 }
 
@@ -66,6 +70,7 @@ func (c *converter) InputFromGraphQL(in graphql.WidgetInput) model.WidgetInput {
 		Code:        in.Code,
 		Workspace:   in.Workspace,
 		DeviceIDs:   in.DeviceIds,
+		Schedule:    in.Schedule,
 	}
 }
 
@@ -80,16 +85,18 @@ func timePtrToTimestampPtr(time *time.Time) *graphql.Timestamp {
 
 func (c *converter) ToGraphQL(in *model.Widget) *graphql.Widget {
 	return &graphql.Widget{
-		ID:          in.ID,
-		TenantID:    in.TenantID,
-		Name:        in.Name,
-		Description: in.Description,
-		Status:      graphql.WidgetStatus(in.Status),
-		Code:        in.Code,
-		Workspace:   in.Workspace,
-		DeviceIds:   in.DeviceIDs,
-		CreatedAt:   graphql.TimePtrToTimestampPtr(in.CreatedAt),
-		UpdatedAt:   graphql.TimePtrToTimestampPtr(in.UpdatedAt),
+		ID:             in.ID,
+		TenantID:       in.TenantID,
+		Name:           in.Name,
+		Description:    in.Description,
+		Status:         graphql.WidgetStatus(in.Status),
+		Code:           in.Code,
+		Workspace:      in.Workspace,
+		DeviceIds:      in.DeviceIDs,
+		Schedule:       in.Schedule,
+		LastExecutedAt: graphql.TimePtrToTimestampPtr(in.LastExecutedAt),
+		CreatedAt:      graphql.TimePtrToTimestampPtr(in.CreatedAt),
+		UpdatedAt:      graphql.TimePtrToTimestampPtr(in.UpdatedAt),
 	}
 }
 

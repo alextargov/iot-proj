@@ -9,10 +9,12 @@ import (
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/auth"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/user"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/widget"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/handlers"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/k8s"
 	authmiddleware "github.com/alextargov/iot-proj/components/orchestrator/internal/middlewares/auth"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/middlewares/correlation"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/scheduler"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/uuid"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/graphql"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/logger"
@@ -70,9 +72,16 @@ func main() {
 		exitOnError(err, "Error while closing the connection to the database")
 	}()
 
-	handler, err := initAPIHandler(ctx, cfg, transact)
+	handler, widgetScheduler, err := initAPIHandler(ctx, cfg, transact)
 
 	exitOnError(err, "Error while registering handler")
+
+	// Start widget scheduler in background
+	go func() {
+		if err := widgetScheduler.Start(ctx); err != nil {
+			logrus.Errorf("Widget scheduler error: %v", err)
+		}
+	}()
 
 	runMainSrv, shutdownMainSrv := createServer(ctx, cfg, handler, "orchestrator")
 
@@ -119,7 +128,7 @@ func createServer(ctx context.Context, cfg config, handler http.Handler, name st
 	return runFn, shutdownFn
 }
 
-func initAPIHandler(ctx context.Context, cfg config, db persistence.Transactioner) (http.Handler, error) {
+func initAPIHandler(ctx context.Context, cfg config, db persistence.Transactioner) (http.Handler, *scheduler.WidgetScheduler, error) {
 	jwtWrapper := auth.NewJwtWrapper(cfg.Config)
 	uidService := uuid.NewService()
 	userConv := user.NewConverter()
@@ -130,15 +139,23 @@ func initAPIHandler(ctx context.Context, cfg config, db persistence.Transactione
 
 	applicationsScheduler, err := buildScheduler(cfg)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
+
+	// Create widget service for the scheduler
+	widgetConv := widget.NewConverter()
+	widgetRepo := widget.NewRepository(widgetConv)
+	widgetSvc := widget.NewService(widgetRepo, uidService)
+
+	// Create widget scheduler
+	widgetScheduler := scheduler.New(widgetSvc, applicationsScheduler)
 
 	mainRouter := mux.NewRouter()
 
 	mainRouter.HandleFunc("/login", authHandler.Login).Methods(http.MethodPost)
 	mainRouter.HandleFunc("/register", authHandler.Register).Methods(http.MethodPost)
 
-	rootResolver := domain.NewRootResolver(db, applicationsScheduler)
+	rootResolver := domain.NewRootResolver(db, applicationsScheduler, widgetScheduler)
 	srv := handler.NewDefaultServer(graphql.NewExecutableSchema(graphql.Config{Resolvers: rootResolver}))
 
 	mainRouter.HandleFunc("/", playground.Handler("GraphQL playground", cfg.APIEndpoint))
@@ -165,7 +182,7 @@ func initAPIHandler(ctx context.Context, cfg config, db persistence.Transactione
 		AllowCredentials: true,
 	})
 
-	return c.Handler(mainRouter), nil
+	return c.Handler(mainRouter), widgetScheduler, nil
 }
 
 func newReadinessHandler(w http.ResponseWriter, r *http.Request) {
