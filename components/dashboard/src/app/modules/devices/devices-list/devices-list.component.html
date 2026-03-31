@@ -44,6 +44,28 @@
             </td>
         </ng-container>
 
+        <!-- Tags Column -->
+        <ng-container matColumnDef="tags">
+            <th
+                class="device-list__table-header device-list__table-header-tags"
+                mat-header-cell
+                *matHeaderCellDef
+            >
+                Tags
+            </th>
+            <td
+                class="device-list__table-definition"
+                mat-cell
+                *matCellDef="let element"
+            >
+                <div class="device-list__tags">
+                    @for (tag of element.tags || []; track tag) {
+                        <mat-chip class="device-list__tag">{{ tag }}</mat-chip>
+                    }
+                </div>
+            </td>
+        </ng-container>
+
         <!-- Weight Column -->
         <ng-container matColumnDef="url">
             <th

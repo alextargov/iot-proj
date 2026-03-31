@@ -10,6 +10,8 @@ import {
     UntypedFormGroup,
     Validators,
 } from '@angular/forms';
+import { COMMA, ENTER } from '@angular/cdk/keycodes';
+import { MatChipInputEvent } from '@angular/material/chips';
 
 import { MatStepper } from '@angular/material/stepper';
 import { Router } from '@angular/router';
@@ -49,6 +51,10 @@ export class DeviceCreateComponent implements OnInit, AfterViewInit {
     public authPolicy = AuthPolicy;
     public filteredDataModels: Observable<DataModelInfoFragment[]>;
     public dataModels: DataModelInfoFragment[] = [];
+
+    // Tags
+    public tags: string[] = [];
+    public readonly separatorKeysCodes: number[] = [ENTER, COMMA];
 
     @ViewChild('tokenInput')
     public tokenInput: ElementRef<HTMLInputElement>;
@@ -97,6 +103,9 @@ export class DeviceCreateComponent implements OnInit, AfterViewInit {
     public ngOnInit(): void {
         const duplicateData = history.state?.duplicate;
 
+        // Initialize tags from duplicate data
+        this.tags = duplicateData?.tags ? [...duplicateData.tags] : [];
+
         this.deviceCreateMetadataFormGroup = this.fb.group({
             name: [duplicateData?.name || '', [Validators.required, Validators.maxLength(128)]],
             description: [duplicateData?.description || '', [Validators.required, Validators.maxLength(512)]],
@@ -141,7 +150,23 @@ export class DeviceCreateComponent implements OnInit, AfterViewInit {
         this.deviceCreateOutputFormGroup.reset();
         this.selectedAuthorizationPolicy = AuthPolicy.None;
         this.tokenInput.nativeElement.value = '';
+        this.tags = [];
         stepper.reset();
+    }
+
+    public addTag(event: MatChipInputEvent): void {
+        const value = (event.value || '').trim().toLowerCase();
+        if (value && !this.tags.includes(value)) {
+            this.tags.push(value);
+        }
+        event.chipInput!.clear();
+    }
+
+    public removeTag(tag: string): void {
+        const index = this.tags.indexOf(tag);
+        if (index >= 0) {
+            this.tags.splice(index, 1);
+        }
     }
 
     public onSaveClick(): void {
@@ -246,6 +271,7 @@ export class DeviceCreateComponent implements OnInit, AfterViewInit {
                 credentialForService: this.tokenInput.nativeElement.value,
             },
             dataModel: (this.deviceCreateOutputFormGroup.get('dataModel').value as DataModelInfoFragment).id,
+            tags: this.tags.length > 0 ? this.tags : undefined,
         };
     }
 

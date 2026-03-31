@@ -100,12 +100,12 @@ export type Device = {
   __typename?: 'Device';
   auth?: Maybe<Auth>;
   createdAt?: Maybe<Scalars['Timestamp']['output']>;
-  dataModel?: Maybe<DataModel>;
   description?: Maybe<Scalars['String']['output']>;
   host?: Maybe<Host>;
   id: Scalars['ID']['output'];
   name: Scalars['String']['output'];
   status: DeviceStatus;
+  tags?: Maybe<Array<Scalars['String']['output']>>;
   tenantId: Scalars['ID']['output'];
   updatedAt?: Maybe<Scalars['Timestamp']['output']>;
 };
@@ -117,6 +117,7 @@ export type DeviceInput = {
   host?: InputMaybe<HostInput>;
   name: Scalars['String']['input'];
   status: DeviceStatus;
+  tags?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
 export type DevicePage = Pageable & {
@@ -353,7 +354,7 @@ export type DeleteDataModelMutationVariables = Exact<{
 
 export type DeleteDataModelMutation = { __typename?: 'Mutation', deleteDataModel: string };
 
-export type DeviceInfoFragment = { __typename?: 'Device', id: string, name: string, description?: string | null, status: DeviceStatus, tenantId: string, createdAt?: any | null, updatedAt?: any | null, auth?: { __typename?: 'Auth', credentialForService?: string | null, credentialForDevice?:
+export type DeviceInfoFragment = { __typename?: 'Device', id: string, name: string, description?: string | null, status: DeviceStatus, tenantId: string, tags?: Array<string> | null, createdAt?: any | null, updatedAt?: any | null, auth?: { __typename?: 'Auth', credentialForService?: string | null, credentialForDevice?:
       | { __typename?: 'BasicCredentialData', username: string, password: string }
       | { __typename?: 'BearerTokenCredentialData', token: string }
       | { __typename?: 'CertificateOAuthCredentialData', clientId: string, certificate: string, url: string }
@@ -363,7 +364,7 @@ export type DeviceInfoFragment = { __typename?: 'Device', id: string, name: stri
 export type GetAllDevicesQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetAllDevicesQuery = { __typename?: 'Query', devices: Array<{ __typename?: 'Device', id: string, name: string, description?: string | null, status: DeviceStatus, tenantId: string, createdAt?: any | null, updatedAt?: any | null, auth?: { __typename?: 'Auth', credentialForService?: string | null, credentialForDevice?:
+export type GetAllDevicesQuery = { __typename?: 'Query', devices: Array<{ __typename?: 'Device', id: string, name: string, description?: string | null, status: DeviceStatus, tenantId: string, tags?: Array<string> | null, createdAt?: any | null, updatedAt?: any | null, auth?: { __typename?: 'Auth', credentialForService?: string | null, credentialForDevice?:
         | { __typename?: 'BasicCredentialData', username: string, password: string }
         | { __typename?: 'BearerTokenCredentialData', token: string }
         | { __typename?: 'CertificateOAuthCredentialData', clientId: string, certificate: string, url: string }
@@ -376,7 +377,7 @@ export type GetDevicesPageQueryVariables = Exact<{
 }>;
 
 
-export type GetDevicesPageQuery = { __typename?: 'Query', devicesPage: { __typename?: 'DevicePage', totalCount: number, data: Array<{ __typename?: 'Device', id: string, name: string, description?: string | null, status: DeviceStatus, tenantId: string, createdAt?: any | null, updatedAt?: any | null, auth?: { __typename?: 'Auth', credentialForService?: string | null, credentialForDevice?:
+export type GetDevicesPageQuery = { __typename?: 'Query', devicesPage: { __typename?: 'DevicePage', totalCount: number, data: Array<{ __typename?: 'Device', id: string, name: string, description?: string | null, status: DeviceStatus, tenantId: string, tags?: Array<string> | null, createdAt?: any | null, updatedAt?: any | null, auth?: { __typename?: 'Auth', credentialForService?: string | null, credentialForDevice?:
           | { __typename?: 'BasicCredentialData', username: string, password: string }
           | { __typename?: 'BearerTokenCredentialData', token: string }
           | { __typename?: 'CertificateOAuthCredentialData', clientId: string, certificate: string, url: string }
@@ -388,7 +389,7 @@ export type CreateDeviceMutationVariables = Exact<{
 }>;
 
 
-export type CreateDeviceMutation = { __typename?: 'Mutation', createDevice: { __typename?: 'Device', id: string, name: string, description?: string | null, status: DeviceStatus, tenantId: string, createdAt?: any | null, updatedAt?: any | null, auth?: { __typename?: 'Auth', credentialForService?: string | null, credentialForDevice?:
+export type CreateDeviceMutation = { __typename?: 'Mutation', createDevice: { __typename?: 'Device', id: string, name: string, description?: string | null, status: DeviceStatus, tenantId: string, tags?: Array<string> | null, createdAt?: any | null, updatedAt?: any | null, auth?: { __typename?: 'Auth', credentialForService?: string | null, credentialForDevice?:
         | { __typename?: 'BasicCredentialData', username: string, password: string }
         | { __typename?: 'BearerTokenCredentialData', token: string }
         | { __typename?: 'CertificateOAuthCredentialData', clientId: string, certificate: string, url: string }
@@ -488,6 +489,7 @@ export const DeviceInfoFragmentDoc = gql`
     turnOnEndpoint
     turnOffEndpoint
   }
+  tags
   createdAt
   updatedAt
 }

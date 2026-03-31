@@ -39,6 +39,11 @@ func (c *converter) ToEntity(model model.Device) (*Entity, error) {
 		return nil, err
 	}
 
+	optionalTags, err := c.toTagsEntity(model)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Entity{
 		ID:          model.ID,
 		TenantID:    model.TenantID,
@@ -47,6 +52,7 @@ func (c *converter) ToEntity(model model.Device) (*Entity, error) {
 		Status:      string(model.Status),
 		Auth:        optionalAuth,
 		DataModelID: model.DataModelID,
+		Tags:        optionalTags,
 		CreatedAt:   model.CreatedAt,
 		UpdatedAt:   model.UpdatedAt,
 	}, nil
@@ -63,6 +69,11 @@ func (c *converter) FromEntity(entity *Entity) (*model.Device, error) {
 		return nil, err
 	}
 
+	tags, err := c.fromEntityTags(*entity)
+	if err != nil {
+		return nil, err
+	}
+
 	return &model.Device{
 		ID:          entity.ID,
 		Name:        entity.Name,
@@ -70,6 +81,7 @@ func (c *converter) FromEntity(entity *Entity) (*model.Device, error) {
 		TenantID:    entity.TenantID,
 		Status:      model.DeviceStatus(entity.Status),
 		Auth:        auth,
+		Tags:        tags,
 		CreatedAt:   entity.CreatedAt,
 		UpdatedAt:   entity.UpdatedAt,
 	}, nil
@@ -83,6 +95,7 @@ func (c *converter) InputFromGraphQL(in graphql.DeviceInput) model.DeviceInput {
 		Host:        c.hostConv.InputFromGraphQL(in.Host),
 		Auth:        c.authConv.InputFromGraphQL(in.Auth),
 		DataModel:   in.DataModel,
+		Tags:        in.Tags,
 	}
 }
 
@@ -104,6 +117,7 @@ func (c *converter) ToGraphQL(in *model.Device) *graphql.Device {
 		Status:      graphql.DeviceStatus(in.Status),
 		Host:        c.hostConv.ToGraphQL(in.Host),
 		Auth:        c.authConv.ToGraphQL(in.Auth),
+		Tags:        in.Tags,
 		CreatedAt:   graphql.TimePtrToTimestampPtr(in.CreatedAt),
 		UpdatedAt:   graphql.TimePtrToTimestampPtr(in.UpdatedAt),
 	}
@@ -159,4 +173,43 @@ func (c *converter) fromEntityAuth(in Entity) (*model.Auth, error) {
 	}
 
 	return auth, nil
+}
+
+func (c *converter) toTagsEntity(in model.Device) (sql.NullString, error) {
+	var optionalTags sql.NullString
+	if in.Tags == nil || len(in.Tags) == 0 {
+		return optionalTags, nil
+	}
+
+	b, err := json.Marshal(in.Tags)
+	if err != nil {
+		return sql.NullString{}, errors.Wrap(err, "while marshalling Tags")
+	}
+
+	if err := optionalTags.Scan(b); err != nil {
+		return sql.NullString{}, errors.Wrap(err, "while scanning optional Tags")
+	}
+	return optionalTags, nil
+}
+
+func (c *converter) fromEntityTags(in Entity) ([]string, error) {
+	if !in.Tags.Valid {
+		return nil, nil
+	}
+
+	var tags []string
+	val, err := in.Tags.Value()
+	if err != nil {
+		return nil, errors.Wrap(err, "while reading Tags from Entity")
+	}
+
+	b, ok := val.(string)
+	if !ok {
+		return nil, errors.New("Tags should be slice of bytes")
+	}
+	if err := json.Unmarshal([]byte(b), &tags); err != nil {
+		return nil, errors.Wrap(err, "while unmarshaling Tags")
+	}
+
+	return tags, nil
 }

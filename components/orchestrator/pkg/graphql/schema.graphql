@@ -76,7 +76,7 @@ type Device {
     tenantId: ID!
     host: Host
     auth: Auth
-    dataModel: DataModel
+    tags: [String!]
     createdAt: Timestamp
     updatedAt: Timestamp
 }
@@ -135,6 +135,7 @@ input DeviceInput {
     host: HostInput
     auth: AuthInput
     dataModel: String!
+    tags: [String!]
 }
 
 input WidgetInput {

@@ -26,6 +26,9 @@ CREATE TABLE devices (
     name varchar(256) NOT NULL,
     description text,
     status device_status,
+    data_model_id uuid NOT NULL,
+    CONSTRAINT data_model_id_fkey FOREIGN KEY (data_model_id) REFERENCES data_models(id) ON DELETE RESTRICT,
+    tags jsonb,
     auth jsonb,
     created_at timestamp,
     updated_at timestamp

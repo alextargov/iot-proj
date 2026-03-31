@@ -32,6 +32,7 @@ fragment DeviceInfo on Device {
         turnOnEndpoint
         turnOffEndpoint
     }
+    tags
     createdAt
     updatedAt
 }

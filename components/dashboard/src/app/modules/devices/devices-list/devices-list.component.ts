@@ -27,6 +27,7 @@ export class DevicesListComponent implements OnInit, AfterViewInit {
     displayedColumns: string[] = [
         'name',
         'description',
+        'tags',
         'url',
         'status',
         'createdAt',
@@ -87,7 +88,8 @@ export class DevicesListComponent implements OnInit, AfterViewInit {
             const searchStr = filter.toLowerCase();
             return (
                 data.name.toLowerCase().includes(searchStr) ||
-                (data.description?.toLowerCase().includes(searchStr) ?? false)
+                (data.description?.toLowerCase().includes(searchStr) ?? false) ||
+                (data.tags?.some(tag => tag.toLowerCase().includes(searchStr)) ?? false)
             );
         };
 
@@ -151,6 +153,7 @@ export class DevicesListComponent implements OnInit, AfterViewInit {
                     name: `${device.name} (Copy)`,
                     description: device.description,
                     host: device.host,
+                    tags: device.tags,
                 },
             },
         });

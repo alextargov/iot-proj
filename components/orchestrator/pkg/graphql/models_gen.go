@@ -92,6 +92,7 @@ type DeviceInput struct {
 	Host        *HostInput   `json:"host,omitempty"`
 	Auth        *AuthInput   `json:"auth,omitempty"`
 	DataModel   string       `json:"dataModel"`
+	Tags        []string     `json:"tags,omitempty"`
 }
 
 type DevicePage struct {
