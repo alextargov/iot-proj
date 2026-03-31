@@ -44,6 +44,11 @@ import {
 import { ToastrService } from '../../../shared/services/toastr/toastr.service';
 import { WidgetService } from '../../../shared/services/widget/widget.service';
 import { Router } from '@angular/router';
+import {
+    WIDGET_TEMPLATES,
+    TEMPLATE_CATEGORIES,
+    WidgetTemplate,
+} from '../../../shared/templates/widget-templates';
 
 @Component({
     standalone: false,
@@ -62,6 +67,12 @@ export class WidgetCreateComponent implements OnInit {
     public readonly DESCRIPTION_MAX_LENGTH = 256;
     public readonly separatorKeysCodes: number[] = [ENTER, COMMA];
     public isLoaded = false;
+
+    // Template selection
+    public templates = WIDGET_TEMPLATES;
+    public templateCategories = TEMPLATE_CATEGORIES;
+    public selectedTemplate: WidgetTemplate | null = null;
+
     private readonly aggregationOperations: any[] = [
         {
             id: 'sum',
@@ -357,8 +368,19 @@ export class WidgetCreateComponent implements OnInit {
             if (this.duplicateWorkspace) {
                 this.blocklyComponent.fromXml(this.duplicateWorkspace);
                 this.duplicateWorkspace = null; // Only restore once
+            } else if (this.selectedTemplate && this.selectedTemplate.id !== 'blank') {
+                // Load selected template
+                this.blocklyComponent.fromXml(this.selectedTemplate.workspace);
             }
         }, 100);
+    }
+
+    public selectTemplate(template: WidgetTemplate): void {
+        this.selectedTemplate = template;
+    }
+
+    public getTemplatesByCategory(categoryId: string): WidgetTemplate[] {
+        return this.templates.filter((t) => t.category === categoryId);
     }
 
     public workspaceChange(event) {

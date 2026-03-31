@@ -113,4 +113,108 @@
             color: rgba(0, 0, 0, 0.6);
         }
     }
+
+    // Template Selection Styles
+    &__templates {
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid rgba(0, 0, 0, 0.12);
+
+        &-title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0 0 0.25rem 0;
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: rgba(0, 0, 0, 0.87);
+
+            mat-icon {
+                color: #1976d2;
+            }
+        }
+
+        &-subtitle {
+            margin: 0 0 1rem 0;
+            color: rgba(0, 0, 0, 0.6);
+            font-size: 0.875rem;
+        }
+
+        &-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+        }
+    }
+
+    &__template-card {
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: 2px solid transparent;
+
+        &:hover {
+            border-color: rgba(25, 118, 210, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+        }
+
+        &--selected {
+            border-color: #1976d2;
+            background-color: rgba(25, 118, 210, 0.04);
+
+            .widget-create__template-icon {
+                background-color: #1976d2;
+                color: white;
+            }
+        }
+
+        mat-card-content {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            padding: 1rem !important;
+        }
+    }
+
+    &__template-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background-color: rgba(0, 0, 0, 0.06);
+        flex-shrink: 0;
+        transition: all 0.2s ease;
+
+        mat-icon {
+            font-size: 24px;
+            width: 24px;
+            height: 24px;
+        }
+    }
+
+    &__template-info {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-width: 0;
+    }
+
+    &__template-name {
+        font-weight: 500;
+        color: rgba(0, 0, 0, 0.87);
+        margin-bottom: 0.25rem;
+    }
+
+    &__template-description {
+        font-size: 0.8rem;
+        color: rgba(0, 0, 0, 0.6);
+        line-height: 1.4;
+    }
+
+    &__template-check {
+        color: #1976d2;
+        flex-shrink: 0;
+    }
 }

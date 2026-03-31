@@ -103,6 +103,40 @@
                         </mat-form-field>
                     </form>
                 </div>
+
+                <!-- Template Selection -->
+                <div class="widget-create__templates">
+                    <h3 class="widget-create__templates-title">
+                        <mat-icon>auto_awesome</mat-icon>
+                        Start with a template
+                    </h3>
+                    <p class="widget-create__templates-subtitle">
+                        Choose a pre-built automation template or start from scratch
+                    </p>
+
+                    <div class="widget-create__templates-grid">
+                        @for (template of templates; track template.id) {
+                            <mat-card
+                                class="widget-create__template-card"
+                                [class.widget-create__template-card--selected]="selectedTemplate?.id === template.id"
+                                (click)="selectTemplate(template)"
+                            >
+                                <mat-card-content>
+                                    <div class="widget-create__template-icon">
+                                        <mat-icon>{{ template.icon }}</mat-icon>
+                                    </div>
+                                    <div class="widget-create__template-info">
+                                        <span class="widget-create__template-name">{{ template.name }}</span>
+                                        <span class="widget-create__template-description">{{ template.description }}</span>
+                                    </div>
+                                    @if (selectedTemplate?.id === template.id) {
+                                        <mat-icon class="widget-create__template-check">check_circle</mat-icon>
+                                    }
+                                </mat-card-content>
+                            </mat-card>
+                        }
+                    </div>
+                </div>
             </div>
 
             <div class="widget-create__step-footer">
