@@ -1,0 +1,93 @@
+<div class="alert-events-container">
+    <h2>Alert Events</h2>
+
+    <div *ngIf="loading" class="loading">
+        <mat-spinner diameter="40"></mat-spinner>
+    </div>
+
+    <div *ngIf="!loading && events.length === 0" class="empty-state">
+        <mat-icon>event_available</mat-icon>
+        <p>No alert events</p>
+    </div>
+
+    <table
+        *ngIf="!loading && events.length > 0"
+        mat-table
+        [dataSource]="events"
+        class="events-table"
+    >
+        <!-- Status Column -->
+        <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>Status</th>
+            <td mat-cell *matCellDef="let event">
+                <mat-icon [color]="getStatusColor(event.status)">
+                    {{ getStatusIcon(event.status) }}
+                </mat-icon>
+                <span class="status-text">{{ event.status }}</span>
+            </td>
+        </ng-container>
+
+        <!-- Alert Rule Column -->
+        <ng-container matColumnDef="alertRule">
+            <th mat-header-cell *matHeaderCellDef>Alert Rule</th>
+            <td mat-cell *matCellDef="let event">
+                <div class="alert-info">
+                    <span>{{ event.alertRule?.name || 'Unknown' }}</span>
+                    <span
+                        *ngIf="event.alertRule?.severity"
+                        class="severity-badge"
+                        [ngClass]="'severity-' + event.alertRule.severity.toLowerCase()"
+                    >
+                        {{ event.alertRule.severity }}
+                    </span>
+                </div>
+            </td>
+        </ng-container>
+
+        <!-- Device Column -->
+        <ng-container matColumnDef="device">
+            <th mat-header-cell *matHeaderCellDef>Device</th>
+            <td mat-cell *matCellDef="let event">
+                {{ event.device?.name || 'Unknown' }}
+            </td>
+        </ng-container>
+
+        <!-- Triggered Values Column -->
+        <ng-container matColumnDef="triggeredValues">
+            <th mat-header-cell *matHeaderCellDef>Triggered Values</th>
+            <td mat-cell *matCellDef="let event">
+                <code>{{ formatTriggeredValues(event.triggeredValues) }}</code>
+            </td>
+        </ng-container>
+
+        <!-- Triggered At Column -->
+        <ng-container matColumnDef="triggeredAt">
+            <th mat-header-cell *matHeaderCellDef>Triggered At</th>
+            <td mat-cell *matCellDef="let event">
+                {{ event.triggeredAt | date : 'medium' }}
+            </td>
+        </ng-container>
+
+        <!-- Actions Column -->
+        <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>Actions</th>
+            <td mat-cell *matCellDef="let event">
+                <button
+                    mat-stroked-button
+                    color="primary"
+                    (click)="acknowledge(event)"
+                    [disabled]="event.status !== 'TRIGGERED'"
+                    *ngIf="event.status === 'TRIGGERED'"
+                >
+                    Acknowledge
+                </button>
+                <span *ngIf="event.status !== 'TRIGGERED'" class="acknowledged-text">
+                    {{ event.status === 'ACKNOWLEDGED' ? 'Acknowledged' : 'Resolved' }}
+                </span>
+            </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+    </table>
+</div>

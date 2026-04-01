@@ -1,0 +1,129 @@
+.alert-form-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 16px;
+
+    h2 {
+        margin-bottom: 24px;
+    }
+
+    .loading {
+        display: flex;
+        justify-content: center;
+        padding: 40px;
+    }
+
+    .form-section {
+        margin-bottom: 24px;
+    }
+
+    .full-width {
+        width: 100%;
+    }
+
+    .form-row {
+        display: flex;
+        gap: 16px;
+
+        mat-form-field {
+            flex: 1;
+        }
+    }
+
+    .condition-group {
+        padding: 16px;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        margin-bottom: 16px;
+        background-color: #fafafa;
+
+        .group-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+
+            .group-label {
+                font-weight: 500;
+                color: #666;
+            }
+        }
+
+        .condition-row {
+            margin-bottom: 8px;
+        }
+
+        .condition-fields {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+
+            mat-form-field {
+                flex: 1;
+            }
+
+            .operator-field {
+                flex: 0 0 150px;
+            }
+        }
+
+        .condition-connector {
+            text-align: center;
+            padding: 8px 0;
+            color: #1976d2;
+            font-weight: 500;
+        }
+
+        .add-condition-btn {
+            margin-top: 8px;
+        }
+    }
+
+    .group-connector {
+        text-align: center;
+        padding: 12px 0;
+        color: #f57c00;
+        font-weight: 500;
+        font-size: 14px;
+    }
+
+    .add-group-btn {
+        margin-top: 8px;
+    }
+
+    .notification-row {
+        margin-bottom: 16px;
+
+        .notification-fields {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+
+            mat-form-field:first-child {
+                flex: 0 0 150px;
+            }
+
+            .config-field {
+                flex: 1;
+            }
+        }
+    }
+
+    .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        margin-top: 24px;
+        padding-top: 16px;
+        border-top: 1px solid #e0e0e0;
+
+        button {
+            min-width: 120px;
+
+            mat-spinner {
+                display: inline-block;
+                margin-right: 8px;
+            }
+        }
+    }
+}

@@ -10,6 +10,8 @@ const (
 	User         Type = "user"
 	DataModel    Type = "dataModel"
 	DeviceMetric Type = "deviceMetric"
+	AlertRule    Type = "alertRule"
+	AlertEvent   Type = "alertEvent"
 	// Schema type represents schema resource.
 	Schema Type = "schemaMigration"
 )

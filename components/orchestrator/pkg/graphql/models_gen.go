@@ -29,6 +29,81 @@ type AggregatedMetric struct {
 	EndTime    Timestamp `json:"endTime"`
 }
 
+type AlertCondition struct {
+	ID         string                 `json:"id"`
+	MetricName string                 `json:"metricName"`
+	Operator   AlertConditionOperator `json:"operator"`
+	Threshold  float64                `json:"threshold"`
+}
+
+type AlertConditionGroup struct {
+	GroupID    int               `json:"groupId"`
+	Conditions []*AlertCondition `json:"conditions"`
+}
+
+type AlertConditionInput struct {
+	GroupID    int                    `json:"groupId"`
+	MetricName string                 `json:"metricName"`
+	Operator   AlertConditionOperator `json:"operator"`
+	Threshold  float64                `json:"threshold"`
+}
+
+type AlertEvent struct {
+	ID              string           `json:"id"`
+	AlertRule       *AlertRule       `json:"alertRule"`
+	Device          *Device          `json:"device"`
+	TriggeredValues string           `json:"triggeredValues"`
+	Status          AlertEventStatus `json:"status"`
+	TriggeredAt     Timestamp        `json:"triggeredAt"`
+	ResolvedAt      *Timestamp       `json:"resolvedAt,omitempty"`
+}
+
+type AlertEventPage struct {
+	Data       []*AlertEvent `json:"data"`
+	PageInfo   *PageInfo     `json:"pageInfo"`
+	TotalCount int           `json:"totalCount"`
+}
+
+func (AlertEventPage) IsPageable()                 {}
+func (this AlertEventPage) GetPageInfo() *PageInfo { return this.PageInfo }
+func (this AlertEventPage) GetTotalCount() int     { return this.TotalCount }
+
+type AlertNotification struct {
+	ID     string `json:"id"`
+	Type   string `json:"type"`
+	Config string `json:"config"`
+}
+
+type AlertNotificationInput struct {
+	Type   string `json:"type"`
+	Config string `json:"config"`
+}
+
+type AlertRule struct {
+	ID              string                 `json:"id"`
+	Device          *Device                `json:"device"`
+	Name            string                 `json:"name"`
+	Description     *string                `json:"description,omitempty"`
+	Severity        AlertSeverity          `json:"severity"`
+	Enabled         bool                   `json:"enabled"`
+	CooldownMinutes int                    `json:"cooldownMinutes"`
+	Conditions      []*AlertConditionGroup `json:"conditions"`
+	Notifications   []*AlertNotification   `json:"notifications"`
+	LastTriggeredAt *Timestamp             `json:"lastTriggeredAt,omitempty"`
+	CreatedAt       *Timestamp             `json:"createdAt,omitempty"`
+	UpdatedAt       *Timestamp             `json:"updatedAt,omitempty"`
+}
+
+type AlertRulePage struct {
+	Data       []*AlertRule `json:"data"`
+	PageInfo   *PageInfo    `json:"pageInfo"`
+	TotalCount int          `json:"totalCount"`
+}
+
+func (AlertRulePage) IsPageable()                 {}
+func (this AlertRulePage) GetPageInfo() *PageInfo { return this.PageInfo }
+func (this AlertRulePage) GetTotalCount() int     { return this.TotalCount }
+
 type Auth struct {
 	CredentialForDevice  CredentialData `json:"credentialForDevice,omitempty"`
 	CredentialForService *string        `json:"credentialForService,omitempty"`
@@ -71,6 +146,16 @@ type CertificateOAuthCredentialDataInput struct {
 	ClientID    string `json:"clientId"`
 	Certificate string `json:"certificate"`
 	URL         string `json:"url"`
+}
+
+type CreateAlertRuleInput struct {
+	DeviceID        string                    `json:"deviceId"`
+	Name            string                    `json:"name"`
+	Description     *string                   `json:"description,omitempty"`
+	Severity        *AlertSeverity            `json:"severity,omitempty"`
+	CooldownMinutes *int                      `json:"cooldownMinutes,omitempty"`
+	Conditions      []*AlertConditionInput    `json:"conditions"`
+	Notifications   []*AlertNotificationInput `json:"notifications"`
 }
 
 type CredentialDataInput struct {
@@ -188,6 +273,16 @@ type TokenCredentialDataInput struct {
 	Token string `json:"token"`
 }
 
+type UpdateAlertRuleInput struct {
+	Name            *string                   `json:"name,omitempty"`
+	Description     *string                   `json:"description,omitempty"`
+	Severity        *AlertSeverity            `json:"severity,omitempty"`
+	Enabled         *bool                     `json:"enabled,omitempty"`
+	CooldownMinutes *int                      `json:"cooldownMinutes,omitempty"`
+	Conditions      []*AlertConditionInput    `json:"conditions,omitempty"`
+	Notifications   []*AlertNotificationInput `json:"notifications,omitempty"`
+}
+
 type Widget struct {
 	ID             string       `json:"id"`
 	Name           string       `json:"name"`
@@ -285,6 +380,183 @@ func (e *AggregationType) UnmarshalJSON(b []byte) error {
 }
 
 func (e AggregationType) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type AlertConditionOperator string
+
+const (
+	AlertConditionOperatorGt  AlertConditionOperator = "GT"
+	AlertConditionOperatorLt  AlertConditionOperator = "LT"
+	AlertConditionOperatorEq  AlertConditionOperator = "EQ"
+	AlertConditionOperatorGte AlertConditionOperator = "GTE"
+	AlertConditionOperatorLte AlertConditionOperator = "LTE"
+	AlertConditionOperatorNe  AlertConditionOperator = "NE"
+)
+
+var AllAlertConditionOperator = []AlertConditionOperator{
+	AlertConditionOperatorGt,
+	AlertConditionOperatorLt,
+	AlertConditionOperatorEq,
+	AlertConditionOperatorGte,
+	AlertConditionOperatorLte,
+	AlertConditionOperatorNe,
+}
+
+func (e AlertConditionOperator) IsValid() bool {
+	switch e {
+	case AlertConditionOperatorGt, AlertConditionOperatorLt, AlertConditionOperatorEq, AlertConditionOperatorGte, AlertConditionOperatorLte, AlertConditionOperatorNe:
+		return true
+	}
+	return false
+}
+
+func (e AlertConditionOperator) String() string {
+	return string(e)
+}
+
+func (e *AlertConditionOperator) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = AlertConditionOperator(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid AlertConditionOperator", str)
+	}
+	return nil
+}
+
+func (e AlertConditionOperator) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *AlertConditionOperator) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e AlertConditionOperator) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type AlertEventStatus string
+
+const (
+	AlertEventStatusTriggered    AlertEventStatus = "TRIGGERED"
+	AlertEventStatusResolved     AlertEventStatus = "RESOLVED"
+	AlertEventStatusAcknowledged AlertEventStatus = "ACKNOWLEDGED"
+)
+
+var AllAlertEventStatus = []AlertEventStatus{
+	AlertEventStatusTriggered,
+	AlertEventStatusResolved,
+	AlertEventStatusAcknowledged,
+}
+
+func (e AlertEventStatus) IsValid() bool {
+	switch e {
+	case AlertEventStatusTriggered, AlertEventStatusResolved, AlertEventStatusAcknowledged:
+		return true
+	}
+	return false
+}
+
+func (e AlertEventStatus) String() string {
+	return string(e)
+}
+
+func (e *AlertEventStatus) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = AlertEventStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid AlertEventStatus", str)
+	}
+	return nil
+}
+
+func (e AlertEventStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *AlertEventStatus) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e AlertEventStatus) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type AlertSeverity string
+
+const (
+	AlertSeverityInfo     AlertSeverity = "INFO"
+	AlertSeverityWarning  AlertSeverity = "WARNING"
+	AlertSeverityCritical AlertSeverity = "CRITICAL"
+)
+
+var AllAlertSeverity = []AlertSeverity{
+	AlertSeverityInfo,
+	AlertSeverityWarning,
+	AlertSeverityCritical,
+}
+
+func (e AlertSeverity) IsValid() bool {
+	switch e {
+	case AlertSeverityInfo, AlertSeverityWarning, AlertSeverityCritical:
+		return true
+	}
+	return false
+}
+
+func (e AlertSeverity) String() string {
+	return string(e)
+}
+
+func (e *AlertSeverity) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = AlertSeverity(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid AlertSeverity", str)
+	}
+	return nil
+}
+
+func (e AlertSeverity) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *AlertSeverity) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e AlertSeverity) MarshalJSON() ([]byte, error) {
 	var buf bytes.Buffer
 	e.MarshalGQL(&buf)
 	return buf.Bytes(), nil

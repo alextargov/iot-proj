@@ -61,5 +61,15 @@ models:
     fields:
       host:
         resolver: true
+  AlertRule:
+    fields:
+      device:
+        resolver: true
+  AlertEvent:
+    fields:
+      alertRule:
+        resolver: true
+      device:
+        resolver: true
   JSON:
     model: "github.com/alextargov/iot-proj/components/orchestrator/pkg/graphql.JSON"

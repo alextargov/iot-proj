@@ -22,6 +22,7 @@ import (
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/k8s"
 	authmiddleware "github.com/alextargov/iot-proj/components/orchestrator/internal/middlewares/auth"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/middlewares/correlation"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/notification"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/scheduler"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/uuid"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/graphql"
@@ -49,6 +50,8 @@ type config struct {
 	JWKSEndpoint          string `envconfig:"default=file://hack/default-jwks.json"`
 	AllowJWTSigningNone   bool   `envconfig:"default=true"`
 	ClientIDHTTPHeaderKey string `envconfig:"default=client_user,APP_CLIENT_ID_HTTP_HEADER"`
+
+	NotificationService notification.Config
 
 	Database persistence.DatabaseConfig
 	Config   auth.Config
@@ -180,7 +183,7 @@ func initAPIHandler(ctx context.Context, cfg config, db persistence.Transactione
 	apiRouter.HandleFunc("/metrics", metricsHandler.RecordMetrics).Methods(http.MethodPost)
 	apiRouter.HandleFunc("/devices/{deviceId}/metrics", metricsHandler.RecordDeviceMetrics).Methods(http.MethodPost)
 
-	rootResolver := domain.NewRootResolver(db, applicationsScheduler, widgetScheduler)
+	rootResolver := domain.NewRootResolver(db, cfg.NotificationService.SMTP, applicationsScheduler, widgetScheduler)
 	srv := handler.NewDefaultServer(graphql.NewExecutableSchema(graphql.Config{Resolvers: rootResolver}))
 
 	mainRouter.HandleFunc("/", playground.Handler("GraphQL playground", cfg.APIEndpoint))

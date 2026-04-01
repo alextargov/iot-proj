@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/alert"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/auth"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/datamodel"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/device"
@@ -15,6 +16,7 @@ import (
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/widget"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/k8s"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/model"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/notification"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/uuid"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/graphql"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/persistence"
@@ -34,9 +36,10 @@ type RootResolver struct {
 	widget      *widget.Resolver
 	dataModel   *datamodel.Resolver
 	metric      *metric.Resolver
+	alert       *alert.Resolver
 }
 
-func NewRootResolver(persistence persistence.Transactioner, scheduler k8s.Scheduler, cronScheduler CronScheduler) *RootResolver {
+func NewRootResolver(persistence persistence.Transactioner, notificationSMTPConfig notification.SMTPConfig, scheduler k8s.Scheduler, cronScheduler CronScheduler) *RootResolver {
 	uuidService := uuid.NewService()
 	authConv := auth.NewConverter()
 
@@ -62,6 +65,16 @@ func NewRootResolver(persistence persistence.Transactioner, scheduler k8s.Schedu
 	metricSvc := metric.NewService(metricRepo, uuidService)
 	metricRes := metric.NewResolver(persistence, metricSvc, metricConv)
 
+	notificationSvc := notification.NewService(notificationSMTPConfig)
+
+	alertConv := alert.NewConverter()
+	alertRepo := alert.NewRepository(alertConv)
+	alertSvc := alert.NewService(alertRepo, metricRepo, deviceSvc, notificationSvc, uuidService)
+	alertRes := alert.NewResolver(persistence, alertSvc, alertConv, deviceSvc, deviceConv)
+
+	// Wire the alert evaluator into the metric service for real-time alert evaluation
+	metricSvc.SetAlertEvaluator(alertSvc)
+
 	deviceRes := device.NewResolver(persistence, deviceSvc, hostSvc, dataModelSvc, deviceConv, hostConv, dataModelConv)
 	widgetRes := widget.NewResolver(persistence, widgetSvc, widgetConv, scheduler, cronScheduler)
 
@@ -71,6 +84,7 @@ func NewRootResolver(persistence persistence.Transactioner, scheduler k8s.Schedu
 		widget:      widgetRes,
 		dataModel:   dataModelRes,
 		metric:      metricRes,
+		alert:       alertRes,
 	}
 }
 
@@ -134,6 +148,18 @@ func (r *queryResolver) DeviceMetricsSeries(ctx context.Context, deviceID string
 
 func (r *queryResolver) DeviceAggregatedMetrics(ctx context.Context, deviceID string, aggregation graphql.AggregationType, filter *graphql.MetricFilterInput) (*graphql.AggregatedMetric, error) {
 	return r.metric.DeviceAggregatedMetrics(ctx, deviceID, aggregation, filter)
+}
+
+func (r *queryResolver) AlertRules(ctx context.Context, deviceID *string, first *int, after *string) (*graphql.AlertRulePage, error) {
+	return r.alert.AlertRules(ctx, deviceID, first, after)
+}
+
+func (r *queryResolver) AlertRule(ctx context.Context, id string) (*graphql.AlertRule, error) {
+	return r.alert.AlertRule(ctx, id)
+}
+
+func (r *queryResolver) AlertEvents(ctx context.Context, deviceID *string, ruleID *string, first *int, after *string) (*graphql.AlertEventPage, error) {
+	return r.alert.AlertEvents(ctx, deviceID, ruleID, first, after)
 }
 
 func (r *queryResolver) TestDeviceConnection(ctx context.Context, url string) (bool, error) {
@@ -206,6 +232,22 @@ func (r *mutationResolver) RecordDeviceMetrics(ctx context.Context, inputs []*gr
 	return r.metric.RecordDeviceMetrics(ctx, inputs)
 }
 
+func (r *mutationResolver) CreateAlertRule(ctx context.Context, input graphql.CreateAlertRuleInput) (*graphql.AlertRule, error) {
+	return r.alert.CreateAlertRule(ctx, input)
+}
+
+func (r *mutationResolver) UpdateAlertRule(ctx context.Context, id string, input graphql.UpdateAlertRuleInput) (*graphql.AlertRule, error) {
+	return r.alert.UpdateAlertRule(ctx, id, input)
+}
+
+func (r *mutationResolver) DeleteAlertRule(ctx context.Context, id string) (string, error) {
+	return r.alert.DeleteAlertRule(ctx, id)
+}
+
+func (r *mutationResolver) AcknowledgeAlertEvent(ctx context.Context, id string) (*graphql.AlertEvent, error) {
+	return r.alert.AcknowledgeAlertEvent(ctx, id)
+}
+
 type deviceResolver struct {
 	*RootResolver
 }
@@ -216,4 +258,34 @@ func (r deviceResolver) Host(ctx context.Context, obj *graphql.Device) (*graphql
 
 func (r deviceResolver) DataModel(ctx context.Context, obj *graphql.Device) (*graphql.DataModel, error) {
 	return r.device.DataModel(ctx, obj)
+}
+
+// AlertRule resolver
+func (r *RootResolver) AlertRule() graphql.AlertRuleResolver {
+	return &alertRuleResolver{r}
+}
+
+type alertRuleResolver struct {
+	*RootResolver
+}
+
+func (r alertRuleResolver) Device(ctx context.Context, obj *graphql.AlertRule) (*graphql.Device, error) {
+	return r.alert.AlertRuleDevice(ctx, obj)
+}
+
+// AlertEvent resolver
+func (r *RootResolver) AlertEvent() graphql.AlertEventResolver {
+	return &alertEventResolver{r}
+}
+
+type alertEventResolver struct {
+	*RootResolver
+}
+
+func (r alertEventResolver) Device(ctx context.Context, obj *graphql.AlertEvent) (*graphql.Device, error) {
+	return r.alert.AlertEventDevice(ctx, obj)
+}
+
+func (r alertEventResolver) AlertRule(ctx context.Context, obj *graphql.AlertEvent) (*graphql.AlertRule, error) {
+	return r.alert.AlertEventAlertRule(ctx, obj)
 }

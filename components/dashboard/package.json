@@ -1,5 +1,6 @@
 {
     "name": "dashboard",
+    "node": "20.19.0",
     "version": "0.0.0",
     "scripts": {
         "ng": "ng",
@@ -10,7 +11,6 @@
         "lint": "ng lint",
         "lint-check": "npx eslint . --ext .ts",
         "generate-types": "graphql-codegen --config codegen.ts",
-        "generate": "graphql-codegen",
         "start:proxy": "ng serve --proxy-config src/proxy.conf.json",
         "format": "prettier --write ."
     },

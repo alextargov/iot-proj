@@ -1,0 +1,81 @@
+.alerts-list-container {
+    padding: 16px;
+
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+
+        h2 {
+            margin: 0;
+        }
+    }
+
+    .loading {
+        display: flex;
+        justify-content: center;
+        padding: 40px;
+    }
+
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 60px 20px;
+        text-align: center;
+        color: #666;
+
+        mat-icon {
+            font-size: 64px;
+            width: 64px;
+            height: 64px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        p {
+            margin-bottom: 16px;
+            font-size: 16px;
+        }
+    }
+
+    .alerts-table {
+        width: 100%;
+
+        .alert-name {
+            display: flex;
+            flex-direction: column;
+
+            .conditions {
+                color: #666;
+                font-size: 12px;
+                margin-top: 4px;
+            }
+        }
+
+        .severity-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 500;
+            text-transform: uppercase;
+
+            &.severity-info {
+                background-color: #e3f2fd;
+                color: #1976d2;
+            }
+
+            &.severity-warning {
+                background-color: #fff3e0;
+                color: #f57c00;
+            }
+
+            &.severity-critical {
+                background-color: #ffebee;
+                color: #d32f2f;
+            }
+        }
+    }
+}

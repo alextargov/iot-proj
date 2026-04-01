@@ -1,0 +1,161 @@
+query GetAlertRules($deviceId: ID, $first: Int, $after: PageCursor) {
+  alertRules(deviceId: $deviceId, first: $first, after: $after) {
+    data {
+      id
+      name
+      description
+      severity
+      enabled
+      cooldownMinutes
+      conditions {
+        groupId
+        conditions {
+          id
+          metricName
+          operator
+          threshold
+        }
+      }
+      notifications {
+        id
+        type
+        config
+      }
+      lastTriggeredAt
+      createdAt
+      updatedAt
+      device {
+        id
+        name
+      }
+    }
+    pageInfo {
+      startCursor
+      endCursor
+      hasNextPage
+    }
+    totalCount
+  }
+}
+
+query GetAlertRule($id: ID!) {
+  alertRule(id: $id) {
+    id
+    name
+    description
+    severity
+    enabled
+    cooldownMinutes
+    conditions {
+      groupId
+      conditions {
+        id
+        metricName
+        operator
+        threshold
+      }
+    }
+    notifications {
+      id
+      type
+      config
+    }
+    lastTriggeredAt
+    createdAt
+    updatedAt
+    device {
+      id
+      name
+    }
+  }
+}
+
+query GetAlertEvents($deviceId: ID, $ruleId: ID, $first: Int, $after: PageCursor) {
+  alertEvents(deviceId: $deviceId, ruleId: $ruleId, first: $first, after: $after) {
+    data {
+      id
+      triggeredValues
+      status
+      triggeredAt
+      resolvedAt
+      alertRule {
+        id
+        name
+        severity
+      }
+      device {
+        id
+        name
+      }
+    }
+    pageInfo {
+      startCursor
+      endCursor
+      hasNextPage
+    }
+    totalCount
+  }
+}
+
+mutation CreateAlertRule($input: CreateAlertRuleInput!) {
+  createAlertRule(input: $input) {
+    id
+    name
+    description
+    severity
+    enabled
+    cooldownMinutes
+    conditions {
+      groupId
+      conditions {
+        id
+        metricName
+        operator
+        threshold
+      }
+    }
+    notifications {
+      id
+      type
+      config
+    }
+    createdAt
+  }
+}
+
+mutation UpdateAlertRule($id: ID!, $input: UpdateAlertRuleInput!) {
+  updateAlertRule(id: $id, input: $input) {
+    id
+    name
+    description
+    severity
+    enabled
+    cooldownMinutes
+    conditions {
+      groupId
+      conditions {
+        id
+        metricName
+        operator
+        threshold
+      }
+    }
+    notifications {
+      id
+      type
+      config
+    }
+    updatedAt
+  }
+}
+
+mutation DeleteAlertRule($id: ID!) {
+  deleteAlertRule(id: $id)
+}
+
+mutation AcknowledgeAlertEvent($id: ID!) {
+  acknowledgeAlertEvent(id: $id) {
+    id
+    status
+  }
+}

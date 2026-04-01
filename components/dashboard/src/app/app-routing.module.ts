@@ -10,6 +10,12 @@ const routes: Routes = [
         pathMatch: 'full',
         canActivate: [AuthGuard],
     },
+    {
+        path: 'alerts',
+        loadChildren: () =>
+            import('./modules/alerts/alerts.module').then((m) => m.AlertsModule),
+        canActivate: [AuthGuard],
+    },
     { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
 ];
 

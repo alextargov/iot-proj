@@ -40,6 +40,27 @@ enum WidgetStatus {
     ACTIVE
 }
 
+enum AlertSeverity {
+    INFO
+    WARNING
+    CRITICAL
+}
+
+enum AlertConditionOperator {
+    GT
+    LT
+    EQ
+    GTE
+    LTE
+    NE
+}
+
+enum AlertEventStatus {
+    TRIGGERED
+    RESOLVED
+    ACKNOWLEDGED
+}
+
 type BearerTokenCredentialData {
     token: String!
 }
@@ -154,6 +175,61 @@ type MetricSeries {
     dataPoints: [DeviceMetric!]!
 }
 
+type AlertRule {
+    id: ID!
+    device: Device!
+    name: String!
+    description: String
+    severity: AlertSeverity!
+    enabled: Boolean!
+    cooldownMinutes: Int!
+    conditions: [AlertConditionGroup!]!
+    notifications: [AlertNotification!]!
+    lastTriggeredAt: Timestamp
+    createdAt: Timestamp
+    updatedAt: Timestamp
+}
+
+type AlertConditionGroup {
+    groupId: Int!
+    conditions: [AlertCondition!]!
+}
+
+type AlertCondition {
+    id: ID!
+    metricName: String!
+    operator: AlertConditionOperator!
+    threshold: Float!
+}
+
+type AlertNotification {
+    id: ID!
+    type: String!
+    config: String!
+}
+
+type AlertEvent {
+    id: ID!
+    alertRule: AlertRule!
+    device: Device!
+    triggeredValues: String!
+    status: AlertEventStatus!
+    triggeredAt: Timestamp!
+    resolvedAt: Timestamp
+}
+
+type AlertRulePage implements Pageable {
+    data: [AlertRule!]!
+    pageInfo: PageInfo!
+    totalCount: Int!
+}
+
+type AlertEventPage implements Pageable {
+    data: [AlertEvent!]!
+    pageInfo: PageInfo!
+    totalCount: Int!
+}
+
 input DeviceMetricInput {
     deviceId: ID!
     metricName: String!
@@ -237,6 +313,38 @@ input DataModelInput {
     schema: JSON!
 }
 
+input AlertConditionInput {
+    groupId: Int!
+    metricName: String!
+    operator: AlertConditionOperator!
+    threshold: Float!
+}
+
+input AlertNotificationInput {
+    type: String!
+    config: String!
+}
+
+input CreateAlertRuleInput {
+    deviceId: ID!
+    name: String!
+    description: String
+    severity: AlertSeverity
+    cooldownMinutes: Int
+    conditions: [AlertConditionInput!]!
+    notifications: [AlertNotificationInput!]!
+}
+
+input UpdateAlertRuleInput {
+    name: String
+    description: String
+    severity: AlertSeverity
+    enabled: Boolean
+    cooldownMinutes: Int
+    conditions: [AlertConditionInput!]
+    notifications: [AlertNotificationInput!]
+}
+
 type Query {
     devices: [Device]!
     devicesPage(first: Int = 20, after: PageCursor): DevicePage!
@@ -250,6 +358,9 @@ type Query {
     deviceMetrics(deviceId: ID!, filter: MetricFilterInput): [DeviceMetric!]!
     deviceMetricsSeries(deviceId: ID!, metricNames: [String!], filter: MetricFilterInput): [MetricSeries!]!
     deviceAggregatedMetrics(deviceId: ID!, aggregation: AggregationType!, filter: MetricFilterInput): AggregatedMetric
+    alertRules(deviceId: ID, first: Int, after: PageCursor): AlertRulePage!
+    alertRule(id: ID!): AlertRule
+    alertEvents(deviceId: ID, ruleId: ID, first: Int, after: PageCursor): AlertEventPage!
 }
 
 type Mutation {
@@ -265,4 +376,8 @@ type Mutation {
     generateDeviceToken: String!
     recordDeviceMetric(input: DeviceMetricInput!): DeviceMetric!
     recordDeviceMetrics(inputs: [DeviceMetricInput!]!): Boolean!
+    createAlertRule(input: CreateAlertRuleInput!): AlertRule!
+    updateAlertRule(id: ID!, input: UpdateAlertRuleInput!): AlertRule!
+    deleteAlertRule(id: ID!): ID!
+    acknowledgeAlertEvent(id: ID!): AlertEvent!
 }

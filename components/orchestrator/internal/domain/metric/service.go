@@ -25,17 +25,29 @@ type UUIDService interface {
 	Generate() string
 }
 
+// AlertEvaluator defines the interface for evaluating alerts when metrics are recorded
+type AlertEvaluator interface {
+	EvaluateMetric(ctx context.Context, metric model.DeviceMetric) error
+}
+
 type service struct {
-	metricRepo  MetricRepository
-	uuidService UUIDService
+	metricRepo     MetricRepository
+	uuidService    UUIDService
+	alertEvaluator AlertEvaluator
 }
 
 // NewService creates a new metric service
 func NewService(repo MetricRepository, uuidService UUIDService) *service {
 	return &service{
-		metricRepo:  repo,
-		uuidService: uuidService,
+		metricRepo:     repo,
+		uuidService:    uuidService,
+		alertEvaluator: nil,
 	}
+}
+
+// SetAlertEvaluator sets the alert evaluator for real-time alert evaluation
+func (s *service) SetAlertEvaluator(evaluator AlertEvaluator) {
+	s.alertEvaluator = evaluator
 }
 
 // RecordMetric records a single metric
@@ -65,6 +77,12 @@ func (s *service) RecordMetric(ctx context.Context, input model.DeviceMetricInpu
 
 	if err := s.metricRepo.Create(ctx, metric); err != nil {
 		return nil, errors.Wrap(err, "while creating metric")
+	}
+
+	if s.alertEvaluator != nil {
+		if err = s.alertEvaluator.EvaluateMetric(ctx, metric); err != nil {
+			logger.C(ctx).Warnf("Alert evaluation failed for metric %s: %v", metric.ID, err)
+		}
 	}
 
 	return &metric, nil
@@ -125,6 +143,12 @@ func (s *service) RecordMetricWithTenant(ctx context.Context, input model.Device
 
 	if err := s.metricRepo.Create(ctx, metric); err != nil {
 		return nil, errors.Wrap(err, "while creating metric")
+	}
+
+	if s.alertEvaluator != nil {
+		if err := s.alertEvaluator.EvaluateMetric(ctx, metric); err != nil {
+			logger.C(ctx).Warnf("Alert evaluation failed for metric %s: %v", metric.ID, err)
+		}
 	}
 
 	return &metric, nil
