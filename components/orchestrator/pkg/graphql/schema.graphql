@@ -13,6 +13,11 @@ interface Pageable {
 enum AggregationType {
     SUM
     AVERAGE
+    MIN
+    MAX
+    COUNT
+    LAST_HOUR
+    LAST_DAY
     LAST_WEEK
 }
 
@@ -124,6 +129,46 @@ type DataModel {
     updatedAt: Timestamp
 }
 
+type DeviceMetric {
+    id: ID!
+    deviceId: ID!
+    metricName: String!
+    metricValue: Float!
+    unit: String
+    recordedAt: Timestamp!
+}
+
+type AggregatedMetric {
+    metricName: String!
+    value: Float!
+    count: Int!
+    min: Float!
+    max: Float!
+    startTime: Timestamp!
+    endTime: Timestamp!
+}
+
+type MetricSeries {
+    metricName: String!
+    unit: String
+    dataPoints: [DeviceMetric!]!
+}
+
+input DeviceMetricInput {
+    deviceId: ID!
+    metricName: String!
+    metricValue: Float!
+    unit: String
+    recordedAt: Timestamp
+}
+
+input MetricFilterInput {
+    metricName: String
+    startTime: Timestamp
+    endTime: Timestamp
+    limit: Int
+}
+
 input HostInput {
     url: String!
     turnOnEndpoint: String
@@ -202,6 +247,9 @@ type Query {
     widget(id: ID!): Widget
     dataModels: [DataModel]!
     testDeviceConnection(url: String!): Boolean!
+    deviceMetrics(deviceId: ID!, filter: MetricFilterInput): [DeviceMetric!]!
+    deviceMetricsSeries(deviceId: ID!, metricNames: [String!], filter: MetricFilterInput): [MetricSeries!]!
+    deviceAggregatedMetrics(deviceId: ID!, aggregation: AggregationType!, filter: MetricFilterInput): AggregatedMetric
 }
 
 type Mutation {
@@ -215,4 +263,6 @@ type Mutation {
     deleteDataModel(id: ID!): String!
     updateDataModel(id: ID!, input: DataModelInput!): DataModel!
     generateDeviceToken: String!
+    recordDeviceMetric(input: DeviceMetricInput!): DeviceMetric!
+    recordDeviceMetrics(inputs: [DeviceMetricInput!]!): Boolean!
 }

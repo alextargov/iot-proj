@@ -222,6 +222,19 @@ export class WidgetCreateComponent implements OnInit {
             this.workspaceCode = duplicateData.code;
         }
 
+        // Restore schedule from duplicate data
+        if (duplicateData?.schedule) {
+            this.enableScheduling = true;
+            const preset = SCHEDULE_PRESETS.find(p => p.value === duplicateData.schedule);
+            if (preset) {
+                this.selectedPreset = preset;
+            } else {
+                // Custom cron expression
+                this.selectedPreset = SCHEDULE_PRESETS.find(p => p.value === 'custom') || null;
+                this.customSchedule = duplicateData.schedule;
+            }
+        }
+
         this.deviceService.getAllDevices().subscribe({
             next: (deviceList) => {
                 this.devices = deviceList;

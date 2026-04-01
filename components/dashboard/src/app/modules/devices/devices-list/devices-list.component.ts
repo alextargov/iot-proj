@@ -158,4 +158,8 @@ export class DevicesListComponent implements OnInit, AfterViewInit {
             },
         });
     }
+
+    public onRowClick(device: DeviceInfoFragment): void {
+        this.router.navigate(['devices', device.id]);
+    }
 }

@@ -1,0 +1,96 @@
+<app-content-header [title]="device?.name || 'Device Details'">
+    <button mat-stroked-button (click)="goBack()">
+        <mat-icon>arrow_back</mat-icon>
+        Back to Devices
+    </button>
+</app-content-header>
+
+<div class="device-detail">
+    @if (isLoading) {
+        <div class="device-detail__loading">
+            <mat-spinner diameter="48"></mat-spinner>
+            <span>Loading device...</span>
+        </div>
+    } @else if (device) {
+        <div class="device-detail__content">
+            <!-- Device Info Card -->
+            <mat-card class="device-detail__info-card">
+                <mat-card-header>
+                    <mat-card-title>Device Information</mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                    <div class="device-detail__info-grid">
+                        <div class="device-detail__info-item">
+                            <span class="device-detail__info-label">Name</span>
+                            <span class="device-detail__info-value">{{ device.name }}</span>
+                        </div>
+                        <div class="device-detail__info-item">
+                            <span class="device-detail__info-label">Status</span>
+                            <span
+                                class="device-detail__status"
+                                [ngClass]="getStatusConfig(device.status).cssClass"
+                            >
+                                <mat-icon>{{ getStatusConfig(device.status).icon }}</mat-icon>
+                                {{ getStatusConfig(device.status).label }}
+                            </span>
+                        </div>
+                        @if (device.description) {
+                            <div class="device-detail__info-item device-detail__info-item--full">
+                                <span class="device-detail__info-label">Description</span>
+                                <span class="device-detail__info-value">{{ device.description }}</span>
+                            </div>
+                        }
+                        @if (device.host?.url) {
+                            <div class="device-detail__info-item">
+                                <span class="device-detail__info-label">URL</span>
+                                <span class="device-detail__info-value">{{ device.host.url }}</span>
+                            </div>
+                        }
+                        @if (device.tags && device.tags.length > 0) {
+                            <div class="device-detail__info-item">
+                                <span class="device-detail__info-label">Tags</span>
+                                <div class="device-detail__tags">
+                                    @for (tag of device.tags; track tag) {
+                                        <mat-chip>{{ tag }}</mat-chip>
+                                    }
+                                </div>
+                            </div>
+                        }
+                        <div class="device-detail__info-item">
+                            <span class="device-detail__info-label">Created</span>
+                            <span class="device-detail__info-value">{{ device.createdAt | date: 'medium' }}</span>
+                        </div>
+                        @if (device.updatedAt) {
+                            <div class="device-detail__info-item">
+                                <span class="device-detail__info-label">Last Updated</span>
+                                <span class="device-detail__info-value">{{ device.updatedAt | date: 'medium' }}</span>
+                            </div>
+                        }
+                    </div>
+                </mat-card-content>
+            </mat-card>
+
+            <!-- Metrics Chart Card -->
+            <mat-card class="device-detail__metrics-card">
+                <mat-card-header>
+                    <mat-card-title>
+                        <mat-icon>show_chart</mat-icon>
+                        Device Metrics
+                    </mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                    <app-device-metrics-chart
+                        [deviceId]="deviceId"
+                        [height]="350"
+                    ></app-device-metrics-chart>
+                </mat-card-content>
+            </mat-card>
+        </div>
+    } @else {
+        <div class="device-detail__not-found">
+            <mat-icon>error_outline</mat-icon>
+            <span>Device not found</span>
+            <button mat-stroked-button (click)="goBack()">Go Back</button>
+        </div>
+    }
+</div>

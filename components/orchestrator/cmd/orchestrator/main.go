@@ -3,11 +3,19 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"net/http"
+	"os/signal"
+	"syscall"
+	"time"
+
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/alextargov/iot-proj/components/controller/client"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/auth"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/device"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/host"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/metric"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/user"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/widget"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/handlers"
@@ -24,11 +32,7 @@ import (
 	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
 	"github.com/vrischmann/envconfig"
-	"net/http"
-	"os/signal"
 	cr "sigs.k8s.io/controller-runtime"
-	"syscall"
-	"time"
 )
 
 const envPrefix = "APP"
@@ -78,7 +82,7 @@ func main() {
 
 	// Start widget scheduler in background
 	go func() {
-		if err := widgetScheduler.Start(ctx); err != nil {
+		if err := widgetScheduler.Start(ctx, transact); err != nil {
 			logrus.Errorf("Widget scheduler error: %v", err)
 		}
 	}()
@@ -150,10 +154,31 @@ func initAPIHandler(ctx context.Context, cfg config, db persistence.Transactione
 	// Create widget scheduler
 	widgetScheduler := scheduler.New(widgetSvc, applicationsScheduler)
 
+	// Create device service for metrics handler
+	authDevConv := device.NewConverter(host.NewConverter(), nil)
+	hostConv := host.NewConverter()
+	hostRepo := host.NewRepository(hostConv)
+	hostSvc := host.NewService(hostRepo, uidService)
+	deviceRepo := device.NewRepository(authDevConv)
+	deviceSvc := device.NewService(deviceRepo, uidService, hostSvc)
+
+	// Create metric service for REST handler
+	metricConv := metric.NewConverter()
+	metricRepo := metric.NewRepository(metricConv)
+	metricSvc := metric.NewService(metricRepo, uidService)
+
+	// Create metrics handler
+	metricsHandler := handlers.NewMetricsHandler(db, metricSvc, deviceSvc)
+
 	mainRouter := mux.NewRouter()
 
 	mainRouter.HandleFunc("/login", authHandler.Login).Methods(http.MethodPost)
 	mainRouter.HandleFunc("/register", authHandler.Register).Methods(http.MethodPost)
+
+	// Metrics API endpoints (no auth required for device-to-cloud metrics)
+	apiRouter := mainRouter.PathPrefix("/api/v1").Subrouter()
+	apiRouter.HandleFunc("/metrics", metricsHandler.RecordMetrics).Methods(http.MethodPost)
+	apiRouter.HandleFunc("/devices/{deviceId}/metrics", metricsHandler.RecordDeviceMetrics).Methods(http.MethodPost)
 
 	rootResolver := domain.NewRootResolver(db, applicationsScheduler, widgetScheduler)
 	srv := handler.NewDefaultServer(graphql.NewExecutableSchema(graphql.Config{Resolvers: rootResolver}))

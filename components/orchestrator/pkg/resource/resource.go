@@ -5,10 +5,11 @@ type Type string
 
 const (
 	// Device type represents device resource.
-	Device    Type = "device"
-	Widget    Type = "widget"
-	User      Type = "user"
-	DataModel Type = "dataModel"
+	Device       Type = "device"
+	Widget       Type = "widget"
+	User         Type = "user"
+	DataModel    Type = "dataModel"
+	DeviceMetric Type = "deviceMetric"
 	// Schema type represents schema resource.
 	Schema Type = "schemaMigration"
 )

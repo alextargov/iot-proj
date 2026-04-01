@@ -19,6 +19,16 @@ type Pageable interface {
 	GetTotalCount() int
 }
 
+type AggregatedMetric struct {
+	MetricName string    `json:"metricName"`
+	Value      float64   `json:"value"`
+	Count      int       `json:"count"`
+	Min        float64   `json:"min"`
+	Max        float64   `json:"max"`
+	StartTime  Timestamp `json:"startTime"`
+	EndTime    Timestamp `json:"endTime"`
+}
+
 type Auth struct {
 	CredentialForDevice  CredentialData `json:"credentialForDevice,omitempty"`
 	CredentialForService *string        `json:"credentialForService,omitempty"`
@@ -95,6 +105,23 @@ type DeviceInput struct {
 	Tags        []string     `json:"tags,omitempty"`
 }
 
+type DeviceMetric struct {
+	ID          string    `json:"id"`
+	DeviceID    string    `json:"deviceId"`
+	MetricName  string    `json:"metricName"`
+	MetricValue float64   `json:"metricValue"`
+	Unit        *string   `json:"unit,omitempty"`
+	RecordedAt  Timestamp `json:"recordedAt"`
+}
+
+type DeviceMetricInput struct {
+	DeviceID    string     `json:"deviceId"`
+	MetricName  string     `json:"metricName"`
+	MetricValue float64    `json:"metricValue"`
+	Unit        *string    `json:"unit,omitempty"`
+	RecordedAt  *Timestamp `json:"recordedAt,omitempty"`
+}
+
 type DevicePage struct {
 	Data       []*Device `json:"data"`
 	PageInfo   *PageInfo `json:"pageInfo"`
@@ -116,6 +143,19 @@ type HostInput struct {
 	URL             string  `json:"url"`
 	TurnOnEndpoint  *string `json:"turnOnEndpoint,omitempty"`
 	TurnOffEndpoint *string `json:"turnOffEndpoint,omitempty"`
+}
+
+type MetricFilterInput struct {
+	MetricName *string    `json:"metricName,omitempty"`
+	StartTime  *Timestamp `json:"startTime,omitempty"`
+	EndTime    *Timestamp `json:"endTime,omitempty"`
+	Limit      *int       `json:"limit,omitempty"`
+}
+
+type MetricSeries struct {
+	MetricName string          `json:"metricName"`
+	Unit       *string         `json:"unit,omitempty"`
+	DataPoints []*DeviceMetric `json:"dataPoints"`
 }
 
 type Mutation struct {
@@ -188,18 +228,28 @@ type AggregationType string
 const (
 	AggregationTypeSum      AggregationType = "SUM"
 	AggregationTypeAverage  AggregationType = "AVERAGE"
+	AggregationTypeMin      AggregationType = "MIN"
+	AggregationTypeMax      AggregationType = "MAX"
+	AggregationTypeCount    AggregationType = "COUNT"
+	AggregationTypeLastHour AggregationType = "LAST_HOUR"
+	AggregationTypeLastDay  AggregationType = "LAST_DAY"
 	AggregationTypeLastWeek AggregationType = "LAST_WEEK"
 )
 
 var AllAggregationType = []AggregationType{
 	AggregationTypeSum,
 	AggregationTypeAverage,
+	AggregationTypeMin,
+	AggregationTypeMax,
+	AggregationTypeCount,
+	AggregationTypeLastHour,
+	AggregationTypeLastDay,
 	AggregationTypeLastWeek,
 }
 
 func (e AggregationType) IsValid() bool {
 	switch e {
-	case AggregationTypeSum, AggregationTypeAverage, AggregationTypeLastWeek:
+	case AggregationTypeSum, AggregationTypeAverage, AggregationTypeMin, AggregationTypeMax, AggregationTypeCount, AggregationTypeLastHour, AggregationTypeLastDay, AggregationTypeLastWeek:
 		return true
 	}
 	return false

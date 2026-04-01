@@ -1,0 +1,54 @@
+fragment DeviceMetricInfo on DeviceMetric {
+    id
+    deviceId
+    metricName
+    metricValue
+    unit
+    recordedAt
+}
+
+fragment MetricSeriesInfo on MetricSeries {
+    metricName
+    unit
+    dataPoints {
+        ...DeviceMetricInfo
+    }
+}
+
+fragment AggregatedMetricInfo on AggregatedMetric {
+    metricName
+    value
+    count
+    min
+    max
+    startTime
+    endTime
+}
+
+query GetDeviceMetrics($deviceId: ID!, $filter: MetricFilterInput) {
+    deviceMetrics(deviceId: $deviceId, filter: $filter) {
+        ...DeviceMetricInfo
+    }
+}
+
+query GetDeviceMetricsSeries($deviceId: ID!, $metricNames: [String!], $filter: MetricFilterInput) {
+    deviceMetricsSeries(deviceId: $deviceId, metricNames: $metricNames, filter: $filter) {
+        ...MetricSeriesInfo
+    }
+}
+
+query GetDeviceAggregatedMetrics($deviceId: ID!, $aggregation: AggregationType!, $filter: MetricFilterInput) {
+    deviceAggregatedMetrics(deviceId: $deviceId, aggregation: $aggregation, filter: $filter) {
+        ...AggregatedMetricInfo
+    }
+}
+
+mutation RecordDeviceMetric($input: DeviceMetricInput!) {
+    recordDeviceMetric(input: $input) {
+        ...DeviceMetricInfo
+    }
+}
+
+mutation RecordDeviceMetrics($inputs: [DeviceMetricInput!]!) {
+    recordDeviceMetrics(inputs: $inputs)
+}

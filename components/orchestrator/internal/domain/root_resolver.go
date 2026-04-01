@@ -11,6 +11,7 @@ import (
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/datamodel"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/device"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/host"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/metric"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/widget"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/k8s"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/model"
@@ -32,6 +33,7 @@ type RootResolver struct {
 	device      *device.Resolver
 	widget      *widget.Resolver
 	dataModel   *datamodel.Resolver
+	metric      *metric.Resolver
 }
 
 func NewRootResolver(persistence persistence.Transactioner, scheduler k8s.Scheduler, cronScheduler CronScheduler) *RootResolver {
@@ -55,6 +57,11 @@ func NewRootResolver(persistence persistence.Transactioner, scheduler k8s.Schedu
 	dataModelSvc := datamodel.NewService(dataModelRepo, uuidService)
 	dataModelRes := datamodel.NewResolver(persistence, dataModelSvc, dataModelConv)
 
+	metricConv := metric.NewConverter()
+	metricRepo := metric.NewRepository(metricConv)
+	metricSvc := metric.NewService(metricRepo, uuidService)
+	metricRes := metric.NewResolver(persistence, metricSvc, metricConv)
+
 	deviceRes := device.NewResolver(persistence, deviceSvc, hostSvc, dataModelSvc, deviceConv, hostConv, dataModelConv)
 	widgetRes := widget.NewResolver(persistence, widgetSvc, widgetConv, scheduler, cronScheduler)
 
@@ -63,6 +70,7 @@ func NewRootResolver(persistence persistence.Transactioner, scheduler k8s.Schedu
 		device:      deviceRes,
 		widget:      widgetRes,
 		dataModel:   dataModelRes,
+		metric:      metricRes,
 	}
 }
 
@@ -114,6 +122,18 @@ func (r *queryResolver) WidgetsPage(ctx context.Context, first *int, after *stri
 
 func (r *queryResolver) DataModels(ctx context.Context) ([]*graphql.DataModel, error) {
 	return r.dataModel.DataModels(ctx)
+}
+
+func (r *queryResolver) DeviceMetrics(ctx context.Context, deviceID string, filter *graphql.MetricFilterInput) ([]*graphql.DeviceMetric, error) {
+	return r.metric.DeviceMetrics(ctx, deviceID, filter)
+}
+
+func (r *queryResolver) DeviceMetricsSeries(ctx context.Context, deviceID string, metricNames []string, filter *graphql.MetricFilterInput) ([]*graphql.MetricSeries, error) {
+	return r.metric.DeviceMetricsSeries(ctx, deviceID, metricNames, filter)
+}
+
+func (r *queryResolver) DeviceAggregatedMetrics(ctx context.Context, deviceID string, aggregation graphql.AggregationType, filter *graphql.MetricFilterInput) (*graphql.AggregatedMetric, error) {
+	return r.metric.DeviceAggregatedMetrics(ctx, deviceID, aggregation, filter)
 }
 
 func (r *queryResolver) TestDeviceConnection(ctx context.Context, url string) (bool, error) {
@@ -176,6 +196,14 @@ func (r *mutationResolver) GenerateDeviceToken(ctx context.Context) (string, err
 		return "", err
 	}
 	return hex.EncodeToString(bytes), nil
+}
+
+func (r *mutationResolver) RecordDeviceMetric(ctx context.Context, input graphql.DeviceMetricInput) (*graphql.DeviceMetric, error) {
+	return r.metric.RecordDeviceMetric(ctx, input)
+}
+
+func (r *mutationResolver) RecordDeviceMetrics(ctx context.Context, inputs []*graphql.DeviceMetricInput) (bool, error) {
+	return r.metric.RecordDeviceMetrics(ctx, inputs)
 }
 
 type deviceResolver struct {

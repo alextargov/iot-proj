@@ -1,0 +1,63 @@
+.device-metrics-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+
+    &__controls {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    &__metric-select {
+        min-width: 150px;
+    }
+
+    &__container {
+        position: relative;
+        width: 100%;
+        min-height: 200px;
+    }
+
+    &__loading,
+    &__empty {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        gap: 1rem;
+        color: rgba(0, 0, 0, 0.6);
+
+        mat-icon {
+            font-size: 48px;
+            width: 48px;
+            height: 48px;
+            color: rgba(0, 0, 0, 0.3);
+        }
+
+        span {
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        p {
+            font-size: 0.875rem;
+            margin: 0;
+            color: rgba(0, 0, 0, 0.5);
+        }
+    }
+}
+
+// Ensure ngx-charts fills container
+:host ::ng-deep {
+    ngx-charts-line-chart {
+        width: 100% !important;
+        height: 100% !important;
+    }
+
+    .ngx-charts {
+        width: 100% !important;
+    }
+}

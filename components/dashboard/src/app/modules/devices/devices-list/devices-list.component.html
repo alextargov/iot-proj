@@ -144,18 +144,19 @@
                     <mat-icon
                         class="device-list__table-definition-actions-duplicate"
                         matTooltip="Duplicate"
-                        (click)="onDuplicate(element)"
+                        (click)="$event.stopPropagation(); onDuplicate(element)"
                         >content_copy</mat-icon
                     >
                     <mat-icon
                         class="device-list__table-definition-actions-edit"
                         matTooltip="Edit"
+                        (click)="$event.stopPropagation()"
                         >edit</mat-icon
                     >
                     <mat-icon
                         class="device-list__table-definition-actions-delete"
                         matTooltip="Delete"
-                        (click)="onDelete(element)"
+                        (click)="$event.stopPropagation(); onDelete(element)"
                         >delete</mat-icon
                     >
                 </div>
@@ -163,7 +164,7 @@
         </ng-container>
 
         <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns" (click)="onRowClick(row)" class="device-list__clickable-row"></tr>
 
         <tr class="mat-row" *matNoDataRow>
             <td class="mat-cell device-list__empty" [attr.colspan]="displayedColumns.length">

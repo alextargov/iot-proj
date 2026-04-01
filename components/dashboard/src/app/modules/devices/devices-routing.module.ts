@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { DevicesListComponent } from './devices-list/devices-list.component';
 import { DeviceCreateComponent } from './device-create/device-create.component';
+import { DeviceDetailComponent } from './device-detail/device-detail.component';
 import { AuthGuard } from '../../shared/guards/auth.guard';
 
 const routes: Routes = [
@@ -17,10 +18,10 @@ const routes: Routes = [
                 pathMatch: 'full',
                 component: DeviceCreateComponent,
             },
-            // {
-            //   path: ':id',
-            //   component: WidgetDetailsComponent,
-            // }
+            {
+                path: ':id',
+                component: DeviceDetailComponent,
+            },
         ],
         canActivate: [AuthGuard],
     },

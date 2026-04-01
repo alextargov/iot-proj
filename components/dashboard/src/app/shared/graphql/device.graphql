@@ -43,6 +43,12 @@ query GetAllDevices {
     }
 }
 
+query GetDevice($id: ID!) {
+    device(id: $id) {
+        ...DeviceInfo
+    }
+}
+
 query GetDevicesPage($first: Int, $after: PageCursor) {
     devicesPage(first: $first, after: $after) {
         data {

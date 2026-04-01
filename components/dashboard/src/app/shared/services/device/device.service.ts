@@ -27,12 +27,59 @@ const TestDeviceConnectionDocument = gql`
     }
 `;
 
+const GetDeviceDocument = gql`
+    query GetDevice($id: ID!) {
+        device(id: $id) {
+            id
+            name
+            description
+            status
+            tenantId
+            auth {
+                credentialForDevice {
+                    ... on BasicCredentialData {
+                        username
+                        password
+                    }
+                    ... on OAuthCredentialData {
+                        clientId
+                        clientSecret
+                        url
+                    }
+                    ... on CertificateOAuthCredentialData {
+                        clientId
+                        certificate
+                        url
+                    }
+                    ... on BearerTokenCredentialData {
+                        token
+                    }
+                }
+                credentialForService
+            }
+            host {
+                id
+                url
+                turnOnEndpoint
+                turnOffEndpoint
+            }
+            tags
+            createdAt
+            updatedAt
+        }
+    }
+`;
+
 interface GenerateDeviceTokenMutation {
     generateDeviceToken: string;
 }
 
 interface TestDeviceConnectionQuery {
     testDeviceConnection: boolean;
+}
+
+interface GetDeviceQuery {
+    device: DeviceInfoFragment | null;
 }
 
 @Injectable({
@@ -81,6 +128,16 @@ export class DeviceService {
         return this.getAllDevicesGql
             .fetch({ fetchPolicy: 'network-only' })
             .pipe(map((res) => (res.data?.devices ?? []) as DeviceInfoFragment[]));
+    }
+
+    public getDevice(id: string): Observable<DeviceInfoFragment | null> {
+        return this.apollo
+            .query<GetDeviceQuery>({
+                query: GetDeviceDocument,
+                variables: { id },
+                fetchPolicy: 'network-only',
+            })
+            .pipe(map((res) => res.data?.device ?? null));
     }
 
     public createDevice(

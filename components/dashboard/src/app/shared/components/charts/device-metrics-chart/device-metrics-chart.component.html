@@ -1,0 +1,46 @@
+<div class="device-metrics-chart">
+    <div class="device-metrics-chart__controls">
+        <mat-button-toggle-group
+            [value]="selectedTimeRange"
+            (change)="onTimeRangeChange($any($event).value)"
+            aria-label="Time range"
+        >
+            <mat-button-toggle value="hour">Last Hour</mat-button-toggle>
+            <mat-button-toggle value="day">Last 24h</mat-button-toggle>
+            <mat-button-toggle value="week">Last Week</mat-button-toggle>
+        </mat-button-toggle-group>
+
+        @if (availableMetrics.length > 1) {
+            <mat-form-field appearance="outline" class="device-metrics-chart__metric-select">
+                <mat-label>Metric</mat-label>
+                <mat-select [(value)]="selectedMetric" (selectionChange)="onMetricChange()">
+                    <mat-option value="">All Metrics</mat-option>
+                    @for (metric of availableMetrics; track metric) {
+                        <mat-option [value]="metric">{{ metric }}</mat-option>
+                    }
+                </mat-select>
+            </mat-form-field>
+        }
+    </div>
+
+    <div class="device-metrics-chart__container" [style.height.px]="height">
+        @if (isLoading) {
+            <div class="device-metrics-chart__loading">
+                <mat-spinner diameter="40"></mat-spinner>
+                <span>Loading metrics...</span>
+            </div>
+        } @else if (!hasData) {
+            <div class="device-metrics-chart__empty">
+                <mat-icon>show_chart</mat-icon>
+                <span>No metrics data available</span>
+                <p>Metrics will appear here once the device starts sending data.</p>
+            </div>
+        } @else {
+            <canvas baseChart
+                [data]="lineChartData"
+                [options]="lineChartOptions"
+                type="line">
+            </canvas>
+        }
+    </div>
+</div>

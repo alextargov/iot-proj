@@ -7,6 +7,7 @@ import (
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/k8s"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/model"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/logger"
+	"github.com/alextargov/iot-proj/components/orchestrator/pkg/persistence"
 	"github.com/robfig/cron/v3"
 )
 
@@ -37,8 +38,16 @@ func New(widgetSvc WidgetService, k8sSched k8s.Scheduler) *WidgetScheduler {
 }
 
 // Start loads existing scheduled widgets and starts the cron scheduler
-func (s *WidgetScheduler) Start(ctx context.Context) error {
+func (s *WidgetScheduler) Start(ctx context.Context, transact persistence.Transactioner) error {
 	logger.C(ctx).Info("Starting widget scheduler...")
+
+	tx, err := transact.Begin()
+	if err != nil {
+		return err
+	}
+	defer transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
 
 	// Load existing scheduled widgets from DB
 	widgets, err := s.widgetSvc.GetScheduledWidgets(ctx)
@@ -53,6 +62,10 @@ func (s *WidgetScheduler) Start(ctx context.Context) error {
 			}
 		}
 		logger.C(ctx).Infof("Loaded %d scheduled widgets", len(widgets))
+	}
+
+	if err = tx.Commit(); err != nil {
+		return err
 	}
 
 	s.cron.Start()

@@ -48,6 +48,16 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	AggregatedMetric struct {
+		Count      func(childComplexity int) int
+		EndTime    func(childComplexity int) int
+		Max        func(childComplexity int) int
+		MetricName func(childComplexity int) int
+		Min        func(childComplexity int) int
+		StartTime  func(childComplexity int) int
+		Value      func(childComplexity int) int
+	}
+
 	Auth struct {
 		AccessStrategy       func(childComplexity int) int
 		CredentialForDevice  func(childComplexity int) int
@@ -91,6 +101,15 @@ type ComplexityRoot struct {
 		UpdatedAt   func(childComplexity int) int
 	}
 
+	DeviceMetric struct {
+		DeviceID    func(childComplexity int) int
+		ID          func(childComplexity int) int
+		MetricName  func(childComplexity int) int
+		MetricValue func(childComplexity int) int
+		RecordedAt  func(childComplexity int) int
+		Unit        func(childComplexity int) int
+	}
+
 	DevicePage struct {
 		Data       func(childComplexity int) int
 		PageInfo   func(childComplexity int) int
@@ -104,6 +123,12 @@ type ComplexityRoot struct {
 		URL             func(childComplexity int) int
 	}
 
+	MetricSeries struct {
+		DataPoints func(childComplexity int) int
+		MetricName func(childComplexity int) int
+		Unit       func(childComplexity int) int
+	}
+
 	Mutation struct {
 		CreateDataModel     func(childComplexity int, input DataModelInput) int
 		CreateDevice        func(childComplexity int, input DeviceInput) int
@@ -112,6 +137,8 @@ type ComplexityRoot struct {
 		DeleteDevice        func(childComplexity int, id string) int
 		DeleteWidget        func(childComplexity int, id string) int
 		GenerateDeviceToken func(childComplexity int) int
+		RecordDeviceMetric  func(childComplexity int, input DeviceMetricInput) int
+		RecordDeviceMetrics func(childComplexity int, inputs []*DeviceMetricInput) int
 		SetDeviceOperation  func(childComplexity int, id string, op OperationType) int
 		SetOperation        func(childComplexity int, op OperationType, data any) int
 		UpdateDataModel     func(childComplexity int, id string, input DataModelInput) int
@@ -132,7 +159,10 @@ type ComplexityRoot struct {
 	Query struct {
 		DataModels               func(childComplexity int) int
 		Device                   func(childComplexity int, id string) int
+		DeviceAggregatedMetrics  func(childComplexity int, deviceID string, aggregation AggregationType, filter *MetricFilterInput) int
 		DeviceByIDAndAggregation func(childComplexity int, id string, aggregation AggregationType) int
+		DeviceMetrics            func(childComplexity int, deviceID string, filter *MetricFilterInput) int
+		DeviceMetricsSeries      func(childComplexity int, deviceID string, metricNames []string, filter *MetricFilterInput) int
 		Devices                  func(childComplexity int) int
 		DevicesPage              func(childComplexity int, first *int, after *string) int
 		TestDeviceConnection     func(childComplexity int, url string) int
@@ -182,6 +212,8 @@ type MutationResolver interface {
 	DeleteDataModel(ctx context.Context, id string) (string, error)
 	UpdateDataModel(ctx context.Context, id string, input DataModelInput) (*DataModel, error)
 	GenerateDeviceToken(ctx context.Context) (string, error)
+	RecordDeviceMetric(ctx context.Context, input DeviceMetricInput) (*DeviceMetric, error)
+	RecordDeviceMetrics(ctx context.Context, inputs []*DeviceMetricInput) (bool, error)
 }
 type QueryResolver interface {
 	Devices(ctx context.Context) ([]*Device, error)
@@ -193,6 +225,9 @@ type QueryResolver interface {
 	Widget(ctx context.Context, id string) (*Widget, error)
 	DataModels(ctx context.Context) ([]*DataModel, error)
 	TestDeviceConnection(ctx context.Context, url string) (bool, error)
+	DeviceMetrics(ctx context.Context, deviceID string, filter *MetricFilterInput) ([]*DeviceMetric, error)
+	DeviceMetricsSeries(ctx context.Context, deviceID string, metricNames []string, filter *MetricFilterInput) ([]*MetricSeries, error)
+	DeviceAggregatedMetrics(ctx context.Context, deviceID string, aggregation AggregationType, filter *MetricFilterInput) (*AggregatedMetric, error)
 }
 
 type executableSchema struct {
@@ -213,6 +248,55 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 	ec := executionContext{nil, e, 0, 0, nil}
 	_ = ec
 	switch typeName + "." + field {
+
+	case "AggregatedMetric.count":
+		if e.complexity.AggregatedMetric.Count == nil {
+			break
+		}
+
+		return e.complexity.AggregatedMetric.Count(childComplexity), true
+
+	case "AggregatedMetric.endTime":
+		if e.complexity.AggregatedMetric.EndTime == nil {
+			break
+		}
+
+		return e.complexity.AggregatedMetric.EndTime(childComplexity), true
+
+	case "AggregatedMetric.max":
+		if e.complexity.AggregatedMetric.Max == nil {
+			break
+		}
+
+		return e.complexity.AggregatedMetric.Max(childComplexity), true
+
+	case "AggregatedMetric.metricName":
+		if e.complexity.AggregatedMetric.MetricName == nil {
+			break
+		}
+
+		return e.complexity.AggregatedMetric.MetricName(childComplexity), true
+
+	case "AggregatedMetric.min":
+		if e.complexity.AggregatedMetric.Min == nil {
+			break
+		}
+
+		return e.complexity.AggregatedMetric.Min(childComplexity), true
+
+	case "AggregatedMetric.startTime":
+		if e.complexity.AggregatedMetric.StartTime == nil {
+			break
+		}
+
+		return e.complexity.AggregatedMetric.StartTime(childComplexity), true
+
+	case "AggregatedMetric.value":
+		if e.complexity.AggregatedMetric.Value == nil {
+			break
+		}
+
+		return e.complexity.AggregatedMetric.Value(childComplexity), true
 
 	case "Auth.accessStrategy":
 		if e.complexity.Auth.AccessStrategy == nil {
@@ -389,6 +473,48 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Device.UpdatedAt(childComplexity), true
 
+	case "DeviceMetric.deviceId":
+		if e.complexity.DeviceMetric.DeviceID == nil {
+			break
+		}
+
+		return e.complexity.DeviceMetric.DeviceID(childComplexity), true
+
+	case "DeviceMetric.id":
+		if e.complexity.DeviceMetric.ID == nil {
+			break
+		}
+
+		return e.complexity.DeviceMetric.ID(childComplexity), true
+
+	case "DeviceMetric.metricName":
+		if e.complexity.DeviceMetric.MetricName == nil {
+			break
+		}
+
+		return e.complexity.DeviceMetric.MetricName(childComplexity), true
+
+	case "DeviceMetric.metricValue":
+		if e.complexity.DeviceMetric.MetricValue == nil {
+			break
+		}
+
+		return e.complexity.DeviceMetric.MetricValue(childComplexity), true
+
+	case "DeviceMetric.recordedAt":
+		if e.complexity.DeviceMetric.RecordedAt == nil {
+			break
+		}
+
+		return e.complexity.DeviceMetric.RecordedAt(childComplexity), true
+
+	case "DeviceMetric.unit":
+		if e.complexity.DeviceMetric.Unit == nil {
+			break
+		}
+
+		return e.complexity.DeviceMetric.Unit(childComplexity), true
+
 	case "DevicePage.data":
 		if e.complexity.DevicePage.Data == nil {
 			break
@@ -437,6 +563,27 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Host.URL(childComplexity), true
+
+	case "MetricSeries.dataPoints":
+		if e.complexity.MetricSeries.DataPoints == nil {
+			break
+		}
+
+		return e.complexity.MetricSeries.DataPoints(childComplexity), true
+
+	case "MetricSeries.metricName":
+		if e.complexity.MetricSeries.MetricName == nil {
+			break
+		}
+
+		return e.complexity.MetricSeries.MetricName(childComplexity), true
+
+	case "MetricSeries.unit":
+		if e.complexity.MetricSeries.Unit == nil {
+			break
+		}
+
+		return e.complexity.MetricSeries.Unit(childComplexity), true
 
 	case "Mutation.createDataModel":
 		if e.complexity.Mutation.CreateDataModel == nil {
@@ -516,6 +663,30 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.GenerateDeviceToken(childComplexity), true
+
+	case "Mutation.recordDeviceMetric":
+		if e.complexity.Mutation.RecordDeviceMetric == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_recordDeviceMetric_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.RecordDeviceMetric(childComplexity, args["input"].(DeviceMetricInput)), true
+
+	case "Mutation.recordDeviceMetrics":
+		if e.complexity.Mutation.RecordDeviceMetrics == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_recordDeviceMetrics_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.RecordDeviceMetrics(childComplexity, args["inputs"].([]*DeviceMetricInput)), true
 
 	case "Mutation.setDeviceOperation":
 		if e.complexity.Mutation.SetDeviceOperation == nil {
@@ -614,6 +785,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Query.Device(childComplexity, args["id"].(string)), true
 
+	case "Query.deviceAggregatedMetrics":
+		if e.complexity.Query.DeviceAggregatedMetrics == nil {
+			break
+		}
+
+		args, err := ec.field_Query_deviceAggregatedMetrics_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.DeviceAggregatedMetrics(childComplexity, args["deviceId"].(string), args["aggregation"].(AggregationType), args["filter"].(*MetricFilterInput)), true
+
 	case "Query.deviceByIdAndAggregation":
 		if e.complexity.Query.DeviceByIDAndAggregation == nil {
 			break
@@ -625,6 +808,30 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.DeviceByIDAndAggregation(childComplexity, args["id"].(string), args["aggregation"].(AggregationType)), true
+
+	case "Query.deviceMetrics":
+		if e.complexity.Query.DeviceMetrics == nil {
+			break
+		}
+
+		args, err := ec.field_Query_deviceMetrics_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.DeviceMetrics(childComplexity, args["deviceId"].(string), args["filter"].(*MetricFilterInput)), true
+
+	case "Query.deviceMetricsSeries":
+		if e.complexity.Query.DeviceMetricsSeries == nil {
+			break
+		}
+
+		args, err := ec.field_Query_deviceMetricsSeries_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.DeviceMetricsSeries(childComplexity, args["deviceId"].(string), args["metricNames"].([]string), args["filter"].(*MetricFilterInput)), true
 
 	case "Query.devices":
 		if e.complexity.Query.Devices == nil {
@@ -821,7 +1028,9 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCredentialDataInput,
 		ec.unmarshalInputDataModelInput,
 		ec.unmarshalInputDeviceInput,
+		ec.unmarshalInputDeviceMetricInput,
 		ec.unmarshalInputHostInput,
+		ec.unmarshalInputMetricFilterInput,
 		ec.unmarshalInputOAuthCredentialDataInput,
 		ec.unmarshalInputTokenCredentialDataInput,
 		ec.unmarshalInputWidgetInput,
@@ -1127,6 +1336,62 @@ func (ec *executionContext) field_Mutation_deleteWidget_argsID(
 	return zeroVal, nil
 }
 
+func (ec *executionContext) field_Mutation_recordDeviceMetric_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_recordDeviceMetric_argsInput(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_recordDeviceMetric_argsInput(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (DeviceMetricInput, error) {
+	if _, ok := rawArgs["input"]; !ok {
+		var zeroVal DeviceMetricInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+	if tmp, ok := rawArgs["input"]; ok {
+		return ec.unmarshalNDeviceMetricInput2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDeviceMetricInput(ctx, tmp)
+	}
+
+	var zeroVal DeviceMetricInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_recordDeviceMetrics_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_recordDeviceMetrics_argsInputs(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["inputs"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_recordDeviceMetrics_argsInputs(
+	ctx context.Context,
+	rawArgs map[string]any,
+) ([]*DeviceMetricInput, error) {
+	if _, ok := rawArgs["inputs"]; !ok {
+		var zeroVal []*DeviceMetricInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("inputs"))
+	if tmp, ok := rawArgs["inputs"]; ok {
+		return ec.unmarshalNDeviceMetricInput2ᚕᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDeviceMetricInputᚄ(ctx, tmp)
+	}
+
+	var zeroVal []*DeviceMetricInput
+	return zeroVal, nil
+}
+
 func (ec *executionContext) field_Mutation_setDeviceOperation_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -1308,6 +1573,80 @@ func (ec *executionContext) field_Query___type_argsName(
 	return zeroVal, nil
 }
 
+func (ec *executionContext) field_Query_deviceAggregatedMetrics_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Query_deviceAggregatedMetrics_argsDeviceID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["deviceId"] = arg0
+	arg1, err := ec.field_Query_deviceAggregatedMetrics_argsAggregation(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["aggregation"] = arg1
+	arg2, err := ec.field_Query_deviceAggregatedMetrics_argsFilter(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["filter"] = arg2
+	return args, nil
+}
+func (ec *executionContext) field_Query_deviceAggregatedMetrics_argsDeviceID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["deviceId"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("deviceId"))
+	if tmp, ok := rawArgs["deviceId"]; ok {
+		return ec.unmarshalNID2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_deviceAggregatedMetrics_argsAggregation(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (AggregationType, error) {
+	if _, ok := rawArgs["aggregation"]; !ok {
+		var zeroVal AggregationType
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("aggregation"))
+	if tmp, ok := rawArgs["aggregation"]; ok {
+		return ec.unmarshalNAggregationType2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐAggregationType(ctx, tmp)
+	}
+
+	var zeroVal AggregationType
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_deviceAggregatedMetrics_argsFilter(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*MetricFilterInput, error) {
+	if _, ok := rawArgs["filter"]; !ok {
+		var zeroVal *MetricFilterInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+	if tmp, ok := rawArgs["filter"]; ok {
+		return ec.unmarshalOMetricFilterInput2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐMetricFilterInput(ctx, tmp)
+	}
+
+	var zeroVal *MetricFilterInput
+	return zeroVal, nil
+}
+
 func (ec *executionContext) field_Query_deviceByIdAndAggregation_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -1356,6 +1695,131 @@ func (ec *executionContext) field_Query_deviceByIdAndAggregation_argsAggregation
 	}
 
 	var zeroVal AggregationType
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_deviceMetricsSeries_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Query_deviceMetricsSeries_argsDeviceID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["deviceId"] = arg0
+	arg1, err := ec.field_Query_deviceMetricsSeries_argsMetricNames(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["metricNames"] = arg1
+	arg2, err := ec.field_Query_deviceMetricsSeries_argsFilter(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["filter"] = arg2
+	return args, nil
+}
+func (ec *executionContext) field_Query_deviceMetricsSeries_argsDeviceID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["deviceId"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("deviceId"))
+	if tmp, ok := rawArgs["deviceId"]; ok {
+		return ec.unmarshalNID2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_deviceMetricsSeries_argsMetricNames(
+	ctx context.Context,
+	rawArgs map[string]any,
+) ([]string, error) {
+	if _, ok := rawArgs["metricNames"]; !ok {
+		var zeroVal []string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("metricNames"))
+	if tmp, ok := rawArgs["metricNames"]; ok {
+		return ec.unmarshalOString2ᚕstringᚄ(ctx, tmp)
+	}
+
+	var zeroVal []string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_deviceMetricsSeries_argsFilter(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*MetricFilterInput, error) {
+	if _, ok := rawArgs["filter"]; !ok {
+		var zeroVal *MetricFilterInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+	if tmp, ok := rawArgs["filter"]; ok {
+		return ec.unmarshalOMetricFilterInput2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐMetricFilterInput(ctx, tmp)
+	}
+
+	var zeroVal *MetricFilterInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_deviceMetrics_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Query_deviceMetrics_argsDeviceID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["deviceId"] = arg0
+	arg1, err := ec.field_Query_deviceMetrics_argsFilter(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["filter"] = arg1
+	return args, nil
+}
+func (ec *executionContext) field_Query_deviceMetrics_argsDeviceID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["deviceId"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("deviceId"))
+	if tmp, ok := rawArgs["deviceId"]; ok {
+		return ec.unmarshalNID2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_deviceMetrics_argsFilter(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*MetricFilterInput, error) {
+	if _, ok := rawArgs["filter"]; !ok {
+		var zeroVal *MetricFilterInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+	if tmp, ok := rawArgs["filter"]; ok {
+		return ec.unmarshalOMetricFilterInput2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐMetricFilterInput(ctx, tmp)
+	}
+
+	var zeroVal *MetricFilterInput
 	return zeroVal, nil
 }
 
@@ -1664,6 +2128,314 @@ func (ec *executionContext) field___Type_fields_argsIncludeDeprecated(
 // endregion ************************** directives.gotpl **************************
 
 // region    **************************** field.gotpl *****************************
+
+func (ec *executionContext) _AggregatedMetric_metricName(ctx context.Context, field graphql.CollectedField, obj *AggregatedMetric) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AggregatedMetric_metricName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MetricName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AggregatedMetric_metricName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AggregatedMetric",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AggregatedMetric_value(ctx context.Context, field graphql.CollectedField, obj *AggregatedMetric) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AggregatedMetric_value(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Value, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AggregatedMetric_value(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AggregatedMetric",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AggregatedMetric_count(ctx context.Context, field graphql.CollectedField, obj *AggregatedMetric) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AggregatedMetric_count(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Count, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AggregatedMetric_count(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AggregatedMetric",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AggregatedMetric_min(ctx context.Context, field graphql.CollectedField, obj *AggregatedMetric) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AggregatedMetric_min(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Min, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AggregatedMetric_min(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AggregatedMetric",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AggregatedMetric_max(ctx context.Context, field graphql.CollectedField, obj *AggregatedMetric) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AggregatedMetric_max(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Max, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AggregatedMetric_max(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AggregatedMetric",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AggregatedMetric_startTime(ctx context.Context, field graphql.CollectedField, obj *AggregatedMetric) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AggregatedMetric_startTime(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.StartTime, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(Timestamp)
+	fc.Result = res
+	return ec.marshalNTimestamp2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AggregatedMetric_startTime(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AggregatedMetric",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Timestamp does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AggregatedMetric_endTime(ctx context.Context, field graphql.CollectedField, obj *AggregatedMetric) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AggregatedMetric_endTime(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EndTime, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(Timestamp)
+	fc.Result = res
+	return ec.marshalNTimestamp2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AggregatedMetric_endTime(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AggregatedMetric",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Timestamp does not have child fields")
+		},
+	}
+	return fc, nil
+}
 
 func (ec *executionContext) _Auth_credentialForDevice(ctx context.Context, field graphql.CollectedField, obj *Auth) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Auth_credentialForDevice(ctx, field)
@@ -2750,6 +3522,267 @@ func (ec *executionContext) fieldContext_Device_updatedAt(_ context.Context, fie
 	return fc, nil
 }
 
+func (ec *executionContext) _DeviceMetric_id(ctx context.Context, field graphql.CollectedField, obj *DeviceMetric) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DeviceMetric_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DeviceMetric_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DeviceMetric",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DeviceMetric_deviceId(ctx context.Context, field graphql.CollectedField, obj *DeviceMetric) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DeviceMetric_deviceId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DeviceID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DeviceMetric_deviceId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DeviceMetric",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DeviceMetric_metricName(ctx context.Context, field graphql.CollectedField, obj *DeviceMetric) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DeviceMetric_metricName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MetricName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DeviceMetric_metricName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DeviceMetric",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DeviceMetric_metricValue(ctx context.Context, field graphql.CollectedField, obj *DeviceMetric) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DeviceMetric_metricValue(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MetricValue, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DeviceMetric_metricValue(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DeviceMetric",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DeviceMetric_unit(ctx context.Context, field graphql.CollectedField, obj *DeviceMetric) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DeviceMetric_unit(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Unit, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DeviceMetric_unit(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DeviceMetric",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DeviceMetric_recordedAt(ctx context.Context, field graphql.CollectedField, obj *DeviceMetric) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DeviceMetric_recordedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RecordedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(Timestamp)
+	fc.Result = res
+	return ec.marshalNTimestamp2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DeviceMetric_recordedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DeviceMetric",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Timestamp does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _DevicePage_data(ctx context.Context, field graphql.CollectedField, obj *DevicePage) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DevicePage_data(ctx, field)
 	if err != nil {
@@ -3077,6 +4110,149 @@ func (ec *executionContext) fieldContext_Host_turnOffEndpoint(_ context.Context,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MetricSeries_metricName(ctx context.Context, field graphql.CollectedField, obj *MetricSeries) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MetricSeries_metricName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MetricName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MetricSeries_metricName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MetricSeries",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MetricSeries_unit(ctx context.Context, field graphql.CollectedField, obj *MetricSeries) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MetricSeries_unit(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Unit, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MetricSeries_unit(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MetricSeries",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MetricSeries_dataPoints(ctx context.Context, field graphql.CollectedField, obj *MetricSeries) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MetricSeries_dataPoints(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DataPoints, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*DeviceMetric)
+	fc.Result = res
+	return ec.marshalNDeviceMetric2ᚕᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDeviceMetricᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MetricSeries_dataPoints(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MetricSeries",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_DeviceMetric_id(ctx, field)
+			case "deviceId":
+				return ec.fieldContext_DeviceMetric_deviceId(ctx, field)
+			case "metricName":
+				return ec.fieldContext_DeviceMetric_metricName(ctx, field)
+			case "metricValue":
+				return ec.fieldContext_DeviceMetric_metricValue(ctx, field)
+			case "unit":
+				return ec.fieldContext_DeviceMetric_unit(ctx, field)
+			case "recordedAt":
+				return ec.fieldContext_DeviceMetric_recordedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DeviceMetric", field.Name)
 		},
 	}
 	return fc, nil
@@ -3721,6 +4897,130 @@ func (ec *executionContext) fieldContext_Mutation_generateDeviceToken(_ context.
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
 		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_recordDeviceMetric(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_recordDeviceMetric(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().RecordDeviceMetric(rctx, fc.Args["input"].(DeviceMetricInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*DeviceMetric)
+	fc.Result = res
+	return ec.marshalNDeviceMetric2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDeviceMetric(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_recordDeviceMetric(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_DeviceMetric_id(ctx, field)
+			case "deviceId":
+				return ec.fieldContext_DeviceMetric_deviceId(ctx, field)
+			case "metricName":
+				return ec.fieldContext_DeviceMetric_metricName(ctx, field)
+			case "metricValue":
+				return ec.fieldContext_DeviceMetric_metricValue(ctx, field)
+			case "unit":
+				return ec.fieldContext_DeviceMetric_unit(ctx, field)
+			case "recordedAt":
+				return ec.fieldContext_DeviceMetric_recordedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DeviceMetric", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_recordDeviceMetric_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_recordDeviceMetrics(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_recordDeviceMetrics(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().RecordDeviceMetrics(rctx, fc.Args["inputs"].([]*DeviceMetricInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_recordDeviceMetrics(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_recordDeviceMetrics_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -4584,6 +5884,206 @@ func (ec *executionContext) fieldContext_Query_testDeviceConnection(ctx context.
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_testDeviceConnection_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_deviceMetrics(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_deviceMetrics(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().DeviceMetrics(rctx, fc.Args["deviceId"].(string), fc.Args["filter"].(*MetricFilterInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*DeviceMetric)
+	fc.Result = res
+	return ec.marshalNDeviceMetric2ᚕᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDeviceMetricᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_deviceMetrics(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_DeviceMetric_id(ctx, field)
+			case "deviceId":
+				return ec.fieldContext_DeviceMetric_deviceId(ctx, field)
+			case "metricName":
+				return ec.fieldContext_DeviceMetric_metricName(ctx, field)
+			case "metricValue":
+				return ec.fieldContext_DeviceMetric_metricValue(ctx, field)
+			case "unit":
+				return ec.fieldContext_DeviceMetric_unit(ctx, field)
+			case "recordedAt":
+				return ec.fieldContext_DeviceMetric_recordedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DeviceMetric", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_deviceMetrics_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_deviceMetricsSeries(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_deviceMetricsSeries(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().DeviceMetricsSeries(rctx, fc.Args["deviceId"].(string), fc.Args["metricNames"].([]string), fc.Args["filter"].(*MetricFilterInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*MetricSeries)
+	fc.Result = res
+	return ec.marshalNMetricSeries2ᚕᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐMetricSeriesᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_deviceMetricsSeries(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "metricName":
+				return ec.fieldContext_MetricSeries_metricName(ctx, field)
+			case "unit":
+				return ec.fieldContext_MetricSeries_unit(ctx, field)
+			case "dataPoints":
+				return ec.fieldContext_MetricSeries_dataPoints(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MetricSeries", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_deviceMetricsSeries_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_deviceAggregatedMetrics(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_deviceAggregatedMetrics(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().DeviceAggregatedMetrics(rctx, fc.Args["deviceId"].(string), fc.Args["aggregation"].(AggregationType), fc.Args["filter"].(*MetricFilterInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*AggregatedMetric)
+	fc.Result = res
+	return ec.marshalOAggregatedMetric2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐAggregatedMetric(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_deviceAggregatedMetrics(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "metricName":
+				return ec.fieldContext_AggregatedMetric_metricName(ctx, field)
+			case "value":
+				return ec.fieldContext_AggregatedMetric_value(ctx, field)
+			case "count":
+				return ec.fieldContext_AggregatedMetric_count(ctx, field)
+			case "min":
+				return ec.fieldContext_AggregatedMetric_min(ctx, field)
+			case "max":
+				return ec.fieldContext_AggregatedMetric_max(ctx, field)
+			case "startTime":
+				return ec.fieldContext_AggregatedMetric_startTime(ctx, field)
+			case "endTime":
+				return ec.fieldContext_AggregatedMetric_endTime(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AggregatedMetric", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_deviceAggregatedMetrics_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -7711,6 +9211,61 @@ func (ec *executionContext) unmarshalInputDeviceInput(ctx context.Context, obj a
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputDeviceMetricInput(ctx context.Context, obj any) (DeviceMetricInput, error) {
+	var it DeviceMetricInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"deviceId", "metricName", "metricValue", "unit", "recordedAt"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "deviceId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("deviceId"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DeviceID = data
+		case "metricName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("metricName"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MetricName = data
+		case "metricValue":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("metricValue"))
+			data, err := ec.unmarshalNFloat2float64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MetricValue = data
+		case "unit":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("unit"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Unit = data
+		case "recordedAt":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("recordedAt"))
+			data, err := ec.unmarshalOTimestamp2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐTimestamp(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RecordedAt = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputHostInput(ctx context.Context, obj any) (HostInput, error) {
 	var it HostInput
 	asMap := map[string]any{}
@@ -7746,6 +9301,54 @@ func (ec *executionContext) unmarshalInputHostInput(ctx context.Context, obj any
 				return it, err
 			}
 			it.TurnOffEndpoint = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputMetricFilterInput(ctx context.Context, obj any) (MetricFilterInput, error) {
+	var it MetricFilterInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"metricName", "startTime", "endTime", "limit"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "metricName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("metricName"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MetricName = data
+		case "startTime":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("startTime"))
+			data, err := ec.unmarshalOTimestamp2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐTimestamp(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.StartTime = data
+		case "endTime":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("endTime"))
+			data, err := ec.unmarshalOTimestamp2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐTimestamp(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EndTime = data
+		case "limit":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("limit"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Limit = data
 		}
 	}
 
@@ -7956,6 +9559,75 @@ func (ec *executionContext) _Pageable(ctx context.Context, sel ast.SelectionSet,
 // endregion ************************** interface.gotpl ***************************
 
 // region    **************************** object.gotpl ****************************
+
+var aggregatedMetricImplementors = []string{"AggregatedMetric"}
+
+func (ec *executionContext) _AggregatedMetric(ctx context.Context, sel ast.SelectionSet, obj *AggregatedMetric) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, aggregatedMetricImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AggregatedMetric")
+		case "metricName":
+			out.Values[i] = ec._AggregatedMetric_metricName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "value":
+			out.Values[i] = ec._AggregatedMetric_value(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "count":
+			out.Values[i] = ec._AggregatedMetric_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "min":
+			out.Values[i] = ec._AggregatedMetric_min(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "max":
+			out.Values[i] = ec._AggregatedMetric_max(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "startTime":
+			out.Values[i] = ec._AggregatedMetric_startTime(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "endTime":
+			out.Values[i] = ec._AggregatedMetric_endTime(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
 
 var authImplementors = []string{"Auth"}
 
@@ -8284,6 +9956,67 @@ func (ec *executionContext) _Device(ctx context.Context, sel ast.SelectionSet, o
 	return out
 }
 
+var deviceMetricImplementors = []string{"DeviceMetric"}
+
+func (ec *executionContext) _DeviceMetric(ctx context.Context, sel ast.SelectionSet, obj *DeviceMetric) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, deviceMetricImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("DeviceMetric")
+		case "id":
+			out.Values[i] = ec._DeviceMetric_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deviceId":
+			out.Values[i] = ec._DeviceMetric_deviceId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "metricName":
+			out.Values[i] = ec._DeviceMetric_metricName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "metricValue":
+			out.Values[i] = ec._DeviceMetric_metricValue(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "unit":
+			out.Values[i] = ec._DeviceMetric_unit(ctx, field, obj)
+		case "recordedAt":
+			out.Values[i] = ec._DeviceMetric_recordedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var devicePageImplementors = []string{"DevicePage", "Pageable"}
 
 func (ec *executionContext) _DevicePage(ctx context.Context, sel ast.SelectionSet, obj *DevicePage) graphql.Marshaler {
@@ -8358,6 +10091,52 @@ func (ec *executionContext) _Host(ctx context.Context, sel ast.SelectionSet, obj
 			out.Values[i] = ec._Host_turnOnEndpoint(ctx, field, obj)
 		case "turnOffEndpoint":
 			out.Values[i] = ec._Host_turnOffEndpoint(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var metricSeriesImplementors = []string{"MetricSeries"}
+
+func (ec *executionContext) _MetricSeries(ctx context.Context, sel ast.SelectionSet, obj *MetricSeries) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, metricSeriesImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MetricSeries")
+		case "metricName":
+			out.Values[i] = ec._MetricSeries_metricName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "unit":
+			out.Values[i] = ec._MetricSeries_unit(ctx, field, obj)
+		case "dataPoints":
+			out.Values[i] = ec._MetricSeries_dataPoints(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -8466,6 +10245,20 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "generateDeviceToken":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_generateDeviceToken(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "recordDeviceMetric":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_recordDeviceMetric(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "recordDeviceMetrics":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_recordDeviceMetrics(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -8790,6 +10583,69 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "deviceMetrics":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_deviceMetrics(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "deviceMetricsSeries":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_deviceMetricsSeries(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "deviceAggregatedMetrics":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_deviceAggregatedMetrics(ctx, field)
 				return res
 			}
 
@@ -9532,6 +11388,89 @@ func (ec *executionContext) unmarshalNDeviceInput2githubᚗcomᚋalextargovᚋio
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalNDeviceMetric2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDeviceMetric(ctx context.Context, sel ast.SelectionSet, v DeviceMetric) graphql.Marshaler {
+	return ec._DeviceMetric(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNDeviceMetric2ᚕᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDeviceMetricᚄ(ctx context.Context, sel ast.SelectionSet, v []*DeviceMetric) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNDeviceMetric2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDeviceMetric(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNDeviceMetric2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDeviceMetric(ctx context.Context, sel ast.SelectionSet, v *DeviceMetric) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._DeviceMetric(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNDeviceMetricInput2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDeviceMetricInput(ctx context.Context, v any) (DeviceMetricInput, error) {
+	res, err := ec.unmarshalInputDeviceMetricInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNDeviceMetricInput2ᚕᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDeviceMetricInputᚄ(ctx context.Context, v any) ([]*DeviceMetricInput, error) {
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*DeviceMetricInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNDeviceMetricInput2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDeviceMetricInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNDeviceMetricInput2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDeviceMetricInput(ctx context.Context, v any) (*DeviceMetricInput, error) {
+	res, err := ec.unmarshalInputDeviceMetricInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) marshalNDevicePage2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDevicePage(ctx context.Context, sel ast.SelectionSet, v DevicePage) graphql.Marshaler {
 	return ec._DevicePage(ctx, sel, &v)
 }
@@ -9554,6 +11493,22 @@ func (ec *executionContext) unmarshalNDeviceStatus2githubᚗcomᚋalextargovᚋi
 
 func (ec *executionContext) marshalNDeviceStatus2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDeviceStatus(ctx context.Context, sel ast.SelectionSet, v DeviceStatus) graphql.Marshaler {
 	return v
+}
+
+func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v any) (float64, error) {
+	res, err := graphql.UnmarshalFloatContext(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNFloat2float64(ctx context.Context, sel ast.SelectionSet, v float64) graphql.Marshaler {
+	_ = sel
+	res := graphql.MarshalFloatContext(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return graphql.WrapContextMarshaler(ctx, res)
 }
 
 func (ec *executionContext) unmarshalNID2string(ctx context.Context, v any) (string, error) {
@@ -9596,6 +11551,60 @@ func (ec *executionContext) unmarshalNJSON2githubᚗcomᚋalextargovᚋiotᚑpro
 
 func (ec *executionContext) marshalNJSON2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐJSON(ctx context.Context, sel ast.SelectionSet, v JSON) graphql.Marshaler {
 	return v
+}
+
+func (ec *executionContext) marshalNMetricSeries2ᚕᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐMetricSeriesᚄ(ctx context.Context, sel ast.SelectionSet, v []*MetricSeries) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNMetricSeries2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐMetricSeries(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNMetricSeries2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐMetricSeries(ctx context.Context, sel ast.SelectionSet, v *MetricSeries) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._MetricSeries(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNOperationType2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐOperationType(ctx context.Context, v any) (OperationType, error) {
@@ -9648,6 +11657,16 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNTimestamp2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐTimestamp(ctx context.Context, v any) (Timestamp, error) {
+	var res Timestamp
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNTimestamp2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐTimestamp(ctx context.Context, sel ast.SelectionSet, v Timestamp) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) marshalNWidget2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐWidget(ctx context.Context, sel ast.SelectionSet, v Widget) graphql.Marshaler {
@@ -10048,6 +12067,13 @@ func (ec *executionContext) marshalN__TypeKind2string(ctx context.Context, sel a
 	return res
 }
 
+func (ec *executionContext) marshalOAggregatedMetric2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐAggregatedMetric(ctx context.Context, sel ast.SelectionSet, v *AggregatedMetric) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._AggregatedMetric(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalOAny2interface(ctx context.Context, v any) (any, error) {
 	if v == nil {
 		return nil, nil
@@ -10187,6 +12213,14 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	_ = ctx
 	res := graphql.MarshalInt(*v)
 	return res
+}
+
+func (ec *executionContext) unmarshalOMetricFilterInput2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐMetricFilterInput(ctx context.Context, v any) (*MetricFilterInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputMetricFilterInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOOAuthCredentialDataInput2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐOAuthCredentialDataInput(ctx context.Context, v any) (*OAuthCredentialDataInput, error) {

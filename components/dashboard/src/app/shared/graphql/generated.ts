@@ -23,9 +23,25 @@ export type Scalars = {
   _FieldSet: { input: any; output: any; }
 };
 
+export type AggregatedMetric = {
+  __typename?: 'AggregatedMetric';
+  count: Scalars['Int']['output'];
+  endTime: Scalars['Timestamp']['output'];
+  max: Scalars['Float']['output'];
+  metricName: Scalars['String']['output'];
+  min: Scalars['Float']['output'];
+  startTime: Scalars['Timestamp']['output'];
+  value: Scalars['Float']['output'];
+};
+
 export enum AggregationType {
   Average = 'AVERAGE',
+  Count = 'COUNT',
+  LastDay = 'LAST_DAY',
+  LastHour = 'LAST_HOUR',
   LastWeek = 'LAST_WEEK',
+  Max = 'MAX',
+  Min = 'MIN',
   Sum = 'SUM'
 }
 
@@ -120,6 +136,24 @@ export type DeviceInput = {
   tags?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
+export type DeviceMetric = {
+  __typename?: 'DeviceMetric';
+  deviceId: Scalars['ID']['output'];
+  id: Scalars['ID']['output'];
+  metricName: Scalars['String']['output'];
+  metricValue: Scalars['Float']['output'];
+  recordedAt: Scalars['Timestamp']['output'];
+  unit?: Maybe<Scalars['String']['output']>;
+};
+
+export type DeviceMetricInput = {
+  deviceId: Scalars['ID']['input'];
+  metricName: Scalars['String']['input'];
+  metricValue: Scalars['Float']['input'];
+  recordedAt?: InputMaybe<Scalars['Timestamp']['input']>;
+  unit?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type DevicePage = Pageable & {
   __typename?: 'DevicePage';
   data: Array<Device>;
@@ -148,6 +182,20 @@ export type HostInput = {
   url: Scalars['String']['input'];
 };
 
+export type MetricFilterInput = {
+  endTime?: InputMaybe<Scalars['Timestamp']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  metricName?: InputMaybe<Scalars['String']['input']>;
+  startTime?: InputMaybe<Scalars['Timestamp']['input']>;
+};
+
+export type MetricSeries = {
+  __typename?: 'MetricSeries';
+  dataPoints: Array<DeviceMetric>;
+  metricName: Scalars['String']['output'];
+  unit?: Maybe<Scalars['String']['output']>;
+};
+
 export type Mutation = {
   __typename?: 'Mutation';
   createDataModel: DataModel;
@@ -157,6 +205,8 @@ export type Mutation = {
   deleteDevice: Scalars['String']['output'];
   deleteWidget: Scalars['String']['output'];
   generateDeviceToken: Scalars['String']['output'];
+  recordDeviceMetric: DeviceMetric;
+  recordDeviceMetrics: Scalars['Boolean']['output'];
   setDeviceOperation: Device;
   setOperation: Scalars['Boolean']['output'];
   updateDataModel: DataModel;
@@ -190,6 +240,16 @@ export type MutationDeleteDeviceArgs = {
 
 export type MutationDeleteWidgetArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+export type MutationRecordDeviceMetricArgs = {
+  input: DeviceMetricInput;
+};
+
+
+export type MutationRecordDeviceMetricsArgs = {
+  inputs: Array<DeviceMetricInput>;
 };
 
 
@@ -247,7 +307,10 @@ export type Query = {
   _service: _Service;
   dataModels: Array<Maybe<DataModel>>;
   device?: Maybe<Device>;
+  deviceAggregatedMetrics?: Maybe<AggregatedMetric>;
   deviceByIdAndAggregation?: Maybe<Device>;
+  deviceMetrics: Array<DeviceMetric>;
+  deviceMetricsSeries: Array<MetricSeries>;
   devices: Array<Maybe<Device>>;
   devicesPage: DevicePage;
   testDeviceConnection: Scalars['Boolean']['output'];
@@ -262,9 +325,29 @@ export type QueryDeviceArgs = {
 };
 
 
+export type QueryDeviceAggregatedMetricsArgs = {
+  aggregation: AggregationType;
+  deviceId: Scalars['ID']['input'];
+  filter?: InputMaybe<MetricFilterInput>;
+};
+
+
 export type QueryDeviceByIdAndAggregationArgs = {
   aggregation: AggregationType;
   id: Scalars['ID']['input'];
+};
+
+
+export type QueryDeviceMetricsArgs = {
+  deviceId: Scalars['ID']['input'];
+  filter?: InputMaybe<MetricFilterInput>;
+};
+
+
+export type QueryDeviceMetricsSeriesArgs = {
+  deviceId: Scalars['ID']['input'];
+  filter?: InputMaybe<MetricFilterInput>;
+  metricNames?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
 
@@ -374,6 +457,18 @@ export type GetAllDevicesQuery = { __typename?: 'Query', devices: Array<{ __type
         | { __typename?: 'OAuthCredentialData', clientId: string, clientSecret: string, url: string }
        | null } | null, host?: { __typename?: 'Host', id: string, url: string, turnOnEndpoint?: string | null, turnOffEndpoint?: string | null } | null } | null> };
 
+export type GetDeviceQueryVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type GetDeviceQuery = { __typename?: 'Query', device?: { __typename?: 'Device', id: string, name: string, description?: string | null, status: DeviceStatus, tenantId: string, tags?: Array<string> | null, createdAt?: any | null, updatedAt?: any | null, auth?: { __typename?: 'Auth', credentialForService?: string | null, credentialForDevice?:
+        | { __typename?: 'BasicCredentialData', username: string, password: string }
+        | { __typename?: 'BearerTokenCredentialData', token: string }
+        | { __typename?: 'CertificateOAuthCredentialData', clientId: string, certificate: string, url: string }
+        | { __typename?: 'OAuthCredentialData', clientId: string, clientSecret: string, url: string }
+       | null } | null, host?: { __typename?: 'Host', id: string, url: string, turnOnEndpoint?: string | null, turnOffEndpoint?: string | null } | null } | null };
+
 export type GetDevicesPageQueryVariables = Exact<{
   first?: InputMaybe<Scalars['Int']['input']>;
   after?: InputMaybe<Scalars['PageCursor']['input']>;
@@ -417,6 +512,52 @@ export type TestDeviceConnectionQueryVariables = Exact<{
 
 
 export type TestDeviceConnectionQuery = { __typename?: 'Query', testDeviceConnection: boolean };
+
+export type DeviceMetricInfoFragment = { __typename?: 'DeviceMetric', id: string, deviceId: string, metricName: string, metricValue: number, unit?: string | null, recordedAt: any };
+
+export type MetricSeriesInfoFragment = { __typename?: 'MetricSeries', metricName: string, unit?: string | null, dataPoints: Array<{ __typename?: 'DeviceMetric', id: string, deviceId: string, metricName: string, metricValue: number, unit?: string | null, recordedAt: any }> };
+
+export type AggregatedMetricInfoFragment = { __typename?: 'AggregatedMetric', metricName: string, value: number, count: number, min: number, max: number, startTime: any, endTime: any };
+
+export type GetDeviceMetricsQueryVariables = Exact<{
+  deviceId: Scalars['ID']['input'];
+  filter?: InputMaybe<MetricFilterInput>;
+}>;
+
+
+export type GetDeviceMetricsQuery = { __typename?: 'Query', deviceMetrics: Array<{ __typename?: 'DeviceMetric', id: string, deviceId: string, metricName: string, metricValue: number, unit?: string | null, recordedAt: any }> };
+
+export type GetDeviceMetricsSeriesQueryVariables = Exact<{
+  deviceId: Scalars['ID']['input'];
+  metricNames?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
+  filter?: InputMaybe<MetricFilterInput>;
+}>;
+
+
+export type GetDeviceMetricsSeriesQuery = { __typename?: 'Query', deviceMetricsSeries: Array<{ __typename?: 'MetricSeries', metricName: string, unit?: string | null, dataPoints: Array<{ __typename?: 'DeviceMetric', id: string, deviceId: string, metricName: string, metricValue: number, unit?: string | null, recordedAt: any }> }> };
+
+export type GetDeviceAggregatedMetricsQueryVariables = Exact<{
+  deviceId: Scalars['ID']['input'];
+  aggregation: AggregationType;
+  filter?: InputMaybe<MetricFilterInput>;
+}>;
+
+
+export type GetDeviceAggregatedMetricsQuery = { __typename?: 'Query', deviceAggregatedMetrics?: { __typename?: 'AggregatedMetric', metricName: string, value: number, count: number, min: number, max: number, startTime: any, endTime: any } | null };
+
+export type RecordDeviceMetricMutationVariables = Exact<{
+  input: DeviceMetricInput;
+}>;
+
+
+export type RecordDeviceMetricMutation = { __typename?: 'Mutation', recordDeviceMetric: { __typename?: 'DeviceMetric', id: string, deviceId: string, metricName: string, metricValue: number, unit?: string | null, recordedAt: any } };
+
+export type RecordDeviceMetricsMutationVariables = Exact<{
+  inputs: Array<DeviceMetricInput> | DeviceMetricInput;
+}>;
+
+
+export type RecordDeviceMetricsMutation = { __typename?: 'Mutation', recordDeviceMetrics: boolean };
 
 export type WidgetInfoFragment = { __typename?: 'Widget', id: string, name: string, description?: string | null, status: WidgetStatus, tenantId: string, code: string, workspace: string, deviceIds?: Array<string> | null, schedule?: string | null, lastExecutedAt?: any | null, createdAt?: any | null, updatedAt?: any | null };
 
@@ -495,6 +636,36 @@ export const DeviceInfoFragmentDoc = gql`
   tags
   createdAt
   updatedAt
+}
+    `;
+export const DeviceMetricInfoFragmentDoc = gql`
+    fragment DeviceMetricInfo on DeviceMetric {
+  id
+  deviceId
+  metricName
+  metricValue
+  unit
+  recordedAt
+}
+    `;
+export const MetricSeriesInfoFragmentDoc = gql`
+    fragment MetricSeriesInfo on MetricSeries {
+  metricName
+  unit
+  dataPoints {
+    ...DeviceMetricInfo
+  }
+}
+    ${DeviceMetricInfoFragmentDoc}`;
+export const AggregatedMetricInfoFragmentDoc = gql`
+    fragment AggregatedMetricInfo on AggregatedMetric {
+  metricName
+  value
+  count
+  min
+  max
+  startTime
+  endTime
 }
     `;
 export const WidgetInfoFragmentDoc = gql`
@@ -578,6 +749,24 @@ export const GetAllDevicesDocument = gql`
   })
   export class GetAllDevicesGQL extends Apollo.Query<GetAllDevicesQuery, GetAllDevicesQueryVariables> {
     document = GetAllDevicesDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const GetDeviceDocument = gql`
+    query GetDevice($id: ID!) {
+  device(id: $id) {
+    ...DeviceInfo
+  }
+}
+    ${DeviceInfoFragmentDoc}`;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class GetDeviceGQL extends Apollo.Query<GetDeviceQuery, GetDeviceQueryVariables> {
+    document = GetDeviceDocument;
     
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
@@ -670,6 +859,102 @@ export const TestDeviceConnectionDocument = gql`
   })
   export class TestDeviceConnectionGQL extends Apollo.Query<TestDeviceConnectionQuery, TestDeviceConnectionQueryVariables> {
     document = TestDeviceConnectionDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const GetDeviceMetricsDocument = gql`
+    query GetDeviceMetrics($deviceId: ID!, $filter: MetricFilterInput) {
+  deviceMetrics(deviceId: $deviceId, filter: $filter) {
+    ...DeviceMetricInfo
+  }
+}
+    ${DeviceMetricInfoFragmentDoc}`;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class GetDeviceMetricsGQL extends Apollo.Query<GetDeviceMetricsQuery, GetDeviceMetricsQueryVariables> {
+    document = GetDeviceMetricsDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const GetDeviceMetricsSeriesDocument = gql`
+    query GetDeviceMetricsSeries($deviceId: ID!, $metricNames: [String!], $filter: MetricFilterInput) {
+  deviceMetricsSeries(
+    deviceId: $deviceId
+    metricNames: $metricNames
+    filter: $filter
+  ) {
+    ...MetricSeriesInfo
+  }
+}
+    ${MetricSeriesInfoFragmentDoc}`;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class GetDeviceMetricsSeriesGQL extends Apollo.Query<GetDeviceMetricsSeriesQuery, GetDeviceMetricsSeriesQueryVariables> {
+    document = GetDeviceMetricsSeriesDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const GetDeviceAggregatedMetricsDocument = gql`
+    query GetDeviceAggregatedMetrics($deviceId: ID!, $aggregation: AggregationType!, $filter: MetricFilterInput) {
+  deviceAggregatedMetrics(
+    deviceId: $deviceId
+    aggregation: $aggregation
+    filter: $filter
+  ) {
+    ...AggregatedMetricInfo
+  }
+}
+    ${AggregatedMetricInfoFragmentDoc}`;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class GetDeviceAggregatedMetricsGQL extends Apollo.Query<GetDeviceAggregatedMetricsQuery, GetDeviceAggregatedMetricsQueryVariables> {
+    document = GetDeviceAggregatedMetricsDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const RecordDeviceMetricDocument = gql`
+    mutation RecordDeviceMetric($input: DeviceMetricInput!) {
+  recordDeviceMetric(input: $input) {
+    ...DeviceMetricInfo
+  }
+}
+    ${DeviceMetricInfoFragmentDoc}`;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class RecordDeviceMetricGQL extends Apollo.Mutation<RecordDeviceMetricMutation, RecordDeviceMetricMutationVariables> {
+    document = RecordDeviceMetricDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const RecordDeviceMetricsDocument = gql`
+    mutation RecordDeviceMetrics($inputs: [DeviceMetricInput!]!) {
+  recordDeviceMetrics(inputs: $inputs)
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class RecordDeviceMetricsGQL extends Apollo.Mutation<RecordDeviceMetricsMutation, RecordDeviceMetricsMutationVariables> {
+    document = RecordDeviceMetricsDocument;
     
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
