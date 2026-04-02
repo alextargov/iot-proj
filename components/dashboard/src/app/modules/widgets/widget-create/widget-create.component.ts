@@ -249,86 +249,89 @@ export class WidgetCreateComponent implements OnInit {
                     });
                 }
 
-            const toolbox = new BlocklyToolbox();
-
-            const dynamicDropdownDevices = deviceList.map((device) => [
-                device.name,
-                device.id,
-            ]);
-            const dropdownOutput = new DynamicDropdownBlock(
-                'deviceDropdownOutput',
-                {
-                    id: 'selectedDeviceOutput',
-                    data: dynamicDropdownDevices,
-                    isOutput: true,
-                }
-            );
-            const dropdownInput = new DynamicDropdownBlock(
-                'deviceDropdownInput',
-                {
-                    id: 'selectedDeviceInput',
-                    data: dynamicDropdownDevices,
-                    isOutput: false,
-                }
-            );
-            const deviceBlocks = [dropdownOutput, dropdownInput];
-
-            const aggregations = this.aggregationOperations.map(
-                (agg, idx) =>
-                    new AggregationBlock('aggregation_' + idx, { ...agg })
-            );
-            const operations = this.operations.map(
-                (op, idx) => new OperationBlock('operation_' + idx, { ...op })
-            );
-            const repeats = [
-                new RepeatForBlock('repeatForBlock', { id: 'repeatForBlock' }),
-            ];
-
-            this.customBlocks.push(
-                ...deviceBlocks,
-                ...aggregations,
-                ...operations,
-                ...repeats
-            );
-
-            toolbox.nodes = [
-                LOGIC_CATEGORY,
-                LOOP_CATEGORY,
-                MATH_CATEGORY,
-                TEXT_CATEGORY,
-                LISTS_CATEGORY,
-                COLOUR_CATEGORY,
-                new Category('Repeats', '#5b80a5', repeats),
-                new Separator(),
-                VARIABLES_CATEGORY,
-                FUNCTIONS_CATEGORY,
-                new Separator(),
-                new Category('Devices', '#5b80a5', deviceBlocks),
-                new Category('Aggregations', '#00AFFF', aggregations),
-                new Category('Operations', '#00AA00', operations),
-            ];
-
-            this.config.toolbox = toolbox.toJSON();
-
             this.isLoaded = true;
 
             this.filteredDevices = this.detailsFormGroup
                 .get('device')
                 .valueChanges.pipe(
                     startWith(null),
-                    map((fruit: string | null) =>
-                        fruit ? this._filter(fruit) : this.devices.slice()
+                    map((device: string | null) =>
+                        device ? this._filter(device) : this.devices.slice()
                     )
                 );
             },
             error: (err) => {
                 console.error('Failed to load devices:', err);
                 this.toast.showError('Failed to load devices. Please check authentication.');
-                // Still mark as loaded so UI doesn't hang forever
                 this.devices = [];
                 this.isLoaded = true;
             },
         });
+    }
+
+    private buildBlocklyToolbox(): void {
+        // Use only selected devices for Blockly blocks
+        const selectedDevicesList = Array.from(this.selectedDevices.values());
+        const dynamicDropdownDevices = selectedDevicesList.map((device) => [
+            device.name,
+            device.id,
+        ]);
+
+        const dropdownOutput = new DynamicDropdownBlock(
+            'deviceDropdownOutput',
+            {
+                id: 'selectedDeviceOutput',
+                data: dynamicDropdownDevices,
+                isOutput: true,
+            }
+        );
+        const dropdownInput = new DynamicDropdownBlock(
+            'deviceDropdownInput',
+            {
+                id: 'selectedDeviceInput',
+                data: dynamicDropdownDevices,
+                isOutput: false,
+            }
+        );
+        const deviceBlocks = [dropdownOutput, dropdownInput];
+
+        const aggregations = this.aggregationOperations.map(
+            (agg, idx) =>
+                new AggregationBlock('aggregation_' + idx, { ...agg })
+        );
+        const operations = this.operations.map(
+            (op, idx) => new OperationBlock('operation_' + idx, { ...op })
+        );
+        const repeats = [
+            new RepeatForBlock('repeatForBlock', { id: 'repeatForBlock' }),
+        ];
+
+        this.customBlocks = [
+            ...deviceBlocks,
+            ...aggregations,
+            ...operations,
+            ...repeats,
+        ];
+
+        const toolbox = new BlocklyToolbox();
+        toolbox.nodes = [
+            LOGIC_CATEGORY,
+            LOOP_CATEGORY,
+            MATH_CATEGORY,
+            TEXT_CATEGORY,
+            LISTS_CATEGORY,
+            COLOUR_CATEGORY,
+            new Category('Repeats', '#5b80a5', repeats),
+            new Separator(),
+            VARIABLES_CATEGORY,
+            FUNCTIONS_CATEGORY,
+            new Separator(),
+            new Category('Devices', '#5b80a5', deviceBlocks),
+            new Category('Aggregations', '#00AFFF', aggregations),
+            new Category('Operations', '#00AA00', operations),
+        ];
+
+        this.config.toolbox = toolbox.toJSON();
     }
 
     onCode(code: string) {
@@ -396,6 +399,9 @@ export class WidgetCreateComponent implements OnInit {
     }
 
     public onNavigateToBlockly(): void {
+        // Rebuild toolbox with currently selected devices
+        this.buildBlocklyToolbox();
+
         setTimeout(() => {
             console.log(this.blocklyComponent);
             this.blocklyComponent.resize();
