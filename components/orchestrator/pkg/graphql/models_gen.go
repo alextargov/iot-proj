@@ -50,8 +50,6 @@ type AlertConditionInput struct {
 
 type AlertEvent struct {
 	ID              string           `json:"id"`
-	AlertRule       *AlertRule       `json:"alertRule"`
-	Device          *Device          `json:"device"`
 	TriggeredValues string           `json:"triggeredValues"`
 	Status          AlertEventStatus `json:"status"`
 	TriggeredAt     Timestamp        `json:"triggeredAt"`

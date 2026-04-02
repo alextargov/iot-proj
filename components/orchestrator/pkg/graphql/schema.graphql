@@ -210,8 +210,6 @@ type AlertNotification {
 
 type AlertEvent {
     id: ID!
-    alertRule: AlertRule!
-    device: Device!
     triggeredValues: String!
     status: AlertEventStatus!
     triggeredAt: Timestamp!

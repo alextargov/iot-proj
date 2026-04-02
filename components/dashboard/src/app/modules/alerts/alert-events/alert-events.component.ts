@@ -1,4 +1,4 @@
-import { Component, OnInit, Input } from '@angular/core';
+import {Component, OnInit, Input, ChangeDetectorRef} from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import {
     AlertService,
@@ -6,6 +6,7 @@ import {
     AlertEventStatus,
     AlertSeverity,
 } from '../../../shared/services/alert/alert.service';
+import {finalize} from "rxjs";
 
 @Component({
     selector: 'app-alert-events',
@@ -30,13 +31,18 @@ export class AlertEventsComponent implements OnInit {
 
     constructor(
         private alertService: AlertService,
-        private route: ActivatedRoute
+        private route: ActivatedRoute,
+        private cdr: ChangeDetectorRef
     ) {}
 
     ngOnInit(): void {
         // Check route params if not provided as inputs
         if (!this.ruleId) {
             this.ruleId = this.route.snapshot.params['id'];
+        }
+
+        if (!this.deviceId) {
+            this.deviceId = this.route.snapshot.params['deviceId'];
         }
         this.loadEvents();
     }
@@ -45,14 +51,16 @@ export class AlertEventsComponent implements OnInit {
         this.loading = true;
         this.alertService
             .getAlertEvents(this.deviceId, this.ruleId)
+            .pipe(finalize(() => {
+                this.loading = false;
+                this.cdr.detectChanges();
+            }))
             .subscribe({
                 next: (page) => {
                     this.events = page.data;
-                    this.loading = false;
                 },
                 error: (err) => {
                     console.error('Failed to load events:', err);
-                    this.loading = false;
                 },
             });
     }

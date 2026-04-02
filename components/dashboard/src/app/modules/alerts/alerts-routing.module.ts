@@ -18,7 +18,7 @@ const routes: Routes = [
         component: AlertFormComponent,
     },
     {
-        path: ':id/events',
+        path: ':id/:deviceId/events',
         component: AlertEventsComponent,
     },
 ];

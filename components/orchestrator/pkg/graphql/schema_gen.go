@@ -39,7 +39,6 @@ type Config struct {
 }
 
 type ResolverRoot interface {
-	AlertEvent() AlertEventResolver
 	AlertRule() AlertRuleResolver
 	Device() DeviceResolver
 	Mutation() MutationResolver
@@ -73,8 +72,6 @@ type ComplexityRoot struct {
 	}
 
 	AlertEvent struct {
-		AlertRule       func(childComplexity int) int
-		Device          func(childComplexity int) int
 		ID              func(childComplexity int) int
 		ResolvedAt      func(childComplexity int) int
 		Status          func(childComplexity int) int
@@ -262,10 +259,6 @@ type ComplexityRoot struct {
 	}
 }
 
-type AlertEventResolver interface {
-	AlertRule(ctx context.Context, obj *AlertEvent) (*AlertRule, error)
-	Device(ctx context.Context, obj *AlertEvent) (*Device, error)
-}
 type AlertRuleResolver interface {
 	Device(ctx context.Context, obj *AlertRule) (*Device, error)
 }
@@ -417,20 +410,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.AlertConditionGroup.GroupID(childComplexity), true
-
-	case "AlertEvent.alertRule":
-		if e.complexity.AlertEvent.AlertRule == nil {
-			break
-		}
-
-		return e.complexity.AlertEvent.AlertRule(childComplexity), true
-
-	case "AlertEvent.device":
-		if e.complexity.AlertEvent.Device == nil {
-			break
-		}
-
-		return e.complexity.AlertEvent.Device(childComplexity), true
 
 	case "AlertEvent.id":
 		if e.complexity.AlertEvent.ID == nil {
@@ -3493,142 +3472,6 @@ func (ec *executionContext) fieldContext_AlertEvent_id(_ context.Context, field 
 	return fc, nil
 }
 
-func (ec *executionContext) _AlertEvent_alertRule(ctx context.Context, field graphql.CollectedField, obj *AlertEvent) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_AlertEvent_alertRule(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.AlertEvent().AlertRule(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*AlertRule)
-	fc.Result = res
-	return ec.marshalNAlertRule2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐAlertRule(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_AlertEvent_alertRule(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "AlertEvent",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_AlertRule_id(ctx, field)
-			case "device":
-				return ec.fieldContext_AlertRule_device(ctx, field)
-			case "name":
-				return ec.fieldContext_AlertRule_name(ctx, field)
-			case "description":
-				return ec.fieldContext_AlertRule_description(ctx, field)
-			case "severity":
-				return ec.fieldContext_AlertRule_severity(ctx, field)
-			case "enabled":
-				return ec.fieldContext_AlertRule_enabled(ctx, field)
-			case "cooldownMinutes":
-				return ec.fieldContext_AlertRule_cooldownMinutes(ctx, field)
-			case "conditions":
-				return ec.fieldContext_AlertRule_conditions(ctx, field)
-			case "notifications":
-				return ec.fieldContext_AlertRule_notifications(ctx, field)
-			case "lastTriggeredAt":
-				return ec.fieldContext_AlertRule_lastTriggeredAt(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_AlertRule_createdAt(ctx, field)
-			case "updatedAt":
-				return ec.fieldContext_AlertRule_updatedAt(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type AlertRule", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _AlertEvent_device(ctx context.Context, field graphql.CollectedField, obj *AlertEvent) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_AlertEvent_device(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.AlertEvent().Device(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*Device)
-	fc.Result = res
-	return ec.marshalNDevice2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDevice(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_AlertEvent_device(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "AlertEvent",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_Device_id(ctx, field)
-			case "name":
-				return ec.fieldContext_Device_name(ctx, field)
-			case "description":
-				return ec.fieldContext_Device_description(ctx, field)
-			case "status":
-				return ec.fieldContext_Device_status(ctx, field)
-			case "tenantId":
-				return ec.fieldContext_Device_tenantId(ctx, field)
-			case "host":
-				return ec.fieldContext_Device_host(ctx, field)
-			case "auth":
-				return ec.fieldContext_Device_auth(ctx, field)
-			case "tags":
-				return ec.fieldContext_Device_tags(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_Device_createdAt(ctx, field)
-			case "updatedAt":
-				return ec.fieldContext_Device_updatedAt(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Device", field.Name)
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _AlertEvent_triggeredValues(ctx context.Context, field graphql.CollectedField, obj *AlertEvent) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_AlertEvent_triggeredValues(ctx, field)
 	if err != nil {
@@ -3843,10 +3686,6 @@ func (ec *executionContext) fieldContext_AlertEventPage_data(_ context.Context, 
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_AlertEvent_id(ctx, field)
-			case "alertRule":
-				return ec.fieldContext_AlertEvent_alertRule(ctx, field)
-			case "device":
-				return ec.fieldContext_AlertEvent_device(ctx, field)
 			case "triggeredValues":
 				return ec.fieldContext_AlertEvent_triggeredValues(ctx, field)
 			case "status":
@@ -7654,10 +7493,6 @@ func (ec *executionContext) fieldContext_Mutation_acknowledgeAlertEvent(ctx cont
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_AlertEvent_id(ctx, field)
-			case "alertRule":
-				return ec.fieldContext_AlertEvent_alertRule(ctx, field)
-			case "device":
-				return ec.fieldContext_AlertEvent_device(ctx, field)
 			case "triggeredValues":
 				return ec.fieldContext_AlertEvent_triggeredValues(ctx, field)
 			case "status":
@@ -12838,94 +12673,22 @@ func (ec *executionContext) _AlertEvent(ctx context.Context, sel ast.SelectionSe
 		case "id":
 			out.Values[i] = ec._AlertEvent_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
+				out.Invalids++
 			}
-		case "alertRule":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._AlertEvent_alertRule(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		case "device":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._AlertEvent_device(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "triggeredValues":
 			out.Values[i] = ec._AlertEvent_triggeredValues(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
+				out.Invalids++
 			}
 		case "status":
 			out.Values[i] = ec._AlertEvent_status(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
+				out.Invalids++
 			}
 		case "triggeredAt":
 			out.Values[i] = ec._AlertEvent_triggeredAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
+				out.Invalids++
 			}
 		case "resolvedAt":
 			out.Values[i] = ec._AlertEvent_resolvedAt(ctx, field, obj)

@@ -89,15 +89,6 @@ const GetAlertEventsDocument = gql`
                 status
                 triggeredAt
                 resolvedAt
-                alertRule {
-                    id
-                    name
-                    severity
-                }
-                device {
-                    id
-                    name
-                }
             }
             pageInfo {
                 startCursor
@@ -244,15 +235,6 @@ export interface AlertEvent {
     status: AlertEventStatus;
     triggeredAt: string;
     resolvedAt?: string;
-    alertRule?: {
-        id: string;
-        name: string;
-        severity: AlertSeverity;
-    };
-    device?: {
-        id: string;
-        name: string;
-    };
 }
 
 export interface AlertRulePage {

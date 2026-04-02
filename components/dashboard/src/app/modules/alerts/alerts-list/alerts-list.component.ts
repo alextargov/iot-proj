@@ -67,7 +67,8 @@ export class AlertsListComponent implements OnInit {
     }
 
     viewEvents(alert: AlertRule): void {
-        this.router.navigate(['/alerts', alert.id, 'events']);
+        console.log(alert.device)
+        this.router.navigate(['/alerts', alert.id, alert.device.id, 'events']);
     }
 
     toggleEnabled(alert: AlertRule): void {
