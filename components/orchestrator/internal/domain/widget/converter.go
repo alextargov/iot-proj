@@ -1,12 +1,9 @@
 package widget
 
 import (
-	"database/sql"
-	"encoding/json"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/model"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/repo"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/graphql"
-	"github.com/pkg/errors"
 	"time"
 )
 
@@ -18,18 +15,12 @@ func NewConverter() *converter {
 }
 
 func (c *converter) ToEntity(model model.Widget) (*Entity, error) {
-	deviceIDs, err := toDeviceIDsEntity(model)
-	if err != nil {
-		return nil, err
-	}
-
 	return &Entity{
 		ID:             model.ID,
 		TenantID:       model.TenantID,
 		Name:           model.Name,
 		Description:    repo.NewNullableString(model.Description),
 		Status:         string(model.Status),
-		DeviceIDs:      deviceIDs,
 		Schedule:       repo.NewNullableString(model.Schedule),
 		LastExecutedAt: model.LastExecutedAt,
 		CreatedAt:      model.CreatedAt,
@@ -37,15 +28,30 @@ func (c *converter) ToEntity(model model.Widget) (*Entity, error) {
 	}, nil
 }
 
-// FromEntity missing godoc
+// FromEntity converts database entity to model (without DeviceIDs - those are loaded separately)
 func (c *converter) FromEntity(entity *Entity) (*model.Widget, error) {
 	if entity == nil {
 		return nil, nil
 	}
 
-	deviceIDs, err := fromEntityDeviceIDs(*entity)
-	if err != nil {
-		return nil, err
+	return &model.Widget{
+		ID:             entity.ID,
+		Name:           entity.Name,
+		Description:    repo.StringPtrFromNullableString(entity.Description),
+		TenantID:       entity.TenantID,
+		Status:         model.WidgetStatus(entity.Status),
+		DeviceIDs:      nil, // Will be populated by service layer
+		Schedule:       repo.StringPtrFromNullableString(entity.Schedule),
+		LastExecutedAt: entity.LastExecutedAt,
+		CreatedAt:      entity.CreatedAt,
+		UpdatedAt:      entity.UpdatedAt,
+	}, nil
+}
+
+// FromEntityWithDeviceIDs converts database entity to model with provided device IDs
+func (c *converter) FromEntityWithDeviceIDs(entity *Entity, deviceIDs []string) (*model.Widget, error) {
+	if entity == nil {
+		return nil, nil
 	}
 
 	return &model.Widget{
@@ -111,44 +117,4 @@ func (c *converter) MultipleToGraphQL(in []*model.Widget) []*graphql.Widget {
 	}
 
 	return wdigets
-}
-
-func toDeviceIDsEntity(in model.Widget) (sql.NullString, error) {
-	var optionalAuth sql.NullString
-	if in.DeviceIDs == nil {
-		return optionalAuth, nil
-	}
-
-	b, err := json.Marshal(in.DeviceIDs)
-	if err != nil {
-		return sql.NullString{}, errors.Wrap(err, "while marshalling DeviceIDs")
-	}
-
-	if err := optionalAuth.Scan(b); err != nil {
-		return sql.NullString{}, errors.Wrap(err, "while scanning optional DeviceIDs")
-	}
-	return optionalAuth, nil
-}
-
-func fromEntityDeviceIDs(in Entity) ([]string, error) {
-	if !in.DeviceIDs.Valid {
-		return nil, nil
-	}
-
-	var deviceIDs []string
-	val, err := in.DeviceIDs.Value()
-	if err != nil {
-		return nil, errors.Wrap(err, "while reading DeviceIDs from Entity")
-	}
-
-	b, ok := val.(string)
-	if !ok {
-		return nil, errors.New("DeviceIDs should be slice of bytes")
-	}
-
-	if err := json.Unmarshal([]byte(b), &deviceIDs); err != nil {
-		return nil, errors.Wrap(err, "while unmarshaling DeviceIDs")
-	}
-
-	return deviceIDs, nil
 }

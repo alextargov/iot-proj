@@ -273,19 +273,6 @@ func (r alertRuleResolver) Device(ctx context.Context, obj *graphql.AlertRule) (
 	return r.alert.AlertRuleDevice(ctx, obj)
 }
 
-// AlertEvent resolver
-func (r *RootResolver) AlertEvent() graphql.AlertEventResolver {
-	return &alertEventResolver{r}
-}
-
 type alertEventResolver struct {
 	*RootResolver
-}
-
-func (r alertEventResolver) Device(ctx context.Context, obj *graphql.AlertEvent) (*graphql.Device, error) {
-	return r.alert.AlertEventDevice(ctx, obj)
-}
-
-func (r alertEventResolver) AlertRule(ctx context.Context, obj *graphql.AlertEvent) (*graphql.AlertRule, error) {
-	return r.alert.AlertEventAlertRule(ctx, obj)
 }

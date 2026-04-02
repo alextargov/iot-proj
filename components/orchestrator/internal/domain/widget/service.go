@@ -21,6 +21,8 @@ type WidgetRepository interface {
 	Delete(ctx context.Context, id, tenantID string) error
 	GetScheduledWidgets(ctx context.Context) ([]*model.Widget, error)
 	UpdateLastExecuted(ctx context.Context, id string, timestamp time.Time) error
+	SetDeviceIDs(ctx context.Context, widgetID string, deviceIDs []string) error
+	GetDeviceIDs(ctx context.Context, widgetID string) ([]string, error)
 }
 
 type UUIDService interface {
@@ -78,11 +80,19 @@ func (s *service) Create(ctx context.Context, widget model.WidgetInput) (string,
 	widgetModel := widget.ToWidget(id)
 	widgetModel.TenantID = tnt
 
+	// Create the widget first
 	if err = s.widgetRepo.Create(ctx, widgetModel); err != nil {
 		return "", errors.Wrapf(err, "while creating widget")
 	}
 
-	return id, err
+	// Set device associations in the junction table
+	if len(widget.DeviceIDs) > 0 {
+		if err = s.widgetRepo.SetDeviceIDs(ctx, id, widget.DeviceIDs); err != nil {
+			return "", errors.Wrapf(err, "while setting widget device associations")
+		}
+	}
+
+	return id, nil
 }
 
 func (s *service) Delete(ctx context.Context, id string) error {
@@ -99,6 +109,7 @@ func (s *service) Delete(ctx context.Context, id string) error {
 		return errors.Wrapf(err, "tenant does not have access")
 	}
 
+	// widget_devices entries are deleted via CASCADE
 	return s.widgetRepo.Delete(ctx, id, tnt)
 }
 
