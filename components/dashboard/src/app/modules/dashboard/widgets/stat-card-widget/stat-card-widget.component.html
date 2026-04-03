@@ -1,0 +1,27 @@
+<div class="stat-card-widget">
+    @if (loading) {
+        <div class="loading">
+            <mat-spinner diameter="30"></mat-spinner>
+        </div>
+    } @else if (error) {
+        <div class="error">
+            <mat-icon>error</mat-icon>
+            <span>{{ error }}</span>
+        </div>
+    } @else {
+        <div class="stat-container">
+            <div class="stat-value">
+                <span class="value">{{ displayValue }}</span>
+                @if (unit) {
+                    <span class="unit">{{ unit }}</span>
+                }
+            </div>
+            <div class="stat-label">{{ metricLabel }}</div>
+            <div class="stat-meta">
+                <span class="aggregation">{{ aggregationLabel }}</span>
+                <span class="separator">·</span>
+                <span class="time-range">{{ timeRangeLabel }}</span>
+            </div>
+        </div>
+    }
+</div>

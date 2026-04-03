@@ -1,0 +1,20 @@
+<div class="line-chart-widget">
+    @if (loading) {
+        <div class="loading">
+            <mat-spinner diameter="40"></mat-spinner>
+        </div>
+    } @else if (error) {
+        <div class="error">
+            <mat-icon>error</mat-icon>
+            <span>{{ error }}</span>
+        </div>
+    } @else {
+        <div class="chart-container">
+            <canvas baseChart
+                [data]="chartData"
+                [options]="chartOptions"
+                type="line">
+            </canvas>
+        </div>
+    }
+</div>

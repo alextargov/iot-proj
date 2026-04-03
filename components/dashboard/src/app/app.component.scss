@@ -22,6 +22,70 @@
     }
 }
 
+.dashboard-submenu {
+    background: transparent !important;
+    box-shadow: none !important;
+    color: #fff;
+
+    ::ng-deep {
+        .mat-expansion-panel-body {
+            padding: 0 !important;
+        }
+
+        .mat-expansion-panel-header {
+            padding: 0 16px !important;
+            height: 48px !important;
+            background: transparent !important;
+
+            &:hover {
+                background: rgba(255, 255, 255, 0.1) !important;
+            }
+        }
+
+        .mat-expansion-indicator::after {
+            color: #fff;
+        }
+
+        .mat-expansion-panel-header-title {
+            color: #fff;
+        }
+    }
+
+    mat-panel-title {
+        display: flex;
+        align-items: center;
+        color: #fff;
+        font-size: 1rem;
+        font-weight: 400;
+
+        mat-icon {
+            margin-right: 8px;
+        }
+
+        span {
+            line-height: 1;
+        }
+    }
+}
+
+.submenu-button {
+    padding-left: 32px !important;
+    font-size: 0.9rem !important;
+    height: 40px !important;
+
+    mat-icon {
+        font-size: 18px !important;
+        width: 18px !important;
+        height: 18px !important;
+    }
+}
+
+.submenu-empty {
+    padding: 8px 16px 8px 48px;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.85rem;
+}
+
 .avatar {
     margin-top: 16px;
     width: 100px;

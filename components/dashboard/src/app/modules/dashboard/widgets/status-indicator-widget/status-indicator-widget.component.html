@@ -1,0 +1,22 @@
+<div class="status-indicator-widget" [ngClass]="sizeClass">
+    @if (loading) {
+        <div class="loading">
+            <mat-spinner diameter="30"></mat-spinner>
+        </div>
+    } @else if (error) {
+        <div class="error">
+            <mat-icon>error</mat-icon>
+            <span>{{ error }}</span>
+        </div>
+    } @else {
+        <div class="status-container">
+            <mat-icon [style.color]="statusColor" class="status-icon">{{ statusIcon }}</mat-icon>
+            <div class="status-info">
+                <span class="device-name">{{ deviceName }}</span>
+                @if (showLabel) {
+                    <span class="status-label" [style.color]="statusColor">{{ statusLabel }}</span>
+                }
+            </div>
+        </div>
+    }
+</div>

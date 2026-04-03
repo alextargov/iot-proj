@@ -163,6 +163,53 @@ type CredentialDataInput struct {
 	BearerToken      *TokenCredentialDataInput            `json:"bearerToken,omitempty"`
 }
 
+type DashboardLayout struct {
+	ID                     string             `json:"id"`
+	TenantID               string             `json:"tenantId"`
+	Name                   string             `json:"name"`
+	Description            *string            `json:"description,omitempty"`
+	IsDefault              bool               `json:"isDefault"`
+	RefreshIntervalSeconds int                `json:"refreshIntervalSeconds"`
+	Widgets                []*DashboardWidget `json:"widgets"`
+	CreatedAt              *Timestamp         `json:"createdAt,omitempty"`
+	UpdatedAt              *Timestamp         `json:"updatedAt,omitempty"`
+}
+
+type DashboardLayoutInput struct {
+	Name                   string  `json:"name"`
+	Description            *string `json:"description,omitempty"`
+	IsDefault              *bool   `json:"isDefault,omitempty"`
+	RefreshIntervalSeconds *int    `json:"refreshIntervalSeconds,omitempty"`
+}
+
+type DashboardWidget struct {
+	ID                string              `json:"id"`
+	DashboardLayoutID string              `json:"dashboardLayoutId"`
+	WidgetType        DashboardWidgetType `json:"widgetType"`
+	Title             string              `json:"title"`
+	GridX             int                 `json:"gridX"`
+	GridY             int                 `json:"gridY"`
+	GridCols          int                 `json:"gridCols"`
+	GridRows          int                 `json:"gridRows"`
+	Device            *Device             `json:"device,omitempty"`
+	MetricName        *string             `json:"metricName,omitempty"`
+	Config            JSON                `json:"config"`
+	CreatedAt         *Timestamp          `json:"createdAt,omitempty"`
+	UpdatedAt         *Timestamp          `json:"updatedAt,omitempty"`
+}
+
+type DashboardWidgetInput struct {
+	WidgetType DashboardWidgetType `json:"widgetType"`
+	Title      string              `json:"title"`
+	GridX      int                 `json:"gridX"`
+	GridY      int                 `json:"gridY"`
+	GridCols   int                 `json:"gridCols"`
+	GridRows   int                 `json:"gridRows"`
+	DeviceID   *string             `json:"deviceId,omitempty"`
+	MetricName *string             `json:"metricName,omitempty"`
+	Config     JSON                `json:"config"`
+}
+
 type DataModel struct {
 	ID          string     `json:"id"`
 	Name        string     `json:"name"`
@@ -281,6 +328,24 @@ type UpdateAlertRuleInput struct {
 	Notifications   []*AlertNotificationInput `json:"notifications,omitempty"`
 }
 
+type UpdateDashboardLayoutInput struct {
+	Name                   *string `json:"name,omitempty"`
+	Description            *string `json:"description,omitempty"`
+	IsDefault              *bool   `json:"isDefault,omitempty"`
+	RefreshIntervalSeconds *int    `json:"refreshIntervalSeconds,omitempty"`
+}
+
+type UpdateDashboardWidgetInput struct {
+	Title      *string `json:"title,omitempty"`
+	GridX      *int    `json:"gridX,omitempty"`
+	GridY      *int    `json:"gridY,omitempty"`
+	GridCols   *int    `json:"gridCols,omitempty"`
+	GridRows   *int    `json:"gridRows,omitempty"`
+	DeviceID   *string `json:"deviceId,omitempty"`
+	MetricName *string `json:"metricName,omitempty"`
+	Config     *JSON   `json:"config,omitempty"`
+}
+
 type Widget struct {
 	ID             string       `json:"id"`
 	Name           string       `json:"name"`
@@ -315,6 +380,14 @@ type WidgetPage struct {
 func (WidgetPage) IsPageable()                 {}
 func (this WidgetPage) GetPageInfo() *PageInfo { return this.PageInfo }
 func (this WidgetPage) GetTotalCount() int     { return this.TotalCount }
+
+type WidgetPositionInput struct {
+	WidgetID string `json:"widgetId"`
+	GridX    int    `json:"gridX"`
+	GridY    int    `json:"gridY"`
+	GridCols int    `json:"gridCols"`
+	GridRows int    `json:"gridRows"`
+}
 
 type AggregationType string
 
@@ -555,6 +628,67 @@ func (e *AlertSeverity) UnmarshalJSON(b []byte) error {
 }
 
 func (e AlertSeverity) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type DashboardWidgetType string
+
+const (
+	DashboardWidgetTypeGauge           DashboardWidgetType = "GAUGE"
+	DashboardWidgetTypeLineChart       DashboardWidgetType = "LINE_CHART"
+	DashboardWidgetTypeStatusIndicator DashboardWidgetType = "STATUS_INDICATOR"
+	DashboardWidgetTypeStatCard        DashboardWidgetType = "STAT_CARD"
+	DashboardWidgetTypeTable           DashboardWidgetType = "TABLE"
+)
+
+var AllDashboardWidgetType = []DashboardWidgetType{
+	DashboardWidgetTypeGauge,
+	DashboardWidgetTypeLineChart,
+	DashboardWidgetTypeStatusIndicator,
+	DashboardWidgetTypeStatCard,
+	DashboardWidgetTypeTable,
+}
+
+func (e DashboardWidgetType) IsValid() bool {
+	switch e {
+	case DashboardWidgetTypeGauge, DashboardWidgetTypeLineChart, DashboardWidgetTypeStatusIndicator, DashboardWidgetTypeStatCard, DashboardWidgetTypeTable:
+		return true
+	}
+	return false
+}
+
+func (e DashboardWidgetType) String() string {
+	return string(e)
+}
+
+func (e *DashboardWidgetType) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = DashboardWidgetType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid DashboardWidgetType", str)
+	}
+	return nil
+}
+
+func (e DashboardWidgetType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *DashboardWidgetType) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e DashboardWidgetType) MarshalJSON() ([]byte, error) {
 	var buf bytes.Buffer
 	e.MarshalGQL(&buf)
 	return buf.Bytes(), nil

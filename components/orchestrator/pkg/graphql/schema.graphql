@@ -61,6 +61,14 @@ enum AlertEventStatus {
     ACKNOWLEDGED
 }
 
+enum DashboardWidgetType {
+    GAUGE
+    LINE_CHART
+    STATUS_INDICATOR
+    STAT_CARD
+    TABLE
+}
+
 type BearerTokenCredentialData {
     token: String!
 }
@@ -228,6 +236,34 @@ type AlertEventPage implements Pageable {
     totalCount: Int!
 }
 
+type DashboardLayout {
+    id: ID!
+    tenantId: ID!
+    name: String!
+    description: String
+    isDefault: Boolean!
+    refreshIntervalSeconds: Int!
+    widgets: [DashboardWidget!]!
+    createdAt: Timestamp
+    updatedAt: Timestamp
+}
+
+type DashboardWidget {
+    id: ID!
+    dashboardLayoutId: ID!
+    widgetType: DashboardWidgetType!
+    title: String!
+    gridX: Int!
+    gridY: Int!
+    gridCols: Int!
+    gridRows: Int!
+    device: Device
+    metricName: String
+    config: JSON!
+    createdAt: Timestamp
+    updatedAt: Timestamp
+}
+
 input DeviceMetricInput {
     deviceId: ID!
     metricName: String!
@@ -343,6 +379,51 @@ input UpdateAlertRuleInput {
     notifications: [AlertNotificationInput!]
 }
 
+input DashboardLayoutInput {
+    name: String!
+    description: String
+    isDefault: Boolean
+    refreshIntervalSeconds: Int
+}
+
+input UpdateDashboardLayoutInput {
+    name: String
+    description: String
+    isDefault: Boolean
+    refreshIntervalSeconds: Int
+}
+
+input DashboardWidgetInput {
+    widgetType: DashboardWidgetType!
+    title: String!
+    gridX: Int!
+    gridY: Int!
+    gridCols: Int!
+    gridRows: Int!
+    deviceId: ID
+    metricName: String
+    config: JSON!
+}
+
+input UpdateDashboardWidgetInput {
+    title: String
+    gridX: Int
+    gridY: Int
+    gridCols: Int
+    gridRows: Int
+    deviceId: ID
+    metricName: String
+    config: JSON
+}
+
+input WidgetPositionInput {
+    widgetId: ID!
+    gridX: Int!
+    gridY: Int!
+    gridCols: Int!
+    gridRows: Int!
+}
+
 type Query {
     devices: [Device]!
     devicesPage(first: Int = 20, after: PageCursor): DevicePage!
@@ -359,6 +440,9 @@ type Query {
     alertRules(deviceId: ID, first: Int, after: PageCursor): AlertRulePage!
     alertRule(id: ID!): AlertRule
     alertEvents(deviceId: ID, ruleId: ID, first: Int, after: PageCursor): AlertEventPage!
+    dashboardLayouts: [DashboardLayout!]!
+    dashboardLayout(id: ID!): DashboardLayout
+    defaultDashboardLayout: DashboardLayout
 }
 
 type Mutation {
@@ -378,4 +462,11 @@ type Mutation {
     updateAlertRule(id: ID!, input: UpdateAlertRuleInput!): AlertRule!
     deleteAlertRule(id: ID!): ID!
     acknowledgeAlertEvent(id: ID!): AlertEvent!
+    createDashboardLayout(input: DashboardLayoutInput!): DashboardLayout!
+    updateDashboardLayout(id: ID!, input: UpdateDashboardLayoutInput!): DashboardLayout!
+    deleteDashboardLayout(id: ID!): ID!
+    addDashboardWidget(layoutId: ID!, input: DashboardWidgetInput!): DashboardWidget!
+    updateDashboardWidget(id: ID!, input: UpdateDashboardWidgetInput!): DashboardWidget!
+    deleteDashboardWidget(id: ID!): ID!
+    updateWidgetPositions(layoutId: ID!, positions: [WidgetPositionInput!]!): Boolean!
 }

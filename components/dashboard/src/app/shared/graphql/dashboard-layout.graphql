@@ -1,0 +1,82 @@
+fragment DashboardWidgetInfo on DashboardWidget {
+    id
+    dashboardLayoutId
+    widgetType
+    title
+    gridX
+    gridY
+    gridCols
+    gridRows
+    metricName
+    config
+    createdAt
+    updatedAt
+}
+
+fragment DashboardLayoutInfo on DashboardLayout {
+    id
+    tenantId
+    name
+    description
+    isDefault
+    refreshIntervalSeconds
+    widgets {
+        ...DashboardWidgetInfo
+    }
+    createdAt
+    updatedAt
+}
+
+query GetDashboardLayouts {
+    dashboardLayouts {
+        ...DashboardLayoutInfo
+    }
+}
+
+query GetDashboardLayout($id: ID!) {
+    dashboardLayout(id: $id) {
+        ...DashboardLayoutInfo
+    }
+}
+
+query GetDefaultDashboardLayout {
+    defaultDashboardLayout {
+        ...DashboardLayoutInfo
+    }
+}
+
+mutation CreateDashboardLayout($input: DashboardLayoutInput!) {
+    createDashboardLayout(input: $input) {
+        ...DashboardLayoutInfo
+    }
+}
+
+mutation UpdateDashboardLayout($id: ID!, $input: UpdateDashboardLayoutInput!) {
+    updateDashboardLayout(id: $id, input: $input) {
+        ...DashboardLayoutInfo
+    }
+}
+
+mutation DeleteDashboardLayout($id: ID!) {
+    deleteDashboardLayout(id: $id)
+}
+
+mutation AddDashboardWidget($layoutId: ID!, $input: DashboardWidgetInput!) {
+    addDashboardWidget(layoutId: $layoutId, input: $input) {
+        ...DashboardWidgetInfo
+    }
+}
+
+mutation UpdateDashboardWidget($id: ID!, $input: UpdateDashboardWidgetInput!) {
+    updateDashboardWidget(id: $id, input: $input) {
+        ...DashboardWidgetInfo
+    }
+}
+
+mutation DeleteDashboardWidget($id: ID!) {
+    deleteDashboardWidget(id: $id)
+}
+
+mutation UpdateWidgetPositions($layoutId: ID!, $positions: [WidgetPositionInput!]!) {
+    updateWidgetPositions(layoutId: $layoutId, positions: $positions)
+}

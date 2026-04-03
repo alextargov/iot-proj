@@ -9,6 +9,8 @@ import (
 
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/alert"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/auth"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/dashboard_layout"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/dashboard_widget"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/datamodel"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/device"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/host"
@@ -31,12 +33,14 @@ type CronScheduler interface {
 }
 
 type RootResolver struct {
-	persistence persistence.Transactioner
-	device      *device.Resolver
-	widget      *widget.Resolver
-	dataModel   *datamodel.Resolver
-	metric      *metric.Resolver
-	alert       *alert.Resolver
+	persistence     persistence.Transactioner
+	device          *device.Resolver
+	widget          *widget.Resolver
+	dataModel       *datamodel.Resolver
+	metric          *metric.Resolver
+	alert           *alert.Resolver
+	dashboardLayout *dashboard_layout.Resolver
+	dashboardWidget *dashboard_widget.Resolver
 }
 
 func NewRootResolver(persistence persistence.Transactioner, notificationSMTPConfig notification.SMTPConfig, scheduler k8s.Scheduler, cronScheduler CronScheduler) *RootResolver {
@@ -72,6 +76,20 @@ func NewRootResolver(persistence persistence.Transactioner, notificationSMTPConf
 	alertSvc := alert.NewService(alertRepo, metricRepo, deviceSvc, notificationSvc, uuidService)
 	alertRes := alert.NewResolver(persistence, alertSvc, alertConv, deviceSvc, deviceConv)
 
+	// Dashboard layout domain
+	layoutConv := dashboard_layout.NewConverter()
+	layoutRepo := dashboard_layout.NewRepository(layoutConv)
+	layoutSvc := dashboard_layout.NewService(layoutRepo, uuidService)
+
+	// Dashboard widget domain
+	dashboardWidgetConv := dashboard_widget.NewConverter()
+	dashboardWidgetRepo := dashboard_widget.NewRepository(dashboardWidgetConv)
+	dashboardWidgetSvc := dashboard_widget.NewService(dashboardWidgetRepo, layoutSvc, uuidService)
+
+	// Dashboard resolvers (layout needs widget service for fetching widgets)
+	dashboardLayoutRes := dashboard_layout.NewResolver(persistence, layoutSvc, dashboardWidgetSvc, layoutConv, dashboardWidgetConv)
+	dashboardWidgetRes := dashboard_widget.NewResolver(persistence, dashboardWidgetSvc, dashboardWidgetConv, deviceSvc, deviceConv)
+
 	// Wire the alert evaluator into the metric service for real-time alert evaluation
 	metricSvc.SetAlertEvaluator(alertSvc)
 
@@ -79,12 +97,14 @@ func NewRootResolver(persistence persistence.Transactioner, notificationSMTPConf
 	widgetRes := widget.NewResolver(persistence, widgetSvc, widgetConv, scheduler, cronScheduler)
 
 	return &RootResolver{
-		persistence: persistence,
-		device:      deviceRes,
-		widget:      widgetRes,
-		dataModel:   dataModelRes,
-		metric:      metricRes,
-		alert:       alertRes,
+		persistence:     persistence,
+		device:          deviceRes,
+		widget:          widgetRes,
+		dataModel:       dataModelRes,
+		metric:          metricRes,
+		alert:           alertRes,
+		dashboardLayout: dashboardLayoutRes,
+		dashboardWidget: dashboardWidgetRes,
 	}
 }
 
@@ -160,6 +180,18 @@ func (r *queryResolver) AlertRule(ctx context.Context, id string) (*graphql.Aler
 
 func (r *queryResolver) AlertEvents(ctx context.Context, deviceID *string, ruleID *string, first *int, after *string) (*graphql.AlertEventPage, error) {
 	return r.alert.AlertEvents(ctx, deviceID, ruleID, first, after)
+}
+
+func (r *queryResolver) DashboardLayouts(ctx context.Context) ([]*graphql.DashboardLayout, error) {
+	return r.dashboardLayout.DashboardLayouts(ctx)
+}
+
+func (r *queryResolver) DashboardLayout(ctx context.Context, id string) (*graphql.DashboardLayout, error) {
+	return r.dashboardLayout.DashboardLayout(ctx, id)
+}
+
+func (r *queryResolver) DefaultDashboardLayout(ctx context.Context) (*graphql.DashboardLayout, error) {
+	return r.dashboardLayout.DefaultDashboardLayout(ctx)
 }
 
 func (r *queryResolver) TestDeviceConnection(ctx context.Context, url string) (bool, error) {
@@ -248,6 +280,34 @@ func (r *mutationResolver) AcknowledgeAlertEvent(ctx context.Context, id string)
 	return r.alert.AcknowledgeAlertEvent(ctx, id)
 }
 
+func (r *mutationResolver) CreateDashboardLayout(ctx context.Context, input graphql.DashboardLayoutInput) (*graphql.DashboardLayout, error) {
+	return r.dashboardLayout.CreateDashboardLayout(ctx, input)
+}
+
+func (r *mutationResolver) UpdateDashboardLayout(ctx context.Context, id string, input graphql.UpdateDashboardLayoutInput) (*graphql.DashboardLayout, error) {
+	return r.dashboardLayout.UpdateDashboardLayout(ctx, id, input)
+}
+
+func (r *mutationResolver) DeleteDashboardLayout(ctx context.Context, id string) (string, error) {
+	return r.dashboardLayout.DeleteDashboardLayout(ctx, id)
+}
+
+func (r *mutationResolver) AddDashboardWidget(ctx context.Context, layoutID string, input graphql.DashboardWidgetInput) (*graphql.DashboardWidget, error) {
+	return r.dashboardWidget.AddDashboardWidget(ctx, layoutID, input)
+}
+
+func (r *mutationResolver) UpdateDashboardWidget(ctx context.Context, id string, input graphql.UpdateDashboardWidgetInput) (*graphql.DashboardWidget, error) {
+	return r.dashboardWidget.UpdateDashboardWidget(ctx, id, input)
+}
+
+func (r *mutationResolver) DeleteDashboardWidget(ctx context.Context, id string) (string, error) {
+	return r.dashboardWidget.DeleteDashboardWidget(ctx, id)
+}
+
+func (r *mutationResolver) UpdateWidgetPositions(ctx context.Context, layoutID string, positions []*graphql.WidgetPositionInput) (bool, error) {
+	return r.dashboardWidget.UpdateWidgetPositions(ctx, layoutID, positions)
+}
+
 type deviceResolver struct {
 	*RootResolver
 }
@@ -275,4 +335,17 @@ func (r alertRuleResolver) Device(ctx context.Context, obj *graphql.AlertRule) (
 
 type alertEventResolver struct {
 	*RootResolver
+}
+
+// DashboardWidget resolver
+func (r *RootResolver) DashboardWidget() graphql.DashboardWidgetResolver {
+	return &dashboardWidgetResolver{r}
+}
+
+type dashboardWidgetResolver struct {
+	*RootResolver
+}
+
+func (r dashboardWidgetResolver) Device(ctx context.Context, obj *graphql.DashboardWidget) (*graphql.Device, error) {
+	return r.dashboardWidget.DashboardWidgetDevice(ctx, obj)
 }

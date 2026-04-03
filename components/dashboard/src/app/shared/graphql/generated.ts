@@ -45,6 +45,99 @@ export enum AggregationType {
   Sum = 'SUM'
 }
 
+export type AlertCondition = {
+  __typename?: 'AlertCondition';
+  id: Scalars['ID']['output'];
+  metricName: Scalars['String']['output'];
+  operator: AlertConditionOperator;
+  threshold: Scalars['Float']['output'];
+};
+
+export type AlertConditionGroup = {
+  __typename?: 'AlertConditionGroup';
+  conditions: Array<AlertCondition>;
+  groupId: Scalars['Int']['output'];
+};
+
+export type AlertConditionInput = {
+  groupId: Scalars['Int']['input'];
+  metricName: Scalars['String']['input'];
+  operator: AlertConditionOperator;
+  threshold: Scalars['Float']['input'];
+};
+
+export enum AlertConditionOperator {
+  Eq = 'EQ',
+  Gt = 'GT',
+  Gte = 'GTE',
+  Lt = 'LT',
+  Lte = 'LTE',
+  Ne = 'NE'
+}
+
+export type AlertEvent = {
+  __typename?: 'AlertEvent';
+  id: Scalars['ID']['output'];
+  resolvedAt?: Maybe<Scalars['Timestamp']['output']>;
+  status: AlertEventStatus;
+  triggeredAt: Scalars['Timestamp']['output'];
+  triggeredValues: Scalars['String']['output'];
+};
+
+export type AlertEventPage = Pageable & {
+  __typename?: 'AlertEventPage';
+  data: Array<AlertEvent>;
+  pageInfo: PageInfo;
+  totalCount: Scalars['Int']['output'];
+};
+
+export enum AlertEventStatus {
+  Acknowledged = 'ACKNOWLEDGED',
+  Resolved = 'RESOLVED',
+  Triggered = 'TRIGGERED'
+}
+
+export type AlertNotification = {
+  __typename?: 'AlertNotification';
+  config: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  type: Scalars['String']['output'];
+};
+
+export type AlertNotificationInput = {
+  config: Scalars['String']['input'];
+  type: Scalars['String']['input'];
+};
+
+export type AlertRule = {
+  __typename?: 'AlertRule';
+  conditions: Array<AlertConditionGroup>;
+  cooldownMinutes: Scalars['Int']['output'];
+  createdAt?: Maybe<Scalars['Timestamp']['output']>;
+  description?: Maybe<Scalars['String']['output']>;
+  device: Device;
+  enabled: Scalars['Boolean']['output'];
+  id: Scalars['ID']['output'];
+  lastTriggeredAt?: Maybe<Scalars['Timestamp']['output']>;
+  name: Scalars['String']['output'];
+  notifications: Array<AlertNotification>;
+  severity: AlertSeverity;
+  updatedAt?: Maybe<Scalars['Timestamp']['output']>;
+};
+
+export type AlertRulePage = Pageable & {
+  __typename?: 'AlertRulePage';
+  data: Array<AlertRule>;
+  pageInfo: PageInfo;
+  totalCount: Scalars['Int']['output'];
+};
+
+export enum AlertSeverity {
+  Critical = 'CRITICAL',
+  Info = 'INFO',
+  Warning = 'WARNING'
+}
+
 export type Auth = {
   __typename?: 'Auth';
   accessStrategy?: Maybe<Scalars['String']['output']>;
@@ -87,6 +180,16 @@ export type CertificateOAuthCredentialDataInput = {
   url: Scalars['String']['input'];
 };
 
+export type CreateAlertRuleInput = {
+  conditions: Array<AlertConditionInput>;
+  cooldownMinutes?: InputMaybe<Scalars['Int']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  deviceId: Scalars['ID']['input'];
+  name: Scalars['String']['input'];
+  notifications: Array<AlertNotificationInput>;
+  severity?: InputMaybe<AlertSeverity>;
+};
+
 export type CredentialData = BasicCredentialData | BearerTokenCredentialData | CertificateOAuthCredentialData | OAuthCredentialData;
 
 export type CredentialDataInput = {
@@ -95,6 +198,63 @@ export type CredentialDataInput = {
   certificateOAuth?: InputMaybe<CertificateOAuthCredentialDataInput>;
   oauth?: InputMaybe<OAuthCredentialDataInput>;
 };
+
+export type DashboardLayout = {
+  __typename?: 'DashboardLayout';
+  createdAt?: Maybe<Scalars['Timestamp']['output']>;
+  description?: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  isDefault: Scalars['Boolean']['output'];
+  name: Scalars['String']['output'];
+  refreshIntervalSeconds: Scalars['Int']['output'];
+  tenantId: Scalars['ID']['output'];
+  updatedAt?: Maybe<Scalars['Timestamp']['output']>;
+  widgets: Array<DashboardWidget>;
+};
+
+export type DashboardLayoutInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  isDefault?: InputMaybe<Scalars['Boolean']['input']>;
+  name: Scalars['String']['input'];
+  refreshIntervalSeconds?: InputMaybe<Scalars['Int']['input']>;
+};
+
+export type DashboardWidget = {
+  __typename?: 'DashboardWidget';
+  config: Scalars['JSON']['output'];
+  createdAt?: Maybe<Scalars['Timestamp']['output']>;
+  dashboardLayoutId: Scalars['ID']['output'];
+  device?: Maybe<Device>;
+  gridCols: Scalars['Int']['output'];
+  gridRows: Scalars['Int']['output'];
+  gridX: Scalars['Int']['output'];
+  gridY: Scalars['Int']['output'];
+  id: Scalars['ID']['output'];
+  metricName?: Maybe<Scalars['String']['output']>;
+  title: Scalars['String']['output'];
+  updatedAt?: Maybe<Scalars['Timestamp']['output']>;
+  widgetType: DashboardWidgetType;
+};
+
+export type DashboardWidgetInput = {
+  config: Scalars['JSON']['input'];
+  deviceId?: InputMaybe<Scalars['ID']['input']>;
+  gridCols: Scalars['Int']['input'];
+  gridRows: Scalars['Int']['input'];
+  gridX: Scalars['Int']['input'];
+  gridY: Scalars['Int']['input'];
+  metricName?: InputMaybe<Scalars['String']['input']>;
+  title: Scalars['String']['input'];
+  widgetType: DashboardWidgetType;
+};
+
+export enum DashboardWidgetType {
+  Gauge = 'GAUGE',
+  LineChart = 'LINE_CHART',
+  StatusIndicator = 'STATUS_INDICATOR',
+  StatCard = 'STAT_CARD',
+  Table = 'TABLE'
+}
 
 export type DataModel = {
   __typename?: 'DataModel';
@@ -198,9 +358,16 @@ export type MetricSeries = {
 
 export type Mutation = {
   __typename?: 'Mutation';
+  acknowledgeAlertEvent: AlertEvent;
+  addDashboardWidget: DashboardWidget;
+  createAlertRule: AlertRule;
+  createDashboardLayout: DashboardLayout;
   createDataModel: DataModel;
   createDevice: Device;
   createWidget: Widget;
+  deleteAlertRule: Scalars['ID']['output'];
+  deleteDashboardLayout: Scalars['ID']['output'];
+  deleteDashboardWidget: Scalars['ID']['output'];
   deleteDataModel: Scalars['String']['output'];
   deleteDevice: Scalars['String']['output'];
   deleteWidget: Scalars['String']['output'];
@@ -209,7 +376,32 @@ export type Mutation = {
   recordDeviceMetrics: Scalars['Boolean']['output'];
   setDeviceOperation: Device;
   setOperation: Scalars['Boolean']['output'];
+  updateAlertRule: AlertRule;
+  updateDashboardLayout: DashboardLayout;
+  updateDashboardWidget: DashboardWidget;
   updateDataModel: DataModel;
+  updateWidgetPositions: Scalars['Boolean']['output'];
+};
+
+
+export type MutationAcknowledgeAlertEventArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationAddDashboardWidgetArgs = {
+  input: DashboardWidgetInput;
+  layoutId: Scalars['ID']['input'];
+};
+
+
+export type MutationCreateAlertRuleArgs = {
+  input: CreateAlertRuleInput;
+};
+
+
+export type MutationCreateDashboardLayoutArgs = {
+  input: DashboardLayoutInput;
 };
 
 
@@ -225,6 +417,21 @@ export type MutationCreateDeviceArgs = {
 
 export type MutationCreateWidgetArgs = {
   input: WidgetInput;
+};
+
+
+export type MutationDeleteAlertRuleArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationDeleteDashboardLayoutArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationDeleteDashboardWidgetArgs = {
+  id: Scalars['ID']['input'];
 };
 
 
@@ -265,9 +472,33 @@ export type MutationSetOperationArgs = {
 };
 
 
+export type MutationUpdateAlertRuleArgs = {
+  id: Scalars['ID']['input'];
+  input: UpdateAlertRuleInput;
+};
+
+
+export type MutationUpdateDashboardLayoutArgs = {
+  id: Scalars['ID']['input'];
+  input: UpdateDashboardLayoutInput;
+};
+
+
+export type MutationUpdateDashboardWidgetArgs = {
+  id: Scalars['ID']['input'];
+  input: UpdateDashboardWidgetInput;
+};
+
+
 export type MutationUpdateDataModelArgs = {
   id: Scalars['ID']['input'];
   input: DataModelInput;
+};
+
+
+export type MutationUpdateWidgetPositionsArgs = {
+  layoutId: Scalars['ID']['input'];
+  positions: Array<WidgetPositionInput>;
 };
 
 export type OAuthCredentialData = {
@@ -305,7 +536,13 @@ export type Pageable = {
 export type Query = {
   __typename?: 'Query';
   _service: _Service;
+  alertEvents: AlertEventPage;
+  alertRule?: Maybe<AlertRule>;
+  alertRules: AlertRulePage;
+  dashboardLayout?: Maybe<DashboardLayout>;
+  dashboardLayouts: Array<DashboardLayout>;
   dataModels: Array<Maybe<DataModel>>;
+  defaultDashboardLayout?: Maybe<DashboardLayout>;
   device?: Maybe<Device>;
   deviceAggregatedMetrics?: Maybe<AggregatedMetric>;
   deviceByIdAndAggregation?: Maybe<Device>;
@@ -317,6 +554,31 @@ export type Query = {
   widget?: Maybe<Widget>;
   widgets: Array<Maybe<Widget>>;
   widgetsPage: WidgetPage;
+};
+
+
+export type QueryAlertEventsArgs = {
+  after?: InputMaybe<Scalars['PageCursor']['input']>;
+  deviceId?: InputMaybe<Scalars['ID']['input']>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  ruleId?: InputMaybe<Scalars['ID']['input']>;
+};
+
+
+export type QueryAlertRuleArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryAlertRulesArgs = {
+  after?: InputMaybe<Scalars['PageCursor']['input']>;
+  deviceId?: InputMaybe<Scalars['ID']['input']>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+export type QueryDashboardLayoutArgs = {
+  id: Scalars['ID']['input'];
 };
 
 
@@ -376,6 +638,34 @@ export type TokenCredentialDataInput = {
   token: Scalars['String']['input'];
 };
 
+export type UpdateAlertRuleInput = {
+  conditions?: InputMaybe<Array<AlertConditionInput>>;
+  cooldownMinutes?: InputMaybe<Scalars['Int']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  enabled?: InputMaybe<Scalars['Boolean']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  notifications?: InputMaybe<Array<AlertNotificationInput>>;
+  severity?: InputMaybe<AlertSeverity>;
+};
+
+export type UpdateDashboardLayoutInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  isDefault?: InputMaybe<Scalars['Boolean']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  refreshIntervalSeconds?: InputMaybe<Scalars['Int']['input']>;
+};
+
+export type UpdateDashboardWidgetInput = {
+  config?: InputMaybe<Scalars['JSON']['input']>;
+  deviceId?: InputMaybe<Scalars['ID']['input']>;
+  gridCols?: InputMaybe<Scalars['Int']['input']>;
+  gridRows?: InputMaybe<Scalars['Int']['input']>;
+  gridX?: InputMaybe<Scalars['Int']['input']>;
+  gridY?: InputMaybe<Scalars['Int']['input']>;
+  metricName?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type Widget = {
   __typename?: 'Widget';
   code: Scalars['String']['output'];
@@ -409,6 +699,14 @@ export type WidgetPage = Pageable & {
   totalCount: Scalars['Int']['output'];
 };
 
+export type WidgetPositionInput = {
+  gridCols: Scalars['Int']['input'];
+  gridRows: Scalars['Int']['input'];
+  gridX: Scalars['Int']['input'];
+  gridY: Scalars['Int']['input'];
+  widgetId: Scalars['ID']['input'];
+};
+
 export enum WidgetStatus {
   Active = 'ACTIVE',
   Inactive = 'INACTIVE'
@@ -418,6 +716,135 @@ export type _Service = {
   __typename?: '_Service';
   sdl?: Maybe<Scalars['String']['output']>;
 };
+
+export type GetAlertRulesQueryVariables = Exact<{
+  deviceId?: InputMaybe<Scalars['ID']['input']>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  after?: InputMaybe<Scalars['PageCursor']['input']>;
+}>;
+
+
+export type GetAlertRulesQuery = { __typename?: 'Query', alertRules: { __typename?: 'AlertRulePage', totalCount: number, data: Array<{ __typename?: 'AlertRule', id: string, name: string, description?: string | null, severity: AlertSeverity, enabled: boolean, cooldownMinutes: number, lastTriggeredAt?: any | null, createdAt?: any | null, updatedAt?: any | null, conditions: Array<{ __typename?: 'AlertConditionGroup', groupId: number, conditions: Array<{ __typename?: 'AlertCondition', id: string, metricName: string, operator: AlertConditionOperator, threshold: number }> }>, notifications: Array<{ __typename?: 'AlertNotification', id: string, type: string, config: string }>, device: { __typename?: 'Device', id: string, name: string } }>, pageInfo: { __typename?: 'PageInfo', startCursor: any, endCursor: any, hasNextPage: boolean } } };
+
+export type GetAlertRuleQueryVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type GetAlertRuleQuery = { __typename?: 'Query', alertRule?: { __typename?: 'AlertRule', id: string, name: string, description?: string | null, severity: AlertSeverity, enabled: boolean, cooldownMinutes: number, lastTriggeredAt?: any | null, createdAt?: any | null, updatedAt?: any | null, conditions: Array<{ __typename?: 'AlertConditionGroup', groupId: number, conditions: Array<{ __typename?: 'AlertCondition', id: string, metricName: string, operator: AlertConditionOperator, threshold: number }> }>, notifications: Array<{ __typename?: 'AlertNotification', id: string, type: string, config: string }>, device: { __typename?: 'Device', id: string, name: string } } | null };
+
+export type GetAlertEventsQueryVariables = Exact<{
+  deviceId?: InputMaybe<Scalars['ID']['input']>;
+  ruleId?: InputMaybe<Scalars['ID']['input']>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  after?: InputMaybe<Scalars['PageCursor']['input']>;
+}>;
+
+
+export type GetAlertEventsQuery = { __typename?: 'Query', alertEvents: { __typename?: 'AlertEventPage', totalCount: number, data: Array<{ __typename?: 'AlertEvent', id: string, triggeredValues: string, status: AlertEventStatus, triggeredAt: any, resolvedAt?: any | null }>, pageInfo: { __typename?: 'PageInfo', startCursor: any, endCursor: any, hasNextPage: boolean } } };
+
+export type CreateAlertRuleMutationVariables = Exact<{
+  input: CreateAlertRuleInput;
+}>;
+
+
+export type CreateAlertRuleMutation = { __typename?: 'Mutation', createAlertRule: { __typename?: 'AlertRule', id: string, name: string, description?: string | null, severity: AlertSeverity, enabled: boolean, cooldownMinutes: number, createdAt?: any | null, conditions: Array<{ __typename?: 'AlertConditionGroup', groupId: number, conditions: Array<{ __typename?: 'AlertCondition', id: string, metricName: string, operator: AlertConditionOperator, threshold: number }> }>, notifications: Array<{ __typename?: 'AlertNotification', id: string, type: string, config: string }> } };
+
+export type UpdateAlertRuleMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  input: UpdateAlertRuleInput;
+}>;
+
+
+export type UpdateAlertRuleMutation = { __typename?: 'Mutation', updateAlertRule: { __typename?: 'AlertRule', id: string, name: string, description?: string | null, severity: AlertSeverity, enabled: boolean, cooldownMinutes: number, updatedAt?: any | null, conditions: Array<{ __typename?: 'AlertConditionGroup', groupId: number, conditions: Array<{ __typename?: 'AlertCondition', id: string, metricName: string, operator: AlertConditionOperator, threshold: number }> }>, notifications: Array<{ __typename?: 'AlertNotification', id: string, type: string, config: string }> } };
+
+export type DeleteAlertRuleMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type DeleteAlertRuleMutation = { __typename?: 'Mutation', deleteAlertRule: string };
+
+export type AcknowledgeAlertEventMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type AcknowledgeAlertEventMutation = { __typename?: 'Mutation', acknowledgeAlertEvent: { __typename?: 'AlertEvent', id: string, status: AlertEventStatus } };
+
+export type DashboardWidgetInfoFragment = { __typename?: 'DashboardWidget', id: string, dashboardLayoutId: string, widgetType: DashboardWidgetType, title: string, gridX: number, gridY: number, gridCols: number, gridRows: number, metricName?: string | null, config: any, createdAt?: any | null, updatedAt?: any | null };
+
+export type DashboardLayoutInfoFragment = { __typename?: 'DashboardLayout', id: string, tenantId: string, name: string, description?: string | null, isDefault: boolean, refreshIntervalSeconds: number, createdAt?: any | null, updatedAt?: any | null, widgets: Array<{ __typename?: 'DashboardWidget', id: string, dashboardLayoutId: string, widgetType: DashboardWidgetType, title: string, gridX: number, gridY: number, gridCols: number, gridRows: number, metricName?: string | null, config: any, createdAt?: any | null, updatedAt?: any | null }> };
+
+export type GetDashboardLayoutsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetDashboardLayoutsQuery = { __typename?: 'Query', dashboardLayouts: Array<{ __typename?: 'DashboardLayout', id: string, tenantId: string, name: string, description?: string | null, isDefault: boolean, refreshIntervalSeconds: number, createdAt?: any | null, updatedAt?: any | null, widgets: Array<{ __typename?: 'DashboardWidget', id: string, dashboardLayoutId: string, widgetType: DashboardWidgetType, title: string, gridX: number, gridY: number, gridCols: number, gridRows: number, metricName?: string | null, config: any, createdAt?: any | null, updatedAt?: any | null }> }> };
+
+export type GetDashboardLayoutQueryVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type GetDashboardLayoutQuery = { __typename?: 'Query', dashboardLayout?: { __typename?: 'DashboardLayout', id: string, tenantId: string, name: string, description?: string | null, isDefault: boolean, refreshIntervalSeconds: number, createdAt?: any | null, updatedAt?: any | null, widgets: Array<{ __typename?: 'DashboardWidget', id: string, dashboardLayoutId: string, widgetType: DashboardWidgetType, title: string, gridX: number, gridY: number, gridCols: number, gridRows: number, metricName?: string | null, config: any, createdAt?: any | null, updatedAt?: any | null }> } | null };
+
+export type GetDefaultDashboardLayoutQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetDefaultDashboardLayoutQuery = { __typename?: 'Query', defaultDashboardLayout?: { __typename?: 'DashboardLayout', id: string, tenantId: string, name: string, description?: string | null, isDefault: boolean, refreshIntervalSeconds: number, createdAt?: any | null, updatedAt?: any | null, widgets: Array<{ __typename?: 'DashboardWidget', id: string, dashboardLayoutId: string, widgetType: DashboardWidgetType, title: string, gridX: number, gridY: number, gridCols: number, gridRows: number, metricName?: string | null, config: any, createdAt?: any | null, updatedAt?: any | null }> } | null };
+
+export type CreateDashboardLayoutMutationVariables = Exact<{
+  input: DashboardLayoutInput;
+}>;
+
+
+export type CreateDashboardLayoutMutation = { __typename?: 'Mutation', createDashboardLayout: { __typename?: 'DashboardLayout', id: string, tenantId: string, name: string, description?: string | null, isDefault: boolean, refreshIntervalSeconds: number, createdAt?: any | null, updatedAt?: any | null, widgets: Array<{ __typename?: 'DashboardWidget', id: string, dashboardLayoutId: string, widgetType: DashboardWidgetType, title: string, gridX: number, gridY: number, gridCols: number, gridRows: number, metricName?: string | null, config: any, createdAt?: any | null, updatedAt?: any | null }> } };
+
+export type UpdateDashboardLayoutMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  input: UpdateDashboardLayoutInput;
+}>;
+
+
+export type UpdateDashboardLayoutMutation = { __typename?: 'Mutation', updateDashboardLayout: { __typename?: 'DashboardLayout', id: string, tenantId: string, name: string, description?: string | null, isDefault: boolean, refreshIntervalSeconds: number, createdAt?: any | null, updatedAt?: any | null, widgets: Array<{ __typename?: 'DashboardWidget', id: string, dashboardLayoutId: string, widgetType: DashboardWidgetType, title: string, gridX: number, gridY: number, gridCols: number, gridRows: number, metricName?: string | null, config: any, createdAt?: any | null, updatedAt?: any | null }> } };
+
+export type DeleteDashboardLayoutMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type DeleteDashboardLayoutMutation = { __typename?: 'Mutation', deleteDashboardLayout: string };
+
+export type AddDashboardWidgetMutationVariables = Exact<{
+  layoutId: Scalars['ID']['input'];
+  input: DashboardWidgetInput;
+}>;
+
+
+export type AddDashboardWidgetMutation = { __typename?: 'Mutation', addDashboardWidget: { __typename?: 'DashboardWidget', id: string, dashboardLayoutId: string, widgetType: DashboardWidgetType, title: string, gridX: number, gridY: number, gridCols: number, gridRows: number, metricName?: string | null, config: any, createdAt?: any | null, updatedAt?: any | null } };
+
+export type UpdateDashboardWidgetMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  input: UpdateDashboardWidgetInput;
+}>;
+
+
+export type UpdateDashboardWidgetMutation = { __typename?: 'Mutation', updateDashboardWidget: { __typename?: 'DashboardWidget', id: string, dashboardLayoutId: string, widgetType: DashboardWidgetType, title: string, gridX: number, gridY: number, gridCols: number, gridRows: number, metricName?: string | null, config: any, createdAt?: any | null, updatedAt?: any | null } };
+
+export type DeleteDashboardWidgetMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type DeleteDashboardWidgetMutation = { __typename?: 'Mutation', deleteDashboardWidget: string };
+
+export type UpdateWidgetPositionsMutationVariables = Exact<{
+  layoutId: Scalars['ID']['input'];
+  positions: Array<WidgetPositionInput> | WidgetPositionInput;
+}>;
+
+
+export type UpdateWidgetPositionsMutation = { __typename?: 'Mutation', updateWidgetPositions: boolean };
 
 export type DataModelInfoFragment = { __typename?: 'DataModel', id: string, name: string, description: string, schema: any, createdAt?: any | null, updatedAt?: any | null };
 
@@ -588,6 +1015,37 @@ export type DeleteWidgetMutationVariables = Exact<{
 
 export type DeleteWidgetMutation = { __typename?: 'Mutation', deleteWidget: string };
 
+export const DashboardWidgetInfoFragmentDoc = gql`
+    fragment DashboardWidgetInfo on DashboardWidget {
+  id
+  dashboardLayoutId
+  widgetType
+  title
+  gridX
+  gridY
+  gridCols
+  gridRows
+  metricName
+  config
+  createdAt
+  updatedAt
+}
+    `;
+export const DashboardLayoutInfoFragmentDoc = gql`
+    fragment DashboardLayoutInfo on DashboardLayout {
+  id
+  tenantId
+  name
+  description
+  isDefault
+  refreshIntervalSeconds
+  widgets {
+    ...DashboardWidgetInfo
+  }
+  createdAt
+  updatedAt
+}
+    ${DashboardWidgetInfoFragmentDoc}`;
 export const DataModelInfoFragmentDoc = gql`
     fragment DataModelInfo on DataModel {
   id
@@ -684,6 +1142,417 @@ export const WidgetInfoFragmentDoc = gql`
   updatedAt
 }
     `;
+export const GetAlertRulesDocument = gql`
+    query GetAlertRules($deviceId: ID, $first: Int, $after: PageCursor) {
+  alertRules(deviceId: $deviceId, first: $first, after: $after) {
+    data {
+      id
+      name
+      description
+      severity
+      enabled
+      cooldownMinutes
+      conditions {
+        groupId
+        conditions {
+          id
+          metricName
+          operator
+          threshold
+        }
+      }
+      notifications {
+        id
+        type
+        config
+      }
+      lastTriggeredAt
+      createdAt
+      updatedAt
+      device {
+        id
+        name
+      }
+    }
+    pageInfo {
+      startCursor
+      endCursor
+      hasNextPage
+    }
+    totalCount
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class GetAlertRulesGQL extends Apollo.Query<GetAlertRulesQuery, GetAlertRulesQueryVariables> {
+    document = GetAlertRulesDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const GetAlertRuleDocument = gql`
+    query GetAlertRule($id: ID!) {
+  alertRule(id: $id) {
+    id
+    name
+    description
+    severity
+    enabled
+    cooldownMinutes
+    conditions {
+      groupId
+      conditions {
+        id
+        metricName
+        operator
+        threshold
+      }
+    }
+    notifications {
+      id
+      type
+      config
+    }
+    lastTriggeredAt
+    createdAt
+    updatedAt
+    device {
+      id
+      name
+    }
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class GetAlertRuleGQL extends Apollo.Query<GetAlertRuleQuery, GetAlertRuleQueryVariables> {
+    document = GetAlertRuleDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const GetAlertEventsDocument = gql`
+    query GetAlertEvents($deviceId: ID, $ruleId: ID, $first: Int, $after: PageCursor) {
+  alertEvents(deviceId: $deviceId, ruleId: $ruleId, first: $first, after: $after) {
+    data {
+      id
+      triggeredValues
+      status
+      triggeredAt
+      resolvedAt
+    }
+    pageInfo {
+      startCursor
+      endCursor
+      hasNextPage
+    }
+    totalCount
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class GetAlertEventsGQL extends Apollo.Query<GetAlertEventsQuery, GetAlertEventsQueryVariables> {
+    document = GetAlertEventsDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const CreateAlertRuleDocument = gql`
+    mutation CreateAlertRule($input: CreateAlertRuleInput!) {
+  createAlertRule(input: $input) {
+    id
+    name
+    description
+    severity
+    enabled
+    cooldownMinutes
+    conditions {
+      groupId
+      conditions {
+        id
+        metricName
+        operator
+        threshold
+      }
+    }
+    notifications {
+      id
+      type
+      config
+    }
+    createdAt
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class CreateAlertRuleGQL extends Apollo.Mutation<CreateAlertRuleMutation, CreateAlertRuleMutationVariables> {
+    document = CreateAlertRuleDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const UpdateAlertRuleDocument = gql`
+    mutation UpdateAlertRule($id: ID!, $input: UpdateAlertRuleInput!) {
+  updateAlertRule(id: $id, input: $input) {
+    id
+    name
+    description
+    severity
+    enabled
+    cooldownMinutes
+    conditions {
+      groupId
+      conditions {
+        id
+        metricName
+        operator
+        threshold
+      }
+    }
+    notifications {
+      id
+      type
+      config
+    }
+    updatedAt
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class UpdateAlertRuleGQL extends Apollo.Mutation<UpdateAlertRuleMutation, UpdateAlertRuleMutationVariables> {
+    document = UpdateAlertRuleDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const DeleteAlertRuleDocument = gql`
+    mutation DeleteAlertRule($id: ID!) {
+  deleteAlertRule(id: $id)
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class DeleteAlertRuleGQL extends Apollo.Mutation<DeleteAlertRuleMutation, DeleteAlertRuleMutationVariables> {
+    document = DeleteAlertRuleDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const AcknowledgeAlertEventDocument = gql`
+    mutation AcknowledgeAlertEvent($id: ID!) {
+  acknowledgeAlertEvent(id: $id) {
+    id
+    status
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class AcknowledgeAlertEventGQL extends Apollo.Mutation<AcknowledgeAlertEventMutation, AcknowledgeAlertEventMutationVariables> {
+    document = AcknowledgeAlertEventDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const GetDashboardLayoutsDocument = gql`
+    query GetDashboardLayouts {
+  dashboardLayouts {
+    ...DashboardLayoutInfo
+  }
+}
+    ${DashboardLayoutInfoFragmentDoc}`;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class GetDashboardLayoutsGQL extends Apollo.Query<GetDashboardLayoutsQuery, GetDashboardLayoutsQueryVariables> {
+    document = GetDashboardLayoutsDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const GetDashboardLayoutDocument = gql`
+    query GetDashboardLayout($id: ID!) {
+  dashboardLayout(id: $id) {
+    ...DashboardLayoutInfo
+  }
+}
+    ${DashboardLayoutInfoFragmentDoc}`;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class GetDashboardLayoutGQL extends Apollo.Query<GetDashboardLayoutQuery, GetDashboardLayoutQueryVariables> {
+    document = GetDashboardLayoutDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const GetDefaultDashboardLayoutDocument = gql`
+    query GetDefaultDashboardLayout {
+  defaultDashboardLayout {
+    ...DashboardLayoutInfo
+  }
+}
+    ${DashboardLayoutInfoFragmentDoc}`;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class GetDefaultDashboardLayoutGQL extends Apollo.Query<GetDefaultDashboardLayoutQuery, GetDefaultDashboardLayoutQueryVariables> {
+    document = GetDefaultDashboardLayoutDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const CreateDashboardLayoutDocument = gql`
+    mutation CreateDashboardLayout($input: DashboardLayoutInput!) {
+  createDashboardLayout(input: $input) {
+    ...DashboardLayoutInfo
+  }
+}
+    ${DashboardLayoutInfoFragmentDoc}`;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class CreateDashboardLayoutGQL extends Apollo.Mutation<CreateDashboardLayoutMutation, CreateDashboardLayoutMutationVariables> {
+    document = CreateDashboardLayoutDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const UpdateDashboardLayoutDocument = gql`
+    mutation UpdateDashboardLayout($id: ID!, $input: UpdateDashboardLayoutInput!) {
+  updateDashboardLayout(id: $id, input: $input) {
+    ...DashboardLayoutInfo
+  }
+}
+    ${DashboardLayoutInfoFragmentDoc}`;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class UpdateDashboardLayoutGQL extends Apollo.Mutation<UpdateDashboardLayoutMutation, UpdateDashboardLayoutMutationVariables> {
+    document = UpdateDashboardLayoutDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const DeleteDashboardLayoutDocument = gql`
+    mutation DeleteDashboardLayout($id: ID!) {
+  deleteDashboardLayout(id: $id)
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class DeleteDashboardLayoutGQL extends Apollo.Mutation<DeleteDashboardLayoutMutation, DeleteDashboardLayoutMutationVariables> {
+    document = DeleteDashboardLayoutDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const AddDashboardWidgetDocument = gql`
+    mutation AddDashboardWidget($layoutId: ID!, $input: DashboardWidgetInput!) {
+  addDashboardWidget(layoutId: $layoutId, input: $input) {
+    ...DashboardWidgetInfo
+  }
+}
+    ${DashboardWidgetInfoFragmentDoc}`;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class AddDashboardWidgetGQL extends Apollo.Mutation<AddDashboardWidgetMutation, AddDashboardWidgetMutationVariables> {
+    document = AddDashboardWidgetDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const UpdateDashboardWidgetDocument = gql`
+    mutation UpdateDashboardWidget($id: ID!, $input: UpdateDashboardWidgetInput!) {
+  updateDashboardWidget(id: $id, input: $input) {
+    ...DashboardWidgetInfo
+  }
+}
+    ${DashboardWidgetInfoFragmentDoc}`;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class UpdateDashboardWidgetGQL extends Apollo.Mutation<UpdateDashboardWidgetMutation, UpdateDashboardWidgetMutationVariables> {
+    document = UpdateDashboardWidgetDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const DeleteDashboardWidgetDocument = gql`
+    mutation DeleteDashboardWidget($id: ID!) {
+  deleteDashboardWidget(id: $id)
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class DeleteDashboardWidgetGQL extends Apollo.Mutation<DeleteDashboardWidgetMutation, DeleteDashboardWidgetMutationVariables> {
+    document = DeleteDashboardWidgetDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const UpdateWidgetPositionsDocument = gql`
+    mutation UpdateWidgetPositions($layoutId: ID!, $positions: [WidgetPositionInput!]!) {
+  updateWidgetPositions(layoutId: $layoutId, positions: $positions)
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class UpdateWidgetPositionsGQL extends Apollo.Mutation<UpdateWidgetPositionsMutation, UpdateWidgetPositionsMutationVariables> {
+    document = UpdateWidgetPositionsDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
 export const ListDataModelsDocument = gql`
     query ListDataModels {
   dataModels {

@@ -92,10 +92,38 @@
 
                 <mat-divider></mat-divider>
 
-                <button mat-button class="menu-button" routerLink="/dashboard">
+                <button mat-button class="menu-button" routerLink="/home">
                     <mat-icon>home</mat-icon>
-                    <span>Dashboard</span>
+                    <span>Home</span>
                 </button>
+
+                <mat-expansion-panel class="dashboard-submenu" [expanded]="isDashboardsExpanded" (opened)="isDashboardsExpanded = true" (closed)="isDashboardsExpanded = false">
+                    <mat-expansion-panel-header>
+                        <mat-panel-title>
+                            <mat-icon>dashboard</mat-icon>
+                            <span>Dashboards</span>
+                        </mat-panel-title>
+                    </mat-expansion-panel-header>
+
+                    @for (layout of dashboardLayouts; track layout.id) {
+                        <button mat-button class="menu-button submenu-button" (click)="navigateToDashboard(layout.id)">
+                            <mat-icon>{{ layout.isDefault ? 'star' : 'dashboard_customize' }}</mat-icon>
+                            <span>{{ layout.name }}</span>
+                        </button>
+                    }
+
+                    @if (dashboardLayouts.length === 0) {
+                        <div class="submenu-empty">No dashboards yet</div>
+                    }
+
+                    <mat-divider></mat-divider>
+
+                    <button mat-button class="menu-button submenu-button" routerLink="/dashboard">
+                        <mat-icon>add</mat-icon>
+                        <span>New Dashboard</span>
+                    </button>
+                </mat-expansion-panel>
+
                 <button mat-button class="menu-button" routerLink="/widgets">
                     <mat-icon>widgets</mat-icon>
                     <span>Widgets</span>

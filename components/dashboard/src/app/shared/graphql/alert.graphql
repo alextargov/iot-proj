@@ -78,15 +78,6 @@ query GetAlertEvents($deviceId: ID, $ruleId: ID, $first: Int, $after: PageCursor
       status
       triggeredAt
       resolvedAt
-      alertRule {
-        id
-        name
-        severity
-      }
-      device {
-        id
-        name
-      }
     }
     pageInfo {
       startCursor

@@ -8,6 +8,7 @@ import { MaterialModule } from './shared/material.module';
 import { CoreModule } from './core/core.module';
 
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { HomeModule } from './modules/home/home.module';
 import { SharedModule } from './shared/shared.module';
 import { ProfileModule } from './modules/profile/profile.module';
 import { WidgetsModule } from './modules/widgets/widgets.module';
@@ -25,6 +26,7 @@ import { MonacoEditorModule } from 'ngx-monaco-editor-v2';
         HttpClientModule,
 
         SharedModule,
+        HomeModule,
         DashboardModule,
         ProfileModule,
         WidgetsModule,

@@ -65,5 +65,9 @@ models:
     fields:
       device:
         resolver: true
+  DashboardWidget:
+    fields:
+      device:
+        resolver: true
   JSON:
     model: "github.com/alextargov/iot-proj/components/orchestrator/pkg/graphql.JSON"
