@@ -1,204 +1,127 @@
-<div class="dashboard__header">
-    <h2>Dashboard Builder</h2>
-</div>
-
-<!-- Dashboard Builder -->
-<div class="dashboard__builder">
-        <!-- Dashboard List Sidebar -->
-        <div class="dashboard__sidebar">
-            <div class="dashboard__sidebar-header">
-                <h3>My Dashboards</h3>
-                <button mat-icon-button (click)="createNewDashboard()" matTooltip="Create new dashboard">
-                    <mat-icon>add</mat-icon>
-                </button>
-            </div>
-
-            @if (isLayoutsLoading) {
-                <div class="dashboard__sidebar-loading">
-                    <mat-spinner diameter="24"></mat-spinner>
-                </div>
-            } @else if (allLayouts.length === 0) {
-                <div class="dashboard__sidebar-empty">
-                    <p>No dashboards yet</p>
-                    <button mat-stroked-button (click)="createNewDashboard()">
-                        <mat-icon>add</mat-icon>
-                        Create First Dashboard
-                    </button>
-                </div>
+<div class="dashboard">
+    <!-- Toolbar -->
+    <div class="dashboard__toolbar">
+        <div class="dashboard__toolbar-left">
+            @if (currentLayout) {
+                <h2 class="dashboard__title">{{ currentLayout.name }}</h2>
+                @if (currentLayout.description) {
+                    <span class="dashboard__description">{{ currentLayout.description }}</span>
+                }
             } @else {
-                <div class="dashboard__sidebar-list">
-                    @for (layout of allLayouts; track layout.id) {
-                        <div
-                            class="dashboard__sidebar-item"
-                            [class.dashboard__sidebar-item--active]="currentLayout?.id === layout.id"
-                            (click)="selectLayout(layout)">
-                            <div class="dashboard__sidebar-item-content">
-                                <div class="dashboard__sidebar-item-name">
-                                    {{ layout.name }}
-                                    @if (layout.isDefault) {
-                                        <mat-icon class="dashboard__sidebar-item-default" matTooltip="Default dashboard">star</mat-icon>
-                                    }
-                                </div>
-                                <div class="dashboard__sidebar-item-meta">
-                                    {{ layout.widgets.length }} widget{{ layout.widgets.length !== 1 ? 's' : '' }}
-                                </div>
-                            </div>
-                            <div class="dashboard__sidebar-item-actions">
-                                <button mat-icon-button [matMenuTriggerFor]="layoutMenu" (click)="$event.stopPropagation()">
-                                    <mat-icon>more_vert</mat-icon>
-                                </button>
-                                <mat-menu #layoutMenu="matMenu">
-                                    @if (!layout.isDefault) {
-                                        <button mat-menu-item (click)="setAsDefault(layout)">
-                                            <mat-icon>star_outline</mat-icon>
-                                            <span>Set as Default</span>
-                                        </button>
-                                    }
-                                    <button mat-menu-item (click)="deleteDashboard(layout)" [disabled]="allLayouts.length <= 1">
-                                        <mat-icon>delete</mat-icon>
-                                        <span>Delete</span>
+                <h2 class="dashboard__title">Dashboard</h2>
+            }
+        </div>
+        <div class="dashboard__toolbar-right">
+            <button mat-stroked-button (click)="openAddWidgetDialog()" [disabled]="!currentLayout">
+                <mat-icon>add</mat-icon>
+                Add Widget
+            </button>
+
+            <button mat-stroked-button (click)="onLockButtonClick()" [disabled]="!currentLayout">
+                @if (isLocked) {
+                    <mat-icon>lock</mat-icon>
+                    Unlock
+                } @else {
+                    <mat-icon>lock_open</mat-icon>
+                    Lock
+                }
+            </button>
+        </div>
+    </div>
+
+    <!-- Content -->
+    <div class="dashboard__content">
+        @if (isLayoutsLoading) {
+            <div class="dashboard__loading">
+                <mat-spinner diameter="40"></mat-spinner>
+                <span>Loading dashboard...</span>
+            </div>
+        } @else if (!currentLayout) {
+            <div class="dashboard__empty">
+                <mat-icon>dashboard</mat-icon>
+                <h3>No Dashboard Selected</h3>
+                <p>Select a dashboard from the menu or create a new one</p>
+            </div>
+        } @else if (dashboard.length === 0) {
+            <div class="dashboard__empty">
+                <mat-icon>widgets</mat-icon>
+                <h3>No Widgets</h3>
+                <p>Click "Add Widget" to get started</p>
+            </div>
+        } @else {
+            <gridster [options]="options" class="dashboard__grid">
+                @for (item of dashboard; track item.widget?.id || $index) {
+                    <gridster-item [item]="item">
+                        <div class="widget-container">
+                            <div class="widget-header" [class.drag-handler]="!isLocked">
+                                <span class="widget-title">{{ item.widget?.title }}</span>
+                                @if (!isLocked) {
+                                    <button mat-icon-button class="widget-remove" (click)="removeWidget(item)">
+                                        <mat-icon>close</mat-icon>
                                     </button>
-                                </mat-menu>
+                                }
+                            </div>
+                            <div class="widget-content">
+                                @switch (item.widget?.widgetType) {
+                                    @case (DashboardWidgetType.Gauge) {
+                                        <app-gauge-widget
+                                            [deviceId]="item.widgetConfig?.deviceId"
+                                            [metricName]="item.widgetConfig?.metricName"
+                                            [minValue]="item.widgetConfig?.minValue ?? 0"
+                                            [maxValue]="item.widgetConfig?.maxValue ?? 100"
+                                            [unit]="item.widgetConfig?.unit"
+                                            [decimals]="item.widgetConfig?.decimals ?? 1"
+                                            [refreshInterval]="refreshInterval">
+                                        </app-gauge-widget>
+                                    }
+                                    @case (DashboardWidgetType.LineChart) {
+                                        <app-line-chart-widget
+                                            [deviceId]="item.widgetConfig?.deviceId"
+                                            [metricNames]="item.widgetConfig?.metricNames"
+                                            [timeRange]="item.widgetConfig?.timeRange || 'hour'"
+                                            [refreshInterval]="refreshInterval">
+                                        </app-line-chart-widget>
+                                    }
+                                    @case (DashboardWidgetType.StatusIndicator) {
+                                        <app-status-indicator-widget
+                                            [deviceId]="item.widgetConfig?.deviceId"
+                                            [size]="item.widgetConfig?.size || 'medium'"
+                                            [showLabel]="item.widgetConfig?.showLabel !== false"
+                                            [refreshInterval]="refreshInterval">
+                                        </app-status-indicator-widget>
+                                    }
+                                    @case (DashboardWidgetType.StatCard) {
+                                        <app-stat-card-widget
+                                            [deviceId]="item.widgetConfig?.deviceId"
+                                            [metricName]="item.widgetConfig?.metricName"
+                                            [aggregation]="item.widgetConfig?.aggregation || 'average'"
+                                            [timeRange]="item.widgetConfig?.timeRange || 'hour'"
+                                            [unit]="item.widgetConfig?.unit"
+                                            [decimals]="item.widgetConfig?.decimals ?? 1"
+                                            [refreshInterval]="refreshInterval">
+                                        </app-stat-card-widget>
+                                    }
+                                    @case (DashboardWidgetType.Table) {
+                                        <app-table-widget
+                                            [deviceId]="item.widgetConfig?.deviceId"
+                                            [metricName]="item.widgetConfig?.metricName"
+                                            [timeRange]="item.widgetConfig?.timeRange || 'hour'"
+                                            [limit]="item.widgetConfig?.limit ?? 10"
+                                            [refreshInterval]="refreshInterval">
+                                        </app-table-widget>
+                                    }
+                                    @default {
+                                        <div class="widget-unknown">
+                                            <mat-icon>help_outline</mat-icon>
+                                            <span>Unknown widget type</span>
+                                        </div>
+                                    }
+                                }
                             </div>
                         </div>
-                    }
-                </div>
-            }
-        </div>
-
-        <!-- Main Builder Area -->
-        <div class="dashboard__builder-main">
-            <!-- Builder Toolbar -->
-            <div class="dashboard__builder-toolbar">
-                <div class="dashboard__builder-toolbar-left">
-                    @if (currentLayout) {
-                        <span class="dashboard__builder-name">{{ currentLayout.name }}</span>
-                        @if (currentLayout.description) {
-                            <span class="dashboard__builder-description">{{ currentLayout.description }}</span>
-                        }
-                    } @else {
-                        <span class="dashboard__builder-name">No Dashboard Selected</span>
-                    }
-                </div>
-                <div class="dashboard__builder-toolbar-right">
-                    <button mat-stroked-button (click)="openAddWidgetDialog()" [disabled]="!currentLayout">
-                        <mat-icon>add</mat-icon>
-                        Add Widget
-                    </button>
-
-                    <button mat-stroked-button (click)="onLockButtonClick()" [disabled]="!currentLayout">
-                        @if (isLocked) {
-                            <ng-container>
-                                <mat-icon>lock</mat-icon>
-                                Unlock
-                            </ng-container>
-                        } @else {
-                            <ng-container>
-                                <mat-icon>lock_open</mat-icon>
-                                Lock
-                            </ng-container>
-                        }
-                    </button>
-                </div>
-            </div>
-
-            <!-- Empty State -->
-            @if (!currentLayout) {
-                <div class="dashboard__builder-empty">
-                    <mat-icon>dashboard</mat-icon>
-                    <h3>No Dashboard Selected</h3>
-                    <p>Select a dashboard from the list or create a new one</p>
-                    <button mat-flat-button color="primary" (click)="createNewDashboard()">
-                        <mat-icon>add</mat-icon>
-                        Create Dashboard
-                    </button>
-                </div>
-            } @else {
-                <!-- Gridster Grid -->
-                <gridster [options]="options" class="dashboard__builder-grid">
-                    @for (item of dashboard; track item.widget?.id || $index) {
-                        <gridster-item [item]="item">
-                            <div class="widget-container">
-                                <!-- Widget Header -->
-                                <div class="widget-header" [class.drag-handler]="!isLocked">
-                                    <span class="widget-title">{{ item.widget?.title }}</span>
-                                    @if (!isLocked) {
-                                        <button mat-icon-button class="widget-remove" (click)="removeWidget(item)">
-                                            <mat-icon>close</mat-icon>
-                                        </button>
-                                    }
-                                </div>
-
-                                <!-- Widget Content -->
-                                <div class="widget-content">
-                                    @switch (item.widget?.widgetType) {
-                                        @case (DashboardWidgetType.Gauge) {
-                                            <app-gauge-widget
-                                                [deviceId]="item.widgetConfig?.deviceId"
-                                                [metricName]="item.widgetConfig?.metricName"
-                                                [minValue]="item.widgetConfig?.minValue ?? 0"
-                                                [maxValue]="item.widgetConfig?.maxValue ?? 100"
-                                                [unit]="item.widgetConfig?.unit"
-                                                [decimals]="item.widgetConfig?.decimals ?? 1"
-                                                [refreshInterval]="refreshInterval">
-                                            </app-gauge-widget>
-                                        }
-                                        @case (DashboardWidgetType.LineChart) {
-                                            <app-line-chart-widget
-                                                [deviceId]="item.widgetConfig?.deviceId"
-                                                [metricNames]="item.widgetConfig?.metricNames"
-                                                [timeRange]="item.widgetConfig?.timeRange || 'hour'"
-                                                [refreshInterval]="refreshInterval">
-                                            </app-line-chart-widget>
-                                        }
-                                        @case (DashboardWidgetType.StatusIndicator) {
-                                            <app-status-indicator-widget
-                                                [deviceId]="item.widgetConfig?.deviceId"
-                                                [size]="item.widgetConfig?.size || 'medium'"
-                                                [showLabel]="item.widgetConfig?.showLabel !== false"
-                                                [refreshInterval]="refreshInterval">
-                                            </app-status-indicator-widget>
-                                        }
-                                        @case (DashboardWidgetType.StatCard) {
-                                            <app-stat-card-widget
-                                                [deviceId]="item.widgetConfig?.deviceId"
-                                                [metricName]="item.widgetConfig?.metricName"
-                                                [aggregation]="item.widgetConfig?.aggregation || 'average'"
-                                                [timeRange]="item.widgetConfig?.timeRange || 'hour'"
-                                                [unit]="item.widgetConfig?.unit"
-                                                [decimals]="item.widgetConfig?.decimals ?? 1"
-                                                [refreshInterval]="refreshInterval">
-                                            </app-stat-card-widget>
-                                        }
-                                        @case (DashboardWidgetType.Table) {
-                                            <app-table-widget
-                                                [deviceId]="item.widgetConfig?.deviceId"
-                                                [metricName]="item.widgetConfig?.metricName"
-                                                [timeRange]="item.widgetConfig?.timeRange || 'hour'"
-                                                [limit]="item.widgetConfig?.limit ?? 10"
-                                                [refreshInterval]="refreshInterval">
-                                            </app-table-widget>
-                                        }
-                                        @default {
-                                            <div class="widget-unknown">
-                                                <mat-icon>help_outline</mat-icon>
-                                                <span>Unknown widget type</span>
-                                            </div>
-                                        }
-                                    }
-                                </div>
-                            </div>
-                        </gridster-item>
-                    }
-                </gridster>
-
-                <!-- Empty Widgets State -->
-                @if (dashboard.length === 0) {
-                    <div class="dashboard__builder-no-widgets">
-                        <mat-icon>widgets</mat-icon>
-                        <p>No widgets added yet. Click "Add Widget" to get started.</p>
-                    </div>
+                    </gridster-item>
                 }
-            }
-        </div>
+            </gridster>
+        }
+    </div>
 </div>

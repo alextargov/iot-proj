@@ -2,8 +2,39 @@
 html,
 body {
     height: 100%;
-}
-body {
     margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+body {
     font-family: Roboto, 'Helvetica Neue', sans-serif;
+    background-color: #f0f2f5;
+}
+
+// Global scrollbar styling
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+
+    &:hover {
+        background: rgba(0, 0, 0, 0.3);
+    }
+}
+
+// Ensure router outlet children fill space
+router-outlet + * {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
 }

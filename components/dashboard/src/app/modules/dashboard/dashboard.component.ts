@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, OnDestroy } from '@angular/core';
-import { Router, ActivatedRoute } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { Subject } from 'rxjs';
 import { takeUntil, debounceTime } from 'rxjs/operators';
@@ -50,7 +50,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
     public dashboard: Array<DashboardGridsterItem> = [];
     public isLocked: boolean = true;
     public currentLayout: DashboardLayoutInfoFragment | null = null;
-    public allLayouts: DashboardLayoutInfoFragment[] = [];
     public refreshInterval: number = 30000;
     public isLayoutsLoading = false;
 
@@ -61,7 +60,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     constructor(
         private readonly dashboardLayoutService: DashboardLayoutService,
-        private readonly router: Router,
         private readonly route: ActivatedRoute,
         private readonly cdr: ChangeDetectorRef,
         private readonly dialog: MatDialog,
@@ -70,7 +68,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     ngOnInit(): void {
         this.initGridsterOptions();
-        this.loadAllLayouts();
 
         // Debounce position changes to avoid too many API calls
         this.positionChange$
@@ -79,8 +76,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
         // Handle query param for direct navigation to specific dashboard
         this.route.queryParams.pipe(takeUntil(this.destroy$)).subscribe((params) => {
-            if (params['id'] && this.allLayouts.length > 0) {
-                this.loadSpecificLayout(params['id']);
+            if (params['id']) {
+                this.loadLayout(params['id']);
+            } else {
+                this.loadDefaultLayout();
             }
         });
     }
@@ -90,54 +89,46 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.destroy$.complete();
     }
 
-    private loadSpecificLayout(layoutId: string): void {
-        const layout = this.allLayouts.find((l) => l.id === layoutId);
-        if (layout) {
-            this.selectLayout(layout);
-        } else {
-            this.dashboardLayoutService.getLayout(layoutId).subscribe({
-                next: (layout) => {
-                    if (layout) {
-                        this.selectLayout(layout);
-                    }
-                },
-                error: (err) => console.error('Failed to load layout:', err),
-            });
-        }
-    }
-
-    private loadAllLayouts(): void {
+    private loadLayout(layoutId: string): void {
         this.isLayoutsLoading = true;
-        this.dashboardLayoutService.getLayouts().subscribe({
-            next: (layouts) => {
-                this.allLayouts = layouts;
+        this.dashboardLayoutService.getLayout(layoutId).subscribe({
+            next: (layout) => {
                 this.isLayoutsLoading = false;
-                // Check for query param first
-                const queryId = this.route.snapshot.queryParams['id'];
-                if (queryId) {
-                    this.loadSpecificLayout(queryId);
-                } else {
-                    // Load default or first layout
-                    const defaultLayout = layouts.find((l) => l.isDefault) || layouts[0];
-                    if (defaultLayout) {
-                        this.selectLayout(defaultLayout);
-                    }
+                if (layout) {
+                    this.setLayout(layout);
                 }
                 this.cdr.markForCheck();
             },
             error: (err) => {
-                console.error('Failed to load layouts:', err);
+                console.error('Failed to load layout:', err);
                 this.isLayoutsLoading = false;
                 this.cdr.markForCheck();
             },
         });
     }
 
-    public selectLayout(layout: DashboardLayoutInfoFragment): void {
+    private loadDefaultLayout(): void {
+        this.isLayoutsLoading = true;
+        this.dashboardLayoutService.getDefaultLayout().subscribe({
+            next: (layout) => {
+                this.isLayoutsLoading = false;
+                if (layout) {
+                    this.setLayout(layout);
+                }
+                this.cdr.markForCheck();
+            },
+            error: (err) => {
+                console.error('Failed to load default layout:', err);
+                this.isLayoutsLoading = false;
+                this.cdr.markForCheck();
+            },
+        });
+    }
+
+    private setLayout(layout: DashboardLayoutInfoFragment): void {
         this.currentLayout = layout;
         this.refreshInterval = layout.refreshIntervalSeconds * 1000;
         this.loadWidgetsFromLayout(layout);
-        this.cdr.markForCheck();
     }
 
     private loadWidgetsFromLayout(layout: DashboardLayoutInfoFragment): void {
@@ -263,9 +254,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.dashboardLayoutService
             .updateWidgetPositions(this.currentLayout.id, positions)
             .subscribe({
-                next: () => {
-                    // Silent save success
-                },
+                next: () => {},
                 error: (err) => {
                     console.error('Failed to save widget positions:', err);
                     this.toast.showError('Failed to save layout');
@@ -311,7 +300,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
             displayGrid: this.isLocked ? DisplayGrid.None : DisplayGrid.Always,
         };
 
-        // Update all items using map to trigger change detection
         this.dashboard = this.dashboard.map((item) => ({
             ...item,
             dragEnabled: !this.isLocked,
@@ -330,32 +318,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
         dialogRef.afterClosed().subscribe((result: WidgetConfigDialogResult | undefined) => {
             if (result) {
-                this.addWidget(result);
+                this.addWidgetToLayout(result);
             }
         });
     }
 
-    private addWidget(config: WidgetConfigDialogResult): void {
-        // Create layout first if none exists
-        if (!this.currentLayout) {
-            this.dashboardLayoutService
-                .createLayout({ name: 'My Dashboard', isDefault: true })
-                .subscribe({
-                    next: (layout) => {
-                        this.currentLayout = layout;
-                        this.addWidgetToLayout(config);
-                    },
-                    error: (err) => {
-                        console.error('Failed to create layout:', err);
-                        this.toast.showError('Failed to create dashboard');
-                    },
-                });
-        } else {
-            this.addWidgetToLayout(config);
-        }
-    }
-
     private addWidgetToLayout(config: WidgetConfigDialogResult): void {
+        if (!this.currentLayout) return;
+
         const input = {
             widgetType: config.widgetType,
             title: config.title,
@@ -366,7 +336,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
             config: JSON.stringify(config.config),
         };
 
-        this.dashboardLayoutService.addWidget(this.currentLayout!.id, input).subscribe({
+        this.dashboardLayoutService.addWidget(this.currentLayout.id, input).subscribe({
             next: (widget) => {
                 const gridsterItem: DashboardGridsterItem = {
                     x: widget.gridX,
@@ -415,72 +385,5 @@ export class DashboardComponent implements OnInit, OnDestroy {
             default:
                 return 2;
         }
-    }
-
-    public createNewDashboard(): void {
-        this.dashboardLayoutService
-            .createLayout({ name: 'My Dashboard', isDefault: this.allLayouts.length === 0 })
-            .subscribe({
-                next: (layout) => {
-                    this.allLayouts = [...this.allLayouts, layout];
-                    this.currentLayout = layout;
-                    this.dashboard = [];
-                    this.toast.showSuccess('Dashboard created');
-                    this.cdr.markForCheck();
-                },
-                error: (err) => {
-                    console.error('Failed to create dashboard:', err);
-                    this.toast.showError('Failed to create dashboard');
-                },
-            });
-    }
-
-    public deleteDashboard(layout: DashboardLayoutInfoFragment): void {
-        if (this.allLayouts.length <= 1) {
-            this.toast.showError('Cannot delete the only dashboard');
-            return;
-        }
-
-        this.dashboardLayoutService.deleteLayout(layout.id).subscribe({
-            next: () => {
-                this.allLayouts = this.allLayouts.filter((l) => l.id !== layout.id);
-                if (this.currentLayout?.id === layout.id) {
-                    const nextLayout = this.allLayouts[0];
-                    if (nextLayout) {
-                        this.selectLayout(nextLayout);
-                    } else {
-                        this.currentLayout = null;
-                        this.dashboard = [];
-                    }
-                }
-                this.toast.showSuccess('Dashboard deleted');
-                this.cdr.markForCheck();
-            },
-            error: (err) => {
-                console.error('Failed to delete dashboard:', err);
-                this.toast.showError('Failed to delete dashboard');
-            },
-        });
-    }
-
-    public setAsDefault(layout: DashboardLayoutInfoFragment): void {
-        this.dashboardLayoutService.updateLayout(layout.id, { isDefault: true }).subscribe({
-            next: (updatedLayout) => {
-                // Update all layouts to reflect the new default
-                this.allLayouts = this.allLayouts.map((l) => ({
-                    ...l,
-                    isDefault: l.id === layout.id,
-                }));
-                if (this.currentLayout?.id === layout.id) {
-                    this.currentLayout = updatedLayout;
-                }
-                this.toast.showSuccess('Default dashboard updated');
-                this.cdr.markForCheck();
-            },
-            error: (err) => {
-                console.error('Failed to set default:', err);
-                this.toast.showError('Failed to set default dashboard');
-            },
-        });
     }
 }
