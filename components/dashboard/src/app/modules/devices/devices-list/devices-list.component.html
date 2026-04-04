@@ -1,11 +1,23 @@
 <app-content-header title="Devices" [buttons]="buttons"></app-content-header>
 
 <div class="device-list__container">
-    <mat-form-field class="device-list__search" appearance="outline">
-        <mat-label>Search devices</mat-label>
-        <input matInput (keyup)="applyFilter($event)" placeholder="Filter by name or description" #searchInput>
-        <mat-icon matSuffix>search</mat-icon>
-    </mat-form-field>
+    <div class="device-list__filters">
+        <mat-form-field class="device-list__search" appearance="outline">
+            <mat-label>Search devices</mat-label>
+            <input matInput (keyup)="applyFilter($event)" placeholder="Filter by name or description" #searchInput>
+            <mat-icon matSuffix>search</mat-icon>
+        </mat-form-field>
+
+        @if (activeTagFilter) {
+            <mat-chip-set class="device-list__active-filter">
+                <mat-chip [removable]="true" (removed)="clearTagFilter()">
+                    <mat-icon matChipAvatar>label</mat-icon>
+                    {{ activeTagFilter }}
+                    <mat-icon matChipRemove>cancel</mat-icon>
+                </mat-chip>
+            </mat-chip-set>
+        }
+    </div>
 
     <table class="device-list__table" mat-table [dataSource]="dataSource">
         <!-- Position Column -->
@@ -59,8 +71,23 @@
                 *matCellDef="let element"
             >
                 <div class="device-list__tags">
-                    @for (tag of element.tags || []; track tag) {
-                        <mat-chip class="device-list__tag">{{ tag }}</mat-chip>
+                    @if (element.tags?.length > 0) {
+                        <mat-chip class="device-list__tag device-list__tag--clickable"
+                                  (click)="filterByTag(element.tags[0], $event)">
+                            {{ element.tags[0] }}
+                        </mat-chip>
+                        @if (element.tags.length > 1) {
+                            <mat-chip class="device-list__tag device-list__tag--more"
+                                      [matMenuTriggerFor]="tagsMenu"
+                                      (click)="$event.stopPropagation()">
+                                +{{ element.tags.length - 1 }}
+                            </mat-chip>
+                            <mat-menu #tagsMenu="matMenu" class="device-list__tags-menu">
+                                @for (tag of element.tags.slice(1); track tag) {
+                                    <button mat-menu-item (click)="filterByTag(tag, $event)">{{ tag }}</button>
+                                }
+                            </mat-menu>
+                        }
                     }
                 </div>
             </td>

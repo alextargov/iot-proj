@@ -1,8 +1,26 @@
 .device-list {
+    &__filters {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+    }
+
     &__search {
         width: 100%;
         max-width: 400px;
-        margin-bottom: 1rem;
+        margin-bottom: 0;
+    }
+
+    &__active-filter {
+        display: flex;
+        align-items: center;
+
+        mat-chip {
+            background-color: #e3f2fd;
+            color: #1565c0;
+        }
     }
 
     &__empty {
@@ -106,6 +124,28 @@
         font-size: 0.7rem;
         min-height: 24px;
         padding: 0 8px;
+
+        &--clickable {
+            cursor: pointer;
+
+            &:hover {
+                background-color: #e3f2fd;
+            }
+        }
+
+        &--more {
+            cursor: pointer;
+            background-color: #e0e0e0;
+
+            &:hover {
+                background-color: #bdbdbd;
+            }
+        }
+    }
+
+    &__tags-menu-item {
+        font-size: 0.85rem;
+        min-height: 32px !important;
     }
 }
 

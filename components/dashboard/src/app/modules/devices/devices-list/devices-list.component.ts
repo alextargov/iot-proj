@@ -34,6 +34,8 @@ export class DevicesListComponent implements OnInit, AfterViewInit {
         'actions',
     ];
     dataSource = new MatTableDataSource<DeviceInfoFragment>();
+    activeTagFilter: string | null = null;
+    private searchFilter: string = '';
 
     public buttons: ContentHeaderButton[] = [
         {
@@ -85,12 +87,25 @@ export class DevicesListComponent implements OnInit, AfterViewInit {
 
     public ngOnInit(): void {
         this.dataSource.filterPredicate = (data: DeviceInfoFragment, filter: string) => {
-            const searchStr = filter.toLowerCase();
-            return (
-                data.name.toLowerCase().includes(searchStr) ||
-                (data.description?.toLowerCase().includes(searchStr) ?? false) ||
-                (data.tags?.some(tag => tag.toLowerCase().includes(searchStr)) ?? false)
-            );
+            // Parse the combined filter
+            const { search, tag } = JSON.parse(filter || '{}');
+
+            // Check tag filter first
+            if (tag && !data.tags?.includes(tag)) {
+                return false;
+            }
+
+            // Then check search filter
+            if (search) {
+                const searchStr = search.toLowerCase();
+                return (
+                    data.name.toLowerCase().includes(searchStr) ||
+                    (data.description?.toLowerCase().includes(searchStr) ?? false) ||
+                    (data.tags?.some(t => t.toLowerCase().includes(searchStr)) ?? false)
+                );
+            }
+
+            return true;
         };
 
         this.deviceService.getAllDevices().subscribe((deviceList) => {
@@ -98,13 +113,31 @@ export class DevicesListComponent implements OnInit, AfterViewInit {
         });
     }
 
-    public applyFilter(event: Event): void {
-        const filterValue = (event.target as HTMLInputElement).value;
-        this.dataSource.filter = filterValue.trim().toLowerCase();
+    private applyFilters(): void {
+        this.dataSource.filter = JSON.stringify({
+            search: this.searchFilter,
+            tag: this.activeTagFilter,
+        });
 
         if (this.dataSource.paginator) {
             this.dataSource.paginator.firstPage();
         }
+    }
+
+    public applyFilter(event: Event): void {
+        this.searchFilter = (event.target as HTMLInputElement).value.trim().toLowerCase();
+        this.applyFilters();
+    }
+
+    public filterByTag(tag: string, event: Event): void {
+        event.stopPropagation();
+        this.activeTagFilter = tag;
+        this.applyFilters();
+    }
+
+    public clearTagFilter(): void {
+        this.activeTagFilter = null;
+        this.applyFilters();
     }
 
     public getStatusConfig(status: string): StatusConfig {
