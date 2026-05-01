@@ -331,4 +331,176 @@ INSERT INTO alert_events (id, alert_rule_id, device_id, tenant_id, triggered_val
 ('17a8b9c0-d1e2-4345-0123-456789012345', 'e8b9c0d1-e2f3-4456-1234-567890123456', '5b698082-c396-4cc3-f3d0-4bed1693e6b3', 'f7e39a3d-2229-49e0-86aa-b359730f45ec',
  '{"temperature": -999}', 'TRIGGERED', now() - interval '3 hours', NULL, now());
 
+-- =====================
+-- Dashboard Layouts
+-- =====================
+INSERT INTO dashboard_layouts (id, tenant_id, name, description, is_default, refresh_interval_seconds, created_at, updated_at) VALUES
+-- Main home dashboard (default)
+('da5b0a01-1111-4001-a001-000000000001', 'f7e39a3d-2229-49e0-86aa-b359730f45ec',
+ 'Home Overview', 'Main dashboard showing key metrics from all rooms', true, 30, now(), now()),
+-- Energy monitoring dashboard
+('da5b0a01-2222-4002-a002-000000000002', 'f7e39a3d-2229-49e0-86aa-b359730f45ec',
+ 'Energy Dashboard', 'Power consumption and solar production monitoring', false, 60, now(), now()),
+-- Climate control dashboard
+('da5b0a01-3333-4003-a003-000000000003', 'f7e39a3d-2229-49e0-86aa-b359730f45ec',
+ 'Climate Control', 'Temperature and humidity across all rooms', false, 30, now(), now());
+
+-- =====================
+-- Dashboard Widgets
+-- =====================
+INSERT INTO dashboard_widgets (id, dashboard_layout_id, tenant_id, widget_type, title, grid_x, grid_y, grid_cols, grid_rows, device_id, metric_name, config, created_at, updated_at) VALUES
+
+-- ========== Home Overview Dashboard Widgets ==========
+-- Living Room Temperature Gauge
+('db5b0a01-0001-4001-a001-000000000001', 'da5b0a01-1111-4001-a001-000000000001', 'f7e39a3d-2229-49e0-86aa-b359730f45ec',
+ 'GAUGE', 'Living Room Temp', 0, 0, 2, 2, '1d254c4e-8f52-4889-b9fc-0ea97259a2df', 'temperature',
+ '{"deviceId": "1d254c4e-8f52-4889-b9fc-0ea97259a2df", "metricName": "temperature", "minValue": 10, "maxValue": 40, "unit": "°C", "decimals": 1, "thresholds": [{"value": 28, "color": "#ff9800"}, {"value": 35, "color": "#f44336"}]}',
+ now(), now()),
+
+-- Bedroom Temperature Gauge
+('db5b0a01-0002-4001-a001-000000000002', 'da5b0a01-1111-4001-a001-000000000001', 'f7e39a3d-2229-49e0-86aa-b359730f45ec',
+ 'GAUGE', 'Bedroom Temp', 2, 0, 2, 2, '2e365d5f-9063-4990-c0ad-1fba8360b3e0', 'temperature',
+ '{"deviceId": "2e365d5f-9063-4990-c0ad-1fba8360b3e0", "metricName": "temperature", "minValue": 10, "maxValue": 40, "unit": "°C", "decimals": 1}',
+ now(), now()),
+
+-- Living Room Device Status
+('db5b0a01-0003-4001-a001-000000000003', 'da5b0a01-1111-4001-a001-000000000001', 'f7e39a3d-2229-49e0-86aa-b359730f45ec',
+ 'STATUS_INDICATOR', 'Living Room Sensor', 4, 0, 2, 2, '1d254c4e-8f52-4889-b9fc-0ea97259a2df', NULL,
+ '{"deviceId": "1d254c4e-8f52-4889-b9fc-0ea97259a2df", "size": "large", "showLabel": true}',
+ now(), now()),
+
+-- Power Consumption Gauge
+('db5b0a01-0004-4001-a001-000000000004', 'da5b0a01-1111-4001-a001-000000000001', 'f7e39a3d-2229-49e0-86aa-b359730f45ec',
+ 'GAUGE', 'Power Usage', 6, 0, 2, 2, '4a587f71-b285-4bb2-e2cf-3adc0582d5a2', 'power',
+ '{"deviceId": "4a587f71-b285-4bb2-e2cf-3adc0582d5a2", "metricName": "power", "minValue": 0, "maxValue": 3000, "unit": "W", "decimals": 0, "thresholds": [{"value": 2000, "color": "#ff9800"}, {"value": 2500, "color": "#f44336"}]}',
+ now(), now()),
+
+-- Living Room Temperature History Chart
+('db5b0a01-0005-4001-a001-000000000005', 'da5b0a01-1111-4001-a001-000000000001', 'f7e39a3d-2229-49e0-86aa-b359730f45ec',
+ 'LINE_CHART', 'Temperature History', 0, 2, 4, 3, '1d254c4e-8f52-4889-b9fc-0ea97259a2df', NULL,
+ '{"deviceId": "1d254c4e-8f52-4889-b9fc-0ea97259a2df", "metricNames": ["temperature", "humidity"], "timeRange": "day", "showLegend": true}',
+ now(), now()),
+
+-- Recent Metrics Table
+('db5b0a01-0006-4001-a001-000000000006', 'da5b0a01-1111-4001-a001-000000000001', 'f7e39a3d-2229-49e0-86aa-b359730f45ec',
+ 'TABLE', 'Recent Readings', 4, 2, 4, 3, '1d254c4e-8f52-4889-b9fc-0ea97259a2df', NULL,
+ '{"deviceId": "1d254c4e-8f52-4889-b9fc-0ea97259a2df", "timeRange": "hour", "limit": 10}',
+ now(), now()),
+
+-- Average Temperature Stat Card
+('db5b0a01-0007-4001-a001-000000000007', 'da5b0a01-1111-4001-a001-000000000001', 'f7e39a3d-2229-49e0-86aa-b359730f45ec',
+ 'STAT_CARD', 'Avg Temp (24h)', 8, 0, 2, 2, '1d254c4e-8f52-4889-b9fc-0ea97259a2df', 'temperature',
+ '{"deviceId": "1d254c4e-8f52-4889-b9fc-0ea97259a2df", "metricName": "temperature", "aggregation": "average", "timeRange": "day", "unit": "°C", "decimals": 1}',
+ now(), now()),
+
+-- Max Temperature Stat Card
+('db5b0a01-0008-4001-a001-000000000008', 'da5b0a01-1111-4001-a001-000000000001', 'f7e39a3d-2229-49e0-86aa-b359730f45ec',
+ 'STAT_CARD', 'Max Temp (24h)', 10, 0, 2, 2, '1d254c4e-8f52-4889-b9fc-0ea97259a2df', 'temperature',
+ '{"deviceId": "1d254c4e-8f52-4889-b9fc-0ea97259a2df", "metricName": "temperature", "aggregation": "max", "timeRange": "day", "unit": "°C", "decimals": 1}',
+ now(), now()),
+
+-- ========== Energy Dashboard Widgets ==========
+-- Power Consumption Gauge (large)
+('db5b0a01-0101-4002-a002-000000000001', 'da5b0a01-2222-4002-a002-000000000002', 'f7e39a3d-2229-49e0-86aa-b359730f45ec',
+ 'GAUGE', 'Current Power', 0, 0, 3, 3, '4a587f71-b285-4bb2-e2cf-3adc0582d5a2', 'power',
+ '{"deviceId": "4a587f71-b285-4bb2-e2cf-3adc0582d5a2", "metricName": "power", "minValue": 0, "maxValue": 3000, "unit": "W", "decimals": 0}',
+ now(), now()),
+
+-- Solar Production Gauge
+('db5b0a01-0102-4002-a002-000000000002', 'da5b0a01-2222-4002-a002-000000000002', 'f7e39a3d-2229-49e0-86aa-b359730f45ec',
+ 'GAUGE', 'Solar Production', 3, 0, 3, 3, '9f0dc4c6-a7da-4007-d7b4-8fcb50d7c0f7', 'power',
+ '{"deviceId": "9f0dc4c6-a7da-4007-d7b4-8fcb50d7c0f7", "metricName": "power", "minValue": 0, "maxValue": 3000, "unit": "W", "decimals": 0}',
+ now(), now()),
+
+-- Power Meter Status
+('db5b0a01-0103-4002-a002-000000000003', 'da5b0a01-2222-4002-a002-000000000002', 'f7e39a3d-2229-49e0-86aa-b359730f45ec',
+ 'STATUS_INDICATOR', 'Power Meter', 6, 0, 2, 2, '4a587f71-b285-4bb2-e2cf-3adc0582d5a2', NULL,
+ '{"deviceId": "4a587f71-b285-4bb2-e2cf-3adc0582d5a2", "size": "medium", "showLabel": true}',
+ now(), now()),
+
+-- Solar Panel Status
+('db5b0a01-0104-4002-a002-000000000004', 'da5b0a01-2222-4002-a002-000000000002', 'f7e39a3d-2229-49e0-86aa-b359730f45ec',
+ 'STATUS_INDICATOR', 'Solar Panel', 8, 0, 2, 2, '9f0dc4c6-a7da-4007-d7b4-8fcb50d7c0f7', NULL,
+ '{"deviceId": "9f0dc4c6-a7da-4007-d7b4-8fcb50d7c0f7", "size": "medium", "showLabel": true}',
+ now(), now()),
+
+-- Power Consumption History
+('db5b0a01-0105-4002-a002-000000000005', 'da5b0a01-2222-4002-a002-000000000002', 'f7e39a3d-2229-49e0-86aa-b359730f45ec',
+ 'LINE_CHART', 'Power Consumption', 0, 3, 6, 3, '4a587f71-b285-4bb2-e2cf-3adc0582d5a2', NULL,
+ '{"deviceId": "4a587f71-b285-4bb2-e2cf-3adc0582d5a2", "metricNames": ["power"], "timeRange": "day", "showLegend": true}',
+ now(), now()),
+
+-- Solar Production History
+('db5b0a01-0106-4002-a002-000000000006', 'da5b0a01-2222-4002-a002-000000000002', 'f7e39a3d-2229-49e0-86aa-b359730f45ec',
+ 'LINE_CHART', 'Solar Production', 6, 3, 6, 3, '9f0dc4c6-a7da-4007-d7b4-8fcb50d7c0f7', NULL,
+ '{"deviceId": "9f0dc4c6-a7da-4007-d7b4-8fcb50d7c0f7", "metricNames": ["power", "voltage"], "timeRange": "day", "showLegend": true}',
+ now(), now()),
+
+-- Total Power Consumed (Stat Card)
+('db5b0a01-0107-4002-a002-000000000007', 'da5b0a01-2222-4002-a002-000000000002', 'f7e39a3d-2229-49e0-86aa-b359730f45ec',
+ 'STAT_CARD', 'Avg Power (24h)', 10, 0, 2, 2, '4a587f71-b285-4bb2-e2cf-3adc0582d5a2', 'power',
+ '{"deviceId": "4a587f71-b285-4bb2-e2cf-3adc0582d5a2", "metricName": "power", "aggregation": "average", "timeRange": "day", "unit": "W", "decimals": 0}',
+ now(), now()),
+
+-- ========== Climate Control Dashboard Widgets ==========
+-- Living Room Temp Gauge
+('db5b0a01-0201-4003-a003-000000000001', 'da5b0a01-3333-4003-a003-000000000003', 'f7e39a3d-2229-49e0-86aa-b359730f45ec',
+ 'GAUGE', 'Living Room', 0, 0, 2, 2, '1d254c4e-8f52-4889-b9fc-0ea97259a2df', 'temperature',
+ '{"deviceId": "1d254c4e-8f52-4889-b9fc-0ea97259a2df", "metricName": "temperature", "minValue": 10, "maxValue": 40, "unit": "°C", "decimals": 1}',
+ now(), now()),
+
+-- Bedroom Temp Gauge
+('db5b0a01-0202-4003-a003-000000000002', 'da5b0a01-3333-4003-a003-000000000003', 'f7e39a3d-2229-49e0-86aa-b359730f45ec',
+ 'GAUGE', 'Bedroom', 2, 0, 2, 2, '2e365d5f-9063-4990-c0ad-1fba8360b3e0', 'temperature',
+ '{"deviceId": "2e365d5f-9063-4990-c0ad-1fba8360b3e0", "metricName": "temperature", "minValue": 10, "maxValue": 40, "unit": "°C", "decimals": 1}',
+ now(), now()),
+
+-- Outdoor Temp Gauge
+('db5b0a01-0203-4003-a003-000000000003', 'da5b0a01-3333-4003-a003-000000000003', 'f7e39a3d-2229-49e0-86aa-b359730f45ec',
+ 'GAUGE', 'Outdoor', 4, 0, 2, 2, '7d8ba2a4-e5b8-4ee5-b5f2-6daf38b5a8d5', 'temperature',
+ '{"deviceId": "7d8ba2a4-e5b8-4ee5-b5f2-6daf38b5a8d5", "metricName": "temperature", "minValue": -10, "maxValue": 45, "unit": "°C", "decimals": 1}',
+ now(), now()),
+
+-- Bathroom Humidity Gauge
+('db5b0a01-0204-4003-a003-000000000004', 'da5b0a01-3333-4003-a003-000000000003', 'f7e39a3d-2229-49e0-86aa-b359730f45ec',
+ 'GAUGE', 'Bathroom Humidity', 6, 0, 2, 2, '6c7a9193-d4a7-4dd4-a4e1-5cfe27a4f7c4', 'humidity',
+ '{"deviceId": "6c7a9193-d4a7-4dd4-a4e1-5cfe27a4f7c4", "metricName": "humidity", "minValue": 0, "maxValue": 100, "unit": "%", "decimals": 0, "thresholds": [{"value": 70, "color": "#ff9800"}, {"value": 85, "color": "#f44336"}]}',
+ now(), now()),
+
+-- Living Room Humidity Gauge
+('db5b0a01-0205-4003-a003-000000000005', 'da5b0a01-3333-4003-a003-000000000003', 'f7e39a3d-2229-49e0-86aa-b359730f45ec',
+ 'GAUGE', 'Living Humidity', 8, 0, 2, 2, '1d254c4e-8f52-4889-b9fc-0ea97259a2df', 'humidity',
+ '{"deviceId": "1d254c4e-8f52-4889-b9fc-0ea97259a2df", "metricName": "humidity", "minValue": 0, "maxValue": 100, "unit": "%", "decimals": 0}',
+ now(), now()),
+
+-- Outdoor Humidity Gauge
+('db5b0a01-0206-4003-a003-000000000006', 'da5b0a01-3333-4003-a003-000000000003', 'f7e39a3d-2229-49e0-86aa-b359730f45ec',
+ 'GAUGE', 'Outdoor Humidity', 10, 0, 2, 2, '7d8ba2a4-e5b8-4ee5-b5f2-6daf38b5a8d5', 'humidity',
+ '{"deviceId": "7d8ba2a4-e5b8-4ee5-b5f2-6daf38b5a8d5", "metricName": "humidity", "minValue": 0, "maxValue": 100, "unit": "%", "decimals": 0}',
+ now(), now()),
+
+-- All Room Temperatures Chart
+('db5b0a01-0207-4003-a003-000000000007', 'da5b0a01-3333-4003-a003-000000000003', 'f7e39a3d-2229-49e0-86aa-b359730f45ec',
+ 'LINE_CHART', 'Indoor Temps (24h)', 0, 2, 6, 3, '1d254c4e-8f52-4889-b9fc-0ea97259a2df', NULL,
+ '{"deviceId": "1d254c4e-8f52-4889-b9fc-0ea97259a2df", "metricNames": ["temperature"], "timeRange": "day", "showLegend": true}',
+ now(), now()),
+
+-- Outdoor Weather Chart
+('db5b0a01-0208-4003-a003-000000000008', 'da5b0a01-3333-4003-a003-000000000003', 'f7e39a3d-2229-49e0-86aa-b359730f45ec',
+ 'LINE_CHART', 'Outdoor Weather', 6, 2, 6, 3, '7d8ba2a4-e5b8-4ee5-b5f2-6daf38b5a8d5', NULL,
+ '{"deviceId": "7d8ba2a4-e5b8-4ee5-b5f2-6daf38b5a8d5", "metricNames": ["temperature", "humidity"], "timeRange": "day", "showLegend": true}',
+ now(), now()),
+
+-- Garage Sensor Status (shows unreachable)
+('db5b0a01-0209-4003-a003-000000000009', 'da5b0a01-3333-4003-a003-000000000003', 'f7e39a3d-2229-49e0-86aa-b359730f45ec',
+ 'STATUS_INDICATOR', 'Garage Sensor', 0, 5, 2, 2, '5b698082-c396-4cc3-f3d0-4bed1693e6b3', NULL,
+ '{"deviceId": "5b698082-c396-4cc3-f3d0-4bed1693e6b3", "size": "medium", "showLabel": true}',
+ now(), now()),
+
+-- Climate Metrics Table
+('db5b0a01-0210-4003-a003-000000000010', 'da5b0a01-3333-4003-a003-000000000003', 'f7e39a3d-2229-49e0-86aa-b359730f45ec',
+ 'TABLE', 'Recent Climate Data', 2, 5, 5, 3, '1d254c4e-8f52-4889-b9fc-0ea97259a2df', NULL,
+ '{"deviceId": "1d254c4e-8f52-4889-b9fc-0ea97259a2df", "timeRange": "hour", "limit": 15}',
+ now(), now());
+
 COMMIT;
