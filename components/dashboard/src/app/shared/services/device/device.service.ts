@@ -162,10 +162,11 @@ export class DeviceService {
         });
     }
 
-    public generateDeviceToken(): Observable<string> {
+    public generateDeviceToken(deviceId: string): Observable<string> {
         return this.apollo
             .mutate<GenerateDeviceTokenMutation>({
                 mutation: GenerateDeviceTokenDocument,
+                variables: { deviceId },
             })
             .pipe(map((res) => res.data?.generateDeviceToken ?? ''));
     }

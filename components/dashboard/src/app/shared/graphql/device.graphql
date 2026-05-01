@@ -73,8 +73,8 @@ mutation DeleteDevice($id: String!) {
     deleteDevice(id: $id)
 }
 
-mutation GenerateDeviceToken {
-    generateDeviceToken
+mutation GenerateDeviceToken($deviceId: ID!) {
+    generateDeviceToken(deviceId: $deviceId)
 }
 
 query TestDeviceConnection($url: String!) {

@@ -17,7 +17,7 @@ const (
 )
 
 var (
-	updatableTableColumns = []string{"name", "description", "user_id", "status", "data_model_id", "auth", "tags", "created_at", "updated_at"}
+	updatableTableColumns = []string{"name", "description", "user_id", "status", "data_model_id", "auth", "tags", "communication_token", "created_at", "updated_at"}
 	idTableColumns        = []string{"id"}
 	tableColumns          = append(idTableColumns, updatableTableColumns...)
 )
@@ -31,6 +31,7 @@ type repository struct {
 	creator               repo.CreatorGlobal
 	existQuerierGlobal    repo.ExistQuerierGlobal
 	singleGetter          repo.SingleGetter
+	singleGetterGlobal    repo.SingleGetterGlobal
 	pageableQuerier       repo.PageableQuerier
 	pageableQuerierGlobal repo.PageableQuerierGlobal
 	updaterGlobal         repo.UpdaterGlobal
@@ -46,6 +47,7 @@ func NewRepository(converter EntityConverter) *repository {
 		creator:               repo.NewCreatorGlobal(resource.Device, tableName, tableColumns),
 		existQuerierGlobal:    repo.NewExistQuerierGlobal(resource.Device, tableName),
 		singleGetter:          repo.NewSingleGetterWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
+		singleGetterGlobal:    repo.NewSingleGetterGlobal(resource.Device, tableName, tableColumns),
 		pageableQuerier:       repo.NewPageableQuerierWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
 		pageableQuerierGlobal: repo.NewPageableQuerierGlobal(resource.Device, tableName, tableColumns),
 		updaterGlobal:         repo.NewUpdaterGlobal(resource.Device, tableName, updatableTableColumns, idTableColumns),
@@ -169,6 +171,16 @@ func (r *repository) Delete(ctx context.Context, id, tenantID string) error {
 // CountByDataModelID returns the number of devices using the given data model
 func (r *repository) CountByDataModelID(ctx context.Context, tenantID, dataModelID string) (int, error) {
 	return r.lister.Count(ctx, resource.Device, tenantID, repo.NewEqualCondition("data_model_id", dataModelID))
+}
+
+// GetByToken retrieves a device by its communication token (global lookup, no tenant filter)
+func (r *repository) GetByToken(ctx context.Context, token string) (*model.Device, error) {
+	var entity Entity
+	if err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("communication_token", token)}, repo.NoOrderBy, &entity); err != nil {
+		return nil, err
+	}
+
+	return r.conv.FromEntity(&entity)
 }
 
 func (r *repository) multipleFromEntities(entities EntityCollection) ([]*model.Device, error) {

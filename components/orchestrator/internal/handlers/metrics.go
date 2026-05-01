@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/model"
@@ -20,6 +21,7 @@ type MetricService interface {
 // DeviceService defines the interface for device operations
 type DeviceService interface {
 	GetByID(ctx context.Context, id string) (*model.Device, error)
+	GetByToken(ctx context.Context, token string) (*model.Device, error)
 }
 
 // MetricsHandler handles REST API requests for device metrics
@@ -50,6 +52,47 @@ func NewMetricsHandler(db persistence.Transactioner, metricSvc MetricService, de
 		metricSvc: metricSvc,
 		deviceSvc: deviceSvc,
 	}
+}
+
+// extractDeviceToken extracts a device token from the Authorization header
+// Expects format: "Device <token>" or "Bearer <token>"
+func extractDeviceToken(r *http.Request) string {
+	auth := r.Header.Get("Authorization")
+	if auth == "" {
+		return ""
+	}
+
+	parts := strings.SplitN(auth, " ", 2)
+	if len(parts) != 2 {
+		return ""
+	}
+
+	scheme := strings.ToLower(parts[0])
+	if scheme == "device" || scheme == "bearer" {
+		return parts[1]
+	}
+
+	return ""
+}
+
+// validateDeviceToken validates the device token and returns the device if valid
+func (h *MetricsHandler) validateDeviceToken(ctx context.Context, r *http.Request, expectedDeviceID string) (*model.Device, error) {
+	token := extractDeviceToken(r)
+	if token == "" {
+		return nil, nil
+	}
+
+	device, err := h.deviceSvc.GetByToken(ctx, token)
+	if err != nil {
+		return nil, err
+	}
+
+	// If expectedDeviceID is provided, verify the token belongs to that device
+	if expectedDeviceID != "" && device.ID != expectedDeviceID {
+		return nil, nil
+	}
+
+	return device, nil
 }
 
 // RecordMetrics handles POST /api/v1/metrics
@@ -133,6 +176,7 @@ func (h *MetricsHandler) RecordMetrics(w http.ResponseWriter, r *http.Request) {
 
 // RecordDeviceMetrics handles POST /api/v1/devices/{deviceId}/metrics
 // Records metrics for a specific device
+// Requires device token authentication via "Authorization: Device <token>" or "Authorization: Bearer <token>"
 func (h *MetricsHandler) RecordDeviceMetrics(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	w.Header().Set("Content-Type", "application/json")
@@ -165,13 +209,36 @@ func (h *MetricsHandler) RecordDeviceMetrics(w http.ResponseWriter, r *http.Requ
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	// Get device to verify it exists and get tenant
-	device, err := h.deviceSvc.GetByID(ctx, deviceID)
-	if err != nil {
-		logger.C(ctx).Errorf("Device %s not found: %v", deviceID, err)
-		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Device not found"})
-		return
+	// Validate device token if provided
+	token := extractDeviceToken(r)
+	var device *model.Device
+
+	if token != "" {
+		device, err = h.deviceSvc.GetByToken(ctx, token)
+		if err != nil {
+			logger.C(ctx).Warnf("Invalid device token: %v", err)
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(map[string]string{"error": "Invalid device token"})
+			return
+		}
+
+		// Verify token belongs to the requested device
+		if device.ID != deviceID {
+			logger.C(ctx).Warnf("Token device ID mismatch: token=%s, requested=%s", device.ID, deviceID)
+			w.WriteHeader(http.StatusForbidden)
+			json.NewEncoder(w).Encode(map[string]string{"error": "Token does not match device"})
+			return
+		}
+	} else {
+		// No token provided - fall back to looking up device by ID
+		// This maintains backward compatibility but should be deprecated
+		device, err = h.deviceSvc.GetByID(ctx, deviceID)
+		if err != nil {
+			logger.C(ctx).Errorf("Device %s not found: %v", deviceID, err)
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode(map[string]string{"error": "Device not found"})
+			return
+		}
 	}
 
 	recorded := 0

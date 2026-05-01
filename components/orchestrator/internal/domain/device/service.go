@@ -14,6 +14,7 @@ type DeviceRepository interface {
 	Exists(ctx context.Context, id string) (bool, error)
 	Create(ctx context.Context, item model.Device) error
 	Get(ctx context.Context, id, tnt string) (*model.Device, error)
+	GetByToken(ctx context.Context, token string) (*model.Device, error)
 	ListByIDs(ctx context.Context, tenant string, ids []string) ([]*model.Device, error)
 	ListAll(ctx context.Context, tenantID string) ([]*model.Device, error)
 	ListPage(ctx context.Context, tenantID string, pageSize int, cursor string) ([]*model.Device, *pagination.Page, int, error)
@@ -133,6 +134,26 @@ func (s *service) CountByDataModelID(ctx context.Context, dataModelID string) (i
 	}
 
 	return s.deviceRepo.CountByDataModelID(ctx, tnt, dataModelID)
+}
+
+func (s *service) SetCommunicationToken(ctx context.Context, id, token string) error {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	device, err := s.deviceRepo.Get(ctx, id, tnt)
+	if err != nil {
+		return errors.Wrapf(err, "while getting device %s", id)
+	}
+
+	device.CommunicationToken = &token
+
+	return s.deviceRepo.Update(ctx, *device)
+}
+
+func (s *service) GetByToken(ctx context.Context, token string) (*model.Device, error) {
+	return s.deviceRepo.GetByToken(ctx, token)
 }
 
 func (s *service) createRelatedResources(ctx context.Context, deviceID string, device model.DeviceInput) error {

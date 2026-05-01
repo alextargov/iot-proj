@@ -2,6 +2,8 @@ package device
 
 import (
 	"context"
+	"fmt"
+	"net/http"
 
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/apperrors"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/model"
@@ -24,6 +26,8 @@ type DeviceSvc interface {
 	Exists(ctx context.Context, id string) (bool, error)
 	Delete(ctx context.Context, id string) error
 	GetByID(ctx context.Context, id string) (*model.Device, error)
+	SetCommunicationToken(ctx context.Context, id, token string) error
+	GetByToken(ctx context.Context, token string) (*model.Device, error)
 }
 
 type HostSvc interface {
@@ -208,7 +212,60 @@ func (r *Resolver) DeleteDevice(ctx context.Context, id string) (string, error) 
 }
 
 func (r *Resolver) SetDeviceOperation(ctx context.Context, id string, op graphql.OperationType) (*graphql.Device, error) {
-	return nil, nil
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	device, err := r.deviceSvc.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	host, err := r.hostSvc.GetByDeviceID(ctx, id)
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return nil, fmt.Errorf("device has no host configured")
+		}
+		return nil, err
+	}
+
+	var endpoint string
+	switch op {
+	case graphql.OperationTypeTurnOn:
+		if host.TurnOnEndpoint == nil || *host.TurnOnEndpoint == "" {
+			return nil, fmt.Errorf("device has no turn-on endpoint configured")
+		}
+		endpoint = host.Url + *host.TurnOnEndpoint
+	case graphql.OperationTypeTurnOff:
+		if host.TurnOffEndpoint == nil || *host.TurnOffEndpoint == "" {
+			return nil, fmt.Errorf("device has no turn-off endpoint configured")
+		}
+		endpoint = host.Url + *host.TurnOffEndpoint
+	default:
+		return nil, fmt.Errorf("unsupported operation type: %s", op)
+	}
+
+	// Use authenticated HTTP client with device credentials
+	httpClient := NewAuthenticatedHTTPClient()
+	resp, err := httpClient.DoRequest(ctx, http.MethodPost, endpoint, nil, device.Auth)
+	if err != nil {
+		return nil, fmt.Errorf("failed to call device endpoint: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, fmt.Errorf("device returned error status: %d", resp.StatusCode)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return r.deviceConverter.ToGraphQL(device), nil
 }
 
 func (r *Resolver) SetOperation(ctx context.Context, op graphql.OperationType, data interface{}) (bool, error) {

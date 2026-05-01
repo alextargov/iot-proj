@@ -34,6 +34,19 @@ type CronScheduler interface {
 	RemoveJob(ctx context.Context, widgetID string)
 }
 
+// MetricServiceWithPublisher defines the interface for metric service that supports PubSub
+type MetricServiceWithPublisher interface {
+	metric.MetricSvc
+	SetMetricPublisher(publisher metric.MetricPublisher)
+	SetAlertEvaluator(evaluator metric.AlertEvaluator)
+}
+
+// DeviceServiceWithToken defines the interface for device service that supports communication tokens
+type DeviceServiceWithToken interface {
+	SetCommunicationToken(ctx context.Context, id, token string) error
+	GetByToken(ctx context.Context, token string) (*model.Device, error)
+}
+
 type RootResolver struct {
 	persistence     persistence.Transactioner
 	device          *device.Resolver
@@ -44,13 +57,17 @@ type RootResolver struct {
 	dashboardLayout *dashboard_layout.Resolver
 	dashboardWidget *dashboard_widget.Resolver
 	metricPubSub    *pubsub.MetricPubSub
+	deviceSvc       DeviceServiceWithToken
 }
 
-func NewRootResolver(persistence persistence.Transactioner, notificationSMTPConfig notification.SMTPConfig, scheduler k8s.Scheduler, cronScheduler CronScheduler, log *logrus.Logger) *RootResolver {
+func NewRootResolver(persistence persistence.Transactioner, notificationSMTPConfig notification.SMTPConfig, scheduler k8s.Scheduler, cronScheduler CronScheduler, log *logrus.Logger, sharedMetricSvc MetricServiceWithPublisher) *RootResolver {
 	uuidService := uuid.NewService()
 	authConv := auth.NewConverter()
 
 	metricPubSub := pubsub.NewMetricPubSub(log)
+
+	// Wire the PubSub into the shared metric service (used by both REST and GraphQL)
+	sharedMetricSvc.SetMetricPublisher(metricPubSub)
 
 	hostConv := host.NewConverter()
 	hostRepo := host.NewRepository(hostConv)
@@ -70,15 +87,13 @@ func NewRootResolver(persistence persistence.Transactioner, notificationSMTPConf
 	dataModelRes := datamodel.NewResolver(persistence, dataModelSvc, deviceSvc, dataModelConv)
 
 	metricConv := metric.NewConverter()
-	metricRepo := metric.NewRepository(metricConv)
-	metricSvc := metric.NewService(metricRepo, uuidService)
-	metricSvc.SetMetricPublisher(metricPubSub)
-	metricRes := metric.NewResolver(persistence, metricSvc, metricConv)
+	metricRes := metric.NewResolver(persistence, sharedMetricSvc, metricConv)
 
 	notificationSvc := notification.NewService(notificationSMTPConfig)
 
 	alertConv := alert.NewConverter()
 	alertRepo := alert.NewRepository(alertConv)
+	metricRepo := metric.NewRepository(metricConv)
 	alertSvc := alert.NewService(alertRepo, metricRepo, deviceSvc, notificationSvc, uuidService)
 	alertRes := alert.NewResolver(persistence, alertSvc, alertConv, deviceSvc, deviceConv)
 
@@ -96,8 +111,8 @@ func NewRootResolver(persistence persistence.Transactioner, notificationSMTPConf
 	dashboardLayoutRes := dashboard_layout.NewResolver(persistence, layoutSvc, dashboardWidgetSvc, layoutConv, dashboardWidgetConv)
 	dashboardWidgetRes := dashboard_widget.NewResolver(persistence, dashboardWidgetSvc, dashboardWidgetConv, deviceSvc, deviceConv)
 
-	// Wire the alert evaluator into the metric service for real-time alert evaluation
-	metricSvc.SetAlertEvaluator(alertSvc)
+	// Wire the alert evaluator into the shared metric service for real-time alert evaluation
+	sharedMetricSvc.SetAlertEvaluator(alertSvc)
 
 	deviceRes := device.NewResolver(persistence, deviceSvc, hostSvc, dataModelSvc, deviceConv, hostConv, dataModelConv)
 	widgetRes := widget.NewResolver(persistence, widgetSvc, widgetConv, scheduler, cronScheduler)
@@ -112,6 +127,7 @@ func NewRootResolver(persistence persistence.Transactioner, notificationSMTPConf
 		dashboardLayout: dashboardLayoutRes,
 		dashboardWidget: dashboardWidgetRes,
 		metricPubSub:    metricPubSub,
+		deviceSvc:       deviceSvc,
 	}
 }
 
@@ -307,12 +323,30 @@ func (r *mutationResolver) RollbackDataModel(ctx context.Context, dataModelID st
 	return r.dataModel.RollbackDataModel(ctx, dataModelID, toVersion)
 }
 
-func (r *mutationResolver) GenerateDeviceToken(ctx context.Context) (string, error) {
+func (r *mutationResolver) GenerateDeviceToken(ctx context.Context, deviceID string) (string, error) {
 	bytes := make([]byte, 32)
 	if _, err := rand.Read(bytes); err != nil {
 		return "", err
 	}
-	return hex.EncodeToString(bytes), nil
+	token := hex.EncodeToString(bytes)
+
+	tx, err := r.persistence.Begin()
+	if err != nil {
+		return "", err
+	}
+	defer r.persistence.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	if err := r.deviceSvc.SetCommunicationToken(ctx, deviceID, token); err != nil {
+		return "", err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return "", err
+	}
+
+	return token, nil
 }
 
 func (r *mutationResolver) RecordDeviceMetric(ctx context.Context, input graphql.DeviceMetricInput) (*graphql.DeviceMetric, error) {

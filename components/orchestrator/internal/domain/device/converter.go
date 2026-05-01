@@ -45,16 +45,17 @@ func (c *converter) ToEntity(model model.Device) (*Entity, error) {
 	}
 
 	return &Entity{
-		ID:          model.ID,
-		TenantID:    model.TenantID,
-		Name:        model.Name,
-		Description: repo.NewNullableString(model.Description),
-		Status:      string(model.Status),
-		Auth:        optionalAuth,
-		DataModelID: model.DataModelID,
-		Tags:        optionalTags,
-		CreatedAt:   model.CreatedAt,
-		UpdatedAt:   model.UpdatedAt,
+		ID:                 model.ID,
+		TenantID:           model.TenantID,
+		Name:               model.Name,
+		Description:        repo.NewNullableString(model.Description),
+		Status:             string(model.Status),
+		Auth:               optionalAuth,
+		DataModelID:        model.DataModelID,
+		Tags:               optionalTags,
+		CommunicationToken: repo.NewNullableString(model.CommunicationToken),
+		CreatedAt:          model.CreatedAt,
+		UpdatedAt:          model.UpdatedAt,
 	}, nil
 }
 
@@ -75,15 +76,17 @@ func (c *converter) FromEntity(entity *Entity) (*model.Device, error) {
 	}
 
 	return &model.Device{
-		ID:          entity.ID,
-		Name:        entity.Name,
-		Description: repo.StringPtrFromNullableString(entity.Description),
-		TenantID:    entity.TenantID,
-		Status:      model.DeviceStatus(entity.Status),
-		Auth:        auth,
-		Tags:        tags,
-		CreatedAt:   entity.CreatedAt,
-		UpdatedAt:   entity.UpdatedAt,
+		ID:                 entity.ID,
+		Name:               entity.Name,
+		Description:        repo.StringPtrFromNullableString(entity.Description),
+		TenantID:           entity.TenantID,
+		Status:             model.DeviceStatus(entity.Status),
+		Auth:               auth,
+		DataModelID:        entity.DataModelID,
+		Tags:               tags,
+		CommunicationToken: repo.StringPtrFromNullableString(entity.CommunicationToken),
+		CreatedAt:          entity.CreatedAt,
+		UpdatedAt:          entity.UpdatedAt,
 	}, nil
 }
 

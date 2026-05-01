@@ -478,7 +478,7 @@ type Mutation {
     deleteDataModel(id: ID!): String!
     updateDataModel(id: ID!, input: UpdateDataModelInput!): DataModel!
     rollbackDataModel(dataModelId: ID!, toVersion: Int!): DataModel!
-    generateDeviceToken: String!
+    generateDeviceToken(deviceId: ID!): String!
     recordDeviceMetric(input: DeviceMetricInput!): DeviceMetric!
     recordDeviceMetrics(inputs: [DeviceMetricInput!]!): Boolean!
     createAlertRule(input: CreateAlertRuleInput!): AlertRule!

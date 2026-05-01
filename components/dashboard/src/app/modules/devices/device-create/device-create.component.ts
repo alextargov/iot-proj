@@ -171,9 +171,26 @@ export class DeviceCreateComponent implements OnInit, AfterViewInit {
 
     public onSaveClick(): void {
         const data = this.convertToModel();
-        this.deviceService.createDevice(data).subscribe((data) => {
-            console.log('success', data);
+        const shouldGenerateToken = this.deviceCreateAuthorizationFormGroup.get('communicationToServer')?.value;
+
+        this.deviceService.createDevice(data).subscribe((result) => {
+            const device = result.data?.createDevice;
+            console.log('success', device);
             this.toast.showSuccess('Successfully created device');
+
+            // Generate communication token after device creation if "device to server" communication is enabled
+            if (shouldGenerateToken && device?.id) {
+                this.deviceService.generateDeviceToken(device.id).subscribe({
+                    next: (token) => {
+                        this.tokenInput.nativeElement.value = token;
+                        this.toast.showSuccess('Device token generated');
+                    },
+                    error: (err) => {
+                        console.error('Failed to generate token', err);
+                        this.toast.showError('Failed to generate device token');
+                    },
+                });
+            }
         });
     }
 
@@ -205,18 +222,7 @@ export class DeviceCreateComponent implements OnInit, AfterViewInit {
         communication: string
     ) {
         event.stopPropagation();
-        setTimeout(() => {
-            if (
-                communication === 'deviceToServer' &&
-                this.deviceCreateAuthorizationFormGroup.get(
-                    'communicationToServer'
-                ).value
-            ) {
-                this.deviceService.generateDeviceToken().subscribe((token) => {
-                    this.tokenInput.nativeElement.value = token;
-                });
-            }
-        });
+        // Token is now generated after device creation in onSaveClick, not on checkbox toggle
     }
 
     public displayDataModel(dataModel: DataModelInfoFragment): string {

@@ -241,7 +241,7 @@ type ComplexityRoot struct {
 		DeleteDataModel       func(childComplexity int, id string) int
 		DeleteDevice          func(childComplexity int, id string) int
 		DeleteWidget          func(childComplexity int, id string) int
-		GenerateDeviceToken   func(childComplexity int) int
+		GenerateDeviceToken   func(childComplexity int, deviceID string) int
 		RecordDeviceMetric    func(childComplexity int, input DeviceMetricInput) int
 		RecordDeviceMetrics   func(childComplexity int, inputs []*DeviceMetricInput) int
 		RollbackDataModel     func(childComplexity int, dataModelID string, toVersion int) int
@@ -342,7 +342,7 @@ type MutationResolver interface {
 	DeleteDataModel(ctx context.Context, id string) (string, error)
 	UpdateDataModel(ctx context.Context, id string, input UpdateDataModelInput) (*DataModel, error)
 	RollbackDataModel(ctx context.Context, dataModelID string, toVersion int) (*DataModel, error)
-	GenerateDeviceToken(ctx context.Context) (string, error)
+	GenerateDeviceToken(ctx context.Context, deviceID string) (string, error)
 	RecordDeviceMetric(ctx context.Context, input DeviceMetricInput) (*DeviceMetric, error)
 	RecordDeviceMetrics(ctx context.Context, inputs []*DeviceMetricInput) (bool, error)
 	CreateAlertRule(ctx context.Context, input CreateAlertRuleInput) (*AlertRule, error)
@@ -1347,7 +1347,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			break
 		}
 
-		return e.complexity.Mutation.GenerateDeviceToken(childComplexity), true
+		args, err := ec.field_Mutation_generateDeviceToken_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.GenerateDeviceToken(childComplexity, args["deviceId"].(string)), true
 
 	case "Mutation.recordDeviceMetric":
 		if e.complexity.Mutation.RecordDeviceMetric == nil {
@@ -2418,6 +2423,34 @@ func (ec *executionContext) field_Mutation_deleteWidget_argsID(
 
 	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
 	if tmp, ok := rawArgs["id"]; ok {
+		return ec.unmarshalNID2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_generateDeviceToken_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_generateDeviceToken_argsDeviceID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["deviceId"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_generateDeviceToken_argsDeviceID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["deviceId"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("deviceId"))
+	if tmp, ok := rawArgs["deviceId"]; ok {
 		return ec.unmarshalNID2string(ctx, tmp)
 	}
 
@@ -9579,7 +9612,7 @@ func (ec *executionContext) _Mutation_generateDeviceToken(ctx context.Context, f
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().GenerateDeviceToken(rctx)
+		return ec.resolvers.Mutation().GenerateDeviceToken(rctx, fc.Args["deviceId"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -9596,7 +9629,7 @@ func (ec *executionContext) _Mutation_generateDeviceToken(ctx context.Context, f
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Mutation_generateDeviceToken(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Mutation_generateDeviceToken(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Mutation",
 		Field:      field,
@@ -9605,6 +9638,17 @@ func (ec *executionContext) fieldContext_Mutation_generateDeviceToken(_ context.
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
 		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_generateDeviceToken_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }

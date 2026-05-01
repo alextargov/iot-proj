@@ -170,12 +170,12 @@ func initAPIHandler(ctx context.Context, cfg config, db persistence.Transactione
 	deviceRepo := device.NewRepository(authDevConv)
 	deviceSvc := device.NewService(deviceRepo, uidService, hostSvc)
 
-	// Create metric service for REST handler
+	// Create shared metric service with PubSub for real-time subscriptions
 	metricConv := metric.NewConverter()
 	metricRepo := metric.NewRepository(metricConv)
 	metricSvc := metric.NewService(metricRepo, uidService)
 
-	// Create metrics handler
+	// Create metrics handler using the shared metric service
 	metricsHandler := handlers.NewMetricsHandler(db, metricSvc, deviceSvc)
 
 	mainRouter := mux.NewRouter()
@@ -188,7 +188,8 @@ func initAPIHandler(ctx context.Context, cfg config, db persistence.Transactione
 	apiRouter.HandleFunc("/metrics", metricsHandler.RecordMetrics).Methods(http.MethodPost)
 	apiRouter.HandleFunc("/devices/{deviceId}/metrics", metricsHandler.RecordDeviceMetrics).Methods(http.MethodPost)
 
-	rootResolver := domain.NewRootResolver(db, cfg.NotificationService.SMTP, applicationsScheduler, widgetScheduler, logrus.StandardLogger())
+	// Pass the shared metric service to the root resolver so PubSub is wired correctly
+	rootResolver := domain.NewRootResolver(db, cfg.NotificationService.SMTP, applicationsScheduler, widgetScheduler, logrus.StandardLogger(), metricSvc)
 
 	srv := handler.New(graphql.NewExecutableSchema(graphql.Config{Resolvers: rootResolver}))
 
