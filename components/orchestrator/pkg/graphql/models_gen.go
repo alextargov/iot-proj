@@ -326,6 +326,9 @@ type PageInfo struct {
 type Query struct {
 }
 
+type Subscription struct {
+}
+
 type TokenCredentialDataInput struct {
 	Token string `json:"token"`
 }

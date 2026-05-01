@@ -19,9 +19,11 @@ import (
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/k8s"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/model"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/notification"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/pubsub"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/uuid"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/graphql"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/persistence"
+	"github.com/sirupsen/logrus"
 )
 
 var _ graphql.ResolverRoot = &RootResolver{}
@@ -41,11 +43,14 @@ type RootResolver struct {
 	alert           *alert.Resolver
 	dashboardLayout *dashboard_layout.Resolver
 	dashboardWidget *dashboard_widget.Resolver
+	metricPubSub    *pubsub.MetricPubSub
 }
 
-func NewRootResolver(persistence persistence.Transactioner, notificationSMTPConfig notification.SMTPConfig, scheduler k8s.Scheduler, cronScheduler CronScheduler) *RootResolver {
+func NewRootResolver(persistence persistence.Transactioner, notificationSMTPConfig notification.SMTPConfig, scheduler k8s.Scheduler, cronScheduler CronScheduler, log *logrus.Logger) *RootResolver {
 	uuidService := uuid.NewService()
 	authConv := auth.NewConverter()
+
+	metricPubSub := pubsub.NewMetricPubSub(log)
 
 	hostConv := host.NewConverter()
 	hostRepo := host.NewRepository(hostConv)
@@ -67,6 +72,7 @@ func NewRootResolver(persistence persistence.Transactioner, notificationSMTPConf
 	metricConv := metric.NewConverter()
 	metricRepo := metric.NewRepository(metricConv)
 	metricSvc := metric.NewService(metricRepo, uuidService)
+	metricSvc.SetMetricPublisher(metricPubSub)
 	metricRes := metric.NewResolver(persistence, metricSvc, metricConv)
 
 	notificationSvc := notification.NewService(notificationSMTPConfig)
@@ -105,6 +111,7 @@ func NewRootResolver(persistence persistence.Transactioner, notificationSMTPConf
 		alert:           alertRes,
 		dashboardLayout: dashboardLayoutRes,
 		dashboardWidget: dashboardWidgetRes,
+		metricPubSub:    metricPubSub,
 	}
 }
 
@@ -118,8 +125,48 @@ func (r *RootResolver) Query() graphql.QueryResolver {
 	return &queryResolver{r}
 }
 
+// Subscription returns the subscription resolver
+func (r *RootResolver) Subscription() graphql.SubscriptionResolver {
+	return &subscriptionResolver{r}
+}
+
 type queryResolver struct {
 	*RootResolver
+}
+
+type subscriptionResolver struct {
+	*RootResolver
+}
+
+func (r *subscriptionResolver) MetricRecorded(ctx context.Context, deviceID string) (<-chan *graphql.DeviceMetric, error) {
+	ch := r.metricPubSub.Subscribe(deviceID)
+
+	out := make(chan *graphql.DeviceMetric, 10)
+
+	go func() {
+		defer close(out)
+		for {
+			select {
+			case <-ctx.Done():
+				r.metricPubSub.Unsubscribe(deviceID, ch)
+				return
+			case metric, ok := <-ch:
+				if !ok {
+					return
+				}
+				out <- &graphql.DeviceMetric{
+					ID:          metric.ID,
+					DeviceID:    metric.DeviceID,
+					MetricName:  metric.MetricName,
+					MetricValue: metric.MetricValue,
+					Unit:        metric.Unit,
+					RecordedAt:  graphql.Timestamp(metric.RecordedAt),
+				}
+			}
+		}
+	}()
+
+	return out, nil
 }
 
 func (r *RootResolver) Device() graphql.DeviceResolver {

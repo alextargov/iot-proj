@@ -9,6 +9,9 @@ import (
 	"time"
 
 	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/handler/extension"
+	"github.com/99designs/gqlgen/graphql/handler/lru"
+	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/alextargov/iot-proj/components/controller/client"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/auth"
@@ -29,9 +32,11 @@ import (
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/logger"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/persistence"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
 	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
+	"github.com/vektah/gqlparser/v2/ast"
 	"github.com/vrischmann/envconfig"
 	cr "sigs.k8s.io/controller-runtime"
 )
@@ -183,8 +188,28 @@ func initAPIHandler(ctx context.Context, cfg config, db persistence.Transactione
 	apiRouter.HandleFunc("/metrics", metricsHandler.RecordMetrics).Methods(http.MethodPost)
 	apiRouter.HandleFunc("/devices/{deviceId}/metrics", metricsHandler.RecordDeviceMetrics).Methods(http.MethodPost)
 
-	rootResolver := domain.NewRootResolver(db, cfg.NotificationService.SMTP, applicationsScheduler, widgetScheduler)
-	srv := handler.NewDefaultServer(graphql.NewExecutableSchema(graphql.Config{Resolvers: rootResolver}))
+	rootResolver := domain.NewRootResolver(db, cfg.NotificationService.SMTP, applicationsScheduler, widgetScheduler, logrus.StandardLogger())
+
+	srv := handler.New(graphql.NewExecutableSchema(graphql.Config{Resolvers: rootResolver}))
+
+	srv.AddTransport(transport.Options{})
+	srv.AddTransport(transport.GET{})
+	srv.AddTransport(transport.POST{})
+
+	srv.AddTransport(&transport.Websocket{
+		KeepAlivePingInterval: 10 * time.Second,
+		Upgrader: websocket.Upgrader{
+			CheckOrigin: func(r *http.Request) bool {
+				return true
+			},
+			ReadBufferSize:  1024,
+			WriteBufferSize: 1024,
+		},
+	})
+
+	srv.SetQueryCache(lru.New[*ast.QueryDocument](1000))
+	srv.Use(extension.Introspection{})
+	srv.Use(extension.AutomaticPersistedQuery{Cache: lru.New[string](100)})
 
 	mainRouter.HandleFunc("/", playground.Handler("GraphQL playground", cfg.APIEndpoint))
 

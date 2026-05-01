@@ -52,3 +52,9 @@ mutation RecordDeviceMetric($input: DeviceMetricInput!) {
 mutation RecordDeviceMetrics($inputs: [DeviceMetricInput!]!) {
     recordDeviceMetrics(inputs: $inputs)
 }
+
+subscription OnMetricRecorded($deviceId: ID!) {
+    metricRecorded(deviceId: $deviceId) {
+        ...DeviceMetricInfo
+    }
+}

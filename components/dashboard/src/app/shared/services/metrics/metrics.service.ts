@@ -4,6 +4,7 @@ import {
     GetDeviceMetricsGQL,
     GetDeviceMetricsSeriesGQL,
     GetDeviceAggregatedMetricsGQL,
+    OnMetricRecordedGQL,
     DeviceMetricInfoFragment,
     MetricSeriesInfoFragment,
     AggregatedMetricInfoFragment,
@@ -18,7 +19,8 @@ export class MetricsService {
     constructor(
         private getDeviceMetricsGQL: GetDeviceMetricsGQL,
         private getDeviceMetricsSeriesGQL: GetDeviceMetricsSeriesGQL,
-        private getDeviceAggregatedMetricsGQL: GetDeviceAggregatedMetricsGQL
+        private getDeviceAggregatedMetricsGQL: GetDeviceAggregatedMetricsGQL,
+        private onMetricRecordedGQL: OnMetricRecordedGQL
     ) {}
 
     /**
@@ -57,5 +59,14 @@ export class MetricsService {
         return this.getDeviceAggregatedMetricsGQL
             .fetch({ variables: { deviceId, aggregation, filter } })
             .pipe(map((result) => result.data.deviceAggregatedMetrics ?? null));
+    }
+
+    /**
+     * Subscribe to real-time metric updates for a device
+     */
+    subscribeToMetrics(deviceId: string): Observable<DeviceMetricInfoFragment> {
+        return this.onMetricRecordedGQL
+            .subscribe({ variables: { deviceId } })
+            .pipe(map((result) => result.data!.metricRecorded));
     }
 }

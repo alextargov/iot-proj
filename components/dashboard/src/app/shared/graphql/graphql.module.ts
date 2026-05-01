@@ -4,11 +4,15 @@ import { BrowserModule } from '@angular/platform-browser';
 import {
     ApolloLink,
     InMemoryCache,
+    split,
 } from '@apollo/client/core';
 import { setContext } from '@apollo/client/link/context';
 import { onError } from '@apollo/client/link/error';
+import { GraphQLWsLink } from '@apollo/client/link/subscriptions';
+import { getMainDefinition } from '@apollo/client/utilities';
 import { provideApollo } from 'apollo-angular';
 import { HttpLink } from 'apollo-angular/http';
+import { createClient } from 'graphql-ws';
 import { environment } from 'src/environments/environment';
 import { AuthService } from '../services/auth/auth.service';
 
@@ -42,6 +46,21 @@ const createAuthLink = (authService: AuthService) =>
         };
     });
 
+// Create WebSocket link for subscriptions
+const createWsLink = (authService: AuthService) => {
+    return new GraphQLWsLink(
+        createClient({
+            url: 'ws://localhost:8080/graphql',
+            connectionParams: () => {
+                const token = authService.getToken();
+                return token ? { Authorization: `Bearer ${token}` } : {};
+            },
+            retryAttempts: 5,
+            shouldRetry: () => true,
+        })
+    );
+};
+
 export function createDefaultApollo(
     httpLink: HttpLink,
     authService: AuthService
@@ -57,11 +76,30 @@ export function createDefaultApollo(
     // Auth link that fetches token dynamically on each request
     const authLink = createAuthLink(authService);
 
+    // WebSocket link for subscriptions
+    const wsLink = createWsLink(authService);
+
+    // HTTP link with auth and error handling
+    const httpLinkChain = ApolloLink.from([authLink, errorLink, http]);
+
+    // Split link: use WebSocket for subscriptions, HTTP for queries/mutations
+    const splitLink = split(
+        ({ query }) => {
+            const definition = getMainDefinition(query);
+            return (
+                definition.kind === 'OperationDefinition' &&
+                definition.operation === 'subscription'
+            );
+        },
+        wsLink,
+        httpLinkChain
+    );
+
     return {
         connectToDevTools: !environment.production,
         assumeImmutableResults: true,
         cache,
-        link: ApolloLink.from([authLink, errorLink, http]),
+        link: splitLink,
         defaultOptions: {
             watchQuery: {
                 errorPolicy: 'all' as const,

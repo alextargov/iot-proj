@@ -30,24 +30,36 @@ type AlertEvaluator interface {
 	EvaluateMetric(ctx context.Context, metric model.DeviceMetric) error
 }
 
+// MetricPublisher defines the interface for publishing metrics to subscribers
+type MetricPublisher interface {
+	Publish(deviceID string, metric *model.DeviceMetric)
+}
+
 type service struct {
-	metricRepo     MetricRepository
-	uuidService    UUIDService
-	alertEvaluator AlertEvaluator
+	metricRepo      MetricRepository
+	uuidService     UUIDService
+	alertEvaluator  AlertEvaluator
+	metricPublisher MetricPublisher
 }
 
 // NewService creates a new metric service
 func NewService(repo MetricRepository, uuidService UUIDService) *service {
 	return &service{
-		metricRepo:     repo,
-		uuidService:    uuidService,
-		alertEvaluator: nil,
+		metricRepo:      repo,
+		uuidService:     uuidService,
+		alertEvaluator:  nil,
+		metricPublisher: nil,
 	}
 }
 
 // SetAlertEvaluator sets the alert evaluator for real-time alert evaluation
 func (s *service) SetAlertEvaluator(evaluator AlertEvaluator) {
 	s.alertEvaluator = evaluator
+}
+
+// SetMetricPublisher sets the metric publisher for real-time subscriptions
+func (s *service) SetMetricPublisher(publisher MetricPublisher) {
+	s.metricPublisher = publisher
 }
 
 // RecordMetric records a single metric
@@ -85,6 +97,10 @@ func (s *service) RecordMetric(ctx context.Context, input model.DeviceMetricInpu
 		}
 	}
 
+	if s.metricPublisher != nil {
+		s.metricPublisher.Publish(metric.DeviceID, &metric)
+	}
+
 	return &metric, nil
 }
 
@@ -118,7 +134,17 @@ func (s *service) RecordMetrics(ctx context.Context, inputs []model.DeviceMetric
 
 	logger.C(ctx).Debugf("Recording %d metrics in batch", len(metrics))
 
-	return s.metricRepo.CreateBatch(ctx, metrics)
+	if err := s.metricRepo.CreateBatch(ctx, metrics); err != nil {
+		return err
+	}
+
+	if s.metricPublisher != nil {
+		for i := range metrics {
+			s.metricPublisher.Publish(metrics[i].DeviceID, &metrics[i])
+		}
+	}
+
+	return nil
 }
 
 // RecordMetricWithTenant records a metric with explicit tenant (for REST API)
@@ -149,6 +175,10 @@ func (s *service) RecordMetricWithTenant(ctx context.Context, input model.Device
 		if err := s.alertEvaluator.EvaluateMetric(ctx, metric); err != nil {
 			logger.C(ctx).Warnf("Alert evaluation failed for metric %s: %v", metric.ID, err)
 		}
+	}
+
+	if s.metricPublisher != nil {
+		s.metricPublisher.Publish(metric.DeviceID, &metric)
 	}
 
 	return &metric, nil

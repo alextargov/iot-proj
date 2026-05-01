@@ -493,3 +493,7 @@ type Mutation {
     deleteDashboardWidget(id: ID!): ID!
     updateWidgetPositions(layoutId: ID!, positions: [WidgetPositionInput!]!): Boolean!
 }
+
+type Subscription {
+    metricRecorded(deviceId: ID!): DeviceMetric!
+}

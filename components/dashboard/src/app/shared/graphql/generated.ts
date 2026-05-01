@@ -19,8 +19,6 @@ export type Scalars = {
   JSON: { input: any; output: any; }
   PageCursor: { input: any; output: any; }
   Timestamp: { input: any; output: any; }
-  _Any: { input: any; output: any; }
-  _FieldSet: { input: any; output: any; }
 };
 
 export type AggregatedMetric = {
@@ -285,13 +283,6 @@ export type DataModelVersion = {
   versionNumber: Scalars['Int']['output'];
 };
 
-export type UpdateDataModelInput = {
-  changeDescription?: InputMaybe<Scalars['String']['input']>;
-  description?: InputMaybe<Scalars['String']['input']>;
-  name?: InputMaybe<Scalars['String']['input']>;
-  schema?: InputMaybe<Scalars['JSON']['input']>;
-};
-
 export type Device = {
   __typename?: 'Device';
   auth?: Maybe<Auth>;
@@ -482,6 +473,12 @@ export type MutationRecordDeviceMetricsArgs = {
 };
 
 
+export type MutationRollbackDataModelArgs = {
+  dataModelId: Scalars['ID']['input'];
+  toVersion: Scalars['Int']['input'];
+};
+
+
 export type MutationSetDeviceOperationArgs = {
   id: Scalars['ID']['input'];
   op: OperationType;
@@ -515,11 +512,6 @@ export type MutationUpdateDashboardWidgetArgs = {
 export type MutationUpdateDataModelArgs = {
   id: Scalars['ID']['input'];
   input: UpdateDataModelInput;
-};
-
-export type MutationRollbackDataModelArgs = {
-  dataModelId: Scalars['ID']['input'];
-  toVersion: Scalars['Int']['input'];
 };
 
 
@@ -562,15 +554,14 @@ export type Pageable = {
 
 export type Query = {
   __typename?: 'Query';
-  _service: _Service;
   alertEvents: AlertEventPage;
   alertRule?: Maybe<AlertRule>;
   alertRules: AlertRulePage;
   dashboardLayout?: Maybe<DashboardLayout>;
   dashboardLayouts: Array<DashboardLayout>;
-  dataModels: Array<Maybe<DataModel>>;
   dataModelVersion?: Maybe<DataModelVersion>;
   dataModelVersions: Array<DataModelVersion>;
+  dataModels: Array<Maybe<DataModel>>;
   defaultDashboardLayout?: Maybe<DashboardLayout>;
   device?: Maybe<Device>;
   deviceAggregatedMetrics?: Maybe<AggregatedMetric>;
@@ -610,10 +601,12 @@ export type QueryDashboardLayoutArgs = {
   id: Scalars['ID']['input'];
 };
 
+
 export type QueryDataModelVersionArgs = {
   dataModelId: Scalars['ID']['input'];
   version: Scalars['Int']['input'];
 };
+
 
 export type QueryDataModelVersionsArgs = {
   dataModelId: Scalars['ID']['input'];
@@ -672,6 +665,16 @@ export type QueryWidgetsPageArgs = {
   first?: InputMaybe<Scalars['Int']['input']>;
 };
 
+export type Subscription = {
+  __typename?: 'Subscription';
+  metricRecorded: DeviceMetric;
+};
+
+
+export type SubscriptionMetricRecordedArgs = {
+  deviceId: Scalars['ID']['input'];
+};
+
 export type TokenCredentialDataInput = {
   token: Scalars['String']['input'];
 };
@@ -702,6 +705,13 @@ export type UpdateDashboardWidgetInput = {
   gridY?: InputMaybe<Scalars['Int']['input']>;
   metricName?: InputMaybe<Scalars['String']['input']>;
   title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateDataModelInput = {
+  changeDescription?: InputMaybe<Scalars['String']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  schema?: InputMaybe<Scalars['JSON']['input']>;
 };
 
 export type Widget = {
@@ -749,11 +759,6 @@ export enum WidgetStatus {
   Active = 'ACTIVE',
   Inactive = 'INACTIVE'
 }
-
-export type _Service = {
-  __typename?: '_Service';
-  sdl?: Maybe<Scalars['String']['output']>;
-};
 
 export type GetAlertRulesQueryVariables = Exact<{
   deviceId?: InputMaybe<Scalars['ID']['input']>;
@@ -923,6 +928,13 @@ export type UpdateDataModelMutationVariables = Exact<{
 
 export type UpdateDataModelMutation = { __typename?: 'Mutation', updateDataModel: { __typename?: 'DataModel', id: string, name: string, description: string, schema: any, deviceCount: number, currentVersion: number, createdAt?: any | null, updatedAt?: any | null } };
 
+export type DeleteDataModelMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type DeleteDataModelMutation = { __typename?: 'Mutation', deleteDataModel: string };
+
 export type RollbackDataModelMutationVariables = Exact<{
   dataModelId: Scalars['ID']['input'];
   toVersion: Scalars['Int']['input'];
@@ -930,13 +942,6 @@ export type RollbackDataModelMutationVariables = Exact<{
 
 
 export type RollbackDataModelMutation = { __typename?: 'Mutation', rollbackDataModel: { __typename?: 'DataModel', id: string, name: string, description: string, schema: any, deviceCount: number, currentVersion: number, createdAt?: any | null, updatedAt?: any | null } };
-
-export type DeleteDataModelMutationVariables = Exact<{
-  id: Scalars['ID']['input'];
-}>;
-
-
-export type DeleteDataModelMutation = { __typename?: 'Mutation', deleteDataModel: string };
 
 export type DeviceInfoFragment = { __typename?: 'Device', id: string, name: string, description?: string | null, status: DeviceStatus, tenantId: string, tags?: Array<string> | null, createdAt?: any | null, updatedAt?: any | null, auth?: { __typename?: 'Auth', credentialForService?: string | null, credentialForDevice?:
       | { __typename?: 'BasicCredentialData', username: string, password: string }
@@ -1056,6 +1061,13 @@ export type RecordDeviceMetricsMutationVariables = Exact<{
 
 
 export type RecordDeviceMetricsMutation = { __typename?: 'Mutation', recordDeviceMetrics: boolean };
+
+export type OnMetricRecordedSubscriptionVariables = Exact<{
+  deviceId: Scalars['ID']['input'];
+}>;
+
+
+export type OnMetricRecordedSubscription = { __typename?: 'Subscription', metricRecorded: { __typename?: 'DeviceMetric', id: string, deviceId: string, metricName: string, metricValue: number, unit?: string | null, recordedAt: any } };
 
 export type WidgetInfoFragment = { __typename?: 'Widget', id: string, name: string, description?: string | null, status: WidgetStatus, tenantId: string, code: string, workspace: string, deviceIds?: Array<string> | null, schedule?: string | null, lastExecutedAt?: any | null, createdAt?: any | null, updatedAt?: any | null };
 
@@ -1655,6 +1667,42 @@ export const ListDataModelsDocument = gql`
       super(apollo);
     }
   }
+export const ListDataModelVersionsDocument = gql`
+    query ListDataModelVersions($dataModelId: ID!) {
+  dataModelVersions(dataModelId: $dataModelId) {
+    ...DataModelVersionInfo
+  }
+}
+    ${DataModelVersionInfoFragmentDoc}`;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class ListDataModelVersionsGQL extends Apollo.Query<ListDataModelVersionsQuery, ListDataModelVersionsQueryVariables> {
+    document = ListDataModelVersionsDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const GetDataModelVersionDocument = gql`
+    query GetDataModelVersion($dataModelId: ID!, $version: Int!) {
+  dataModelVersion(dataModelId: $dataModelId, version: $version) {
+    ...DataModelVersionInfo
+  }
+}
+    ${DataModelVersionInfoFragmentDoc}`;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class GetDataModelVersionGQL extends Apollo.Query<GetDataModelVersionQuery, GetDataModelVersionQueryVariables> {
+    document = GetDataModelVersionDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
 export const CreateDataModelDocument = gql`
     mutation CreateDataModel($input: DataModelInput!) {
   createDataModel(input: $input) {
@@ -1673,58 +1721,6 @@ export const CreateDataModelDocument = gql`
       super(apollo);
     }
   }
-export const DeleteDataModelDocument = gql`
-    mutation DeleteDataModel($id: ID!) {
-  deleteDataModel(id: $id)
-}
-    `;
-
-  @Injectable({
-    providedIn: 'root'
-  })
-  export class DeleteDataModelGQL extends Apollo.Mutation<DeleteDataModelMutation, DeleteDataModelMutationVariables> {
-    document = DeleteDataModelDocument;
-
-    constructor(apollo: Apollo.Apollo) {
-      super(apollo);
-    }
-  }
-export const ListDataModelVersionsDocument = gql`
-    query ListDataModelVersions($dataModelId: ID!) {
-  dataModelVersions(dataModelId: $dataModelId) {
-    ...DataModelVersionInfo
-  }
-}
-    ${DataModelVersionInfoFragmentDoc}`;
-
-  @Injectable({
-    providedIn: 'root'
-  })
-  export class ListDataModelVersionsGQL extends Apollo.Query<ListDataModelVersionsQuery, ListDataModelVersionsQueryVariables> {
-    document = ListDataModelVersionsDocument;
-
-    constructor(apollo: Apollo.Apollo) {
-      super(apollo);
-    }
-  }
-export const GetDataModelVersionDocument = gql`
-    query GetDataModelVersion($dataModelId: ID!, $version: Int!) {
-  dataModelVersion(dataModelId: $dataModelId, version: $version) {
-    ...DataModelVersionInfo
-  }
-}
-    ${DataModelVersionInfoFragmentDoc}`;
-
-  @Injectable({
-    providedIn: 'root'
-  })
-  export class GetDataModelVersionGQL extends Apollo.Query<GetDataModelVersionQuery, GetDataModelVersionQueryVariables> {
-    document = GetDataModelVersionDocument;
-
-    constructor(apollo: Apollo.Apollo) {
-      super(apollo);
-    }
-  }
 export const UpdateDataModelDocument = gql`
     mutation UpdateDataModel($id: ID!, $input: UpdateDataModelInput!) {
   updateDataModel(id: $id, input: $input) {
@@ -1738,7 +1734,23 @@ export const UpdateDataModelDocument = gql`
   })
   export class UpdateDataModelGQL extends Apollo.Mutation<UpdateDataModelMutation, UpdateDataModelMutationVariables> {
     document = UpdateDataModelDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const DeleteDataModelDocument = gql`
+    mutation DeleteDataModel($id: ID!) {
+  deleteDataModel(id: $id)
+}
+    `;
 
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class DeleteDataModelGQL extends Apollo.Mutation<DeleteDataModelMutation, DeleteDataModelMutationVariables> {
+    document = DeleteDataModelDocument;
+    
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1756,7 +1768,7 @@ export const RollbackDataModelDocument = gql`
   })
   export class RollbackDataModelGQL extends Apollo.Mutation<RollbackDataModelMutation, RollbackDataModelMutationVariables> {
     document = RollbackDataModelDocument;
-
+    
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1980,6 +1992,24 @@ export const RecordDeviceMetricsDocument = gql`
   })
   export class RecordDeviceMetricsGQL extends Apollo.Mutation<RecordDeviceMetricsMutation, RecordDeviceMetricsMutationVariables> {
     document = RecordDeviceMetricsDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const OnMetricRecordedDocument = gql`
+    subscription OnMetricRecorded($deviceId: ID!) {
+  metricRecorded(deviceId: $deviceId) {
+    ...DeviceMetricInfo
+  }
+}
+    ${DeviceMetricInfoFragmentDoc}`;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class OnMetricRecordedGQL extends Apollo.Subscription<OnMetricRecordedSubscription, OnMetricRecordedSubscriptionVariables> {
+    document = OnMetricRecordedDocument;
     
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
