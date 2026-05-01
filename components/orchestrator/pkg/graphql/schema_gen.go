@@ -163,17 +163,30 @@ type ComplexityRoot struct {
 	}
 
 	DataModel struct {
-		CreatedAt   func(childComplexity int) int
-		Description func(childComplexity int) int
-		ID          func(childComplexity int) int
-		Name        func(childComplexity int) int
-		Schema      func(childComplexity int) int
-		UpdatedAt   func(childComplexity int) int
+		CreatedAt      func(childComplexity int) int
+		CurrentVersion func(childComplexity int) int
+		Description    func(childComplexity int) int
+		DeviceCount    func(childComplexity int) int
+		ID             func(childComplexity int) int
+		Name           func(childComplexity int) int
+		Schema         func(childComplexity int) int
+		UpdatedAt      func(childComplexity int) int
+	}
+
+	DataModelVersion struct {
+		ChangeDescription func(childComplexity int) int
+		CreatedAt         func(childComplexity int) int
+		CreatedBy         func(childComplexity int) int
+		DataModelID       func(childComplexity int) int
+		ID                func(childComplexity int) int
+		Schema            func(childComplexity int) int
+		VersionNumber     func(childComplexity int) int
 	}
 
 	Device struct {
 		Auth        func(childComplexity int) int
 		CreatedAt   func(childComplexity int) int
+		DataModel   func(childComplexity int) int
 		Description func(childComplexity int) int
 		Host        func(childComplexity int) int
 		ID          func(childComplexity int) int
@@ -229,12 +242,13 @@ type ComplexityRoot struct {
 		GenerateDeviceToken   func(childComplexity int) int
 		RecordDeviceMetric    func(childComplexity int, input DeviceMetricInput) int
 		RecordDeviceMetrics   func(childComplexity int, inputs []*DeviceMetricInput) int
+		RollbackDataModel     func(childComplexity int, dataModelID string, toVersion int) int
 		SetDeviceOperation    func(childComplexity int, id string, op OperationType) int
 		SetOperation          func(childComplexity int, op OperationType, data any) int
 		UpdateAlertRule       func(childComplexity int, id string, input UpdateAlertRuleInput) int
 		UpdateDashboardLayout func(childComplexity int, id string, input UpdateDashboardLayoutInput) int
 		UpdateDashboardWidget func(childComplexity int, id string, input UpdateDashboardWidgetInput) int
-		UpdateDataModel       func(childComplexity int, id string, input DataModelInput) int
+		UpdateDataModel       func(childComplexity int, id string, input UpdateDataModelInput) int
 		UpdateWidgetPositions func(childComplexity int, layoutID string, positions []*WidgetPositionInput) int
 	}
 
@@ -256,6 +270,8 @@ type ComplexityRoot struct {
 		AlertRules               func(childComplexity int, deviceID *string, first *int, after *string) int
 		DashboardLayout          func(childComplexity int, id string) int
 		DashboardLayouts         func(childComplexity int) int
+		DataModelVersion         func(childComplexity int, dataModelID string, version int) int
+		DataModelVersions        func(childComplexity int, dataModelID string) int
 		DataModels               func(childComplexity int) int
 		DefaultDashboardLayout   func(childComplexity int) int
 		Device                   func(childComplexity int, id string) int
@@ -306,6 +322,8 @@ type DashboardWidgetResolver interface {
 }
 type DeviceResolver interface {
 	Host(ctx context.Context, obj *Device) (*Host, error)
+
+	DataModel(ctx context.Context, obj *Device) (*DataModel, error)
 }
 type MutationResolver interface {
 	CreateDevice(ctx context.Context, input DeviceInput) (*Device, error)
@@ -316,7 +334,8 @@ type MutationResolver interface {
 	DeleteWidget(ctx context.Context, id string) (string, error)
 	CreateDataModel(ctx context.Context, input DataModelInput) (*DataModel, error)
 	DeleteDataModel(ctx context.Context, id string) (string, error)
-	UpdateDataModel(ctx context.Context, id string, input DataModelInput) (*DataModel, error)
+	UpdateDataModel(ctx context.Context, id string, input UpdateDataModelInput) (*DataModel, error)
+	RollbackDataModel(ctx context.Context, dataModelID string, toVersion int) (*DataModel, error)
 	GenerateDeviceToken(ctx context.Context) (string, error)
 	RecordDeviceMetric(ctx context.Context, input DeviceMetricInput) (*DeviceMetric, error)
 	RecordDeviceMetrics(ctx context.Context, inputs []*DeviceMetricInput) (bool, error)
@@ -341,6 +360,8 @@ type QueryResolver interface {
 	WidgetsPage(ctx context.Context, first *int, after *string) (*WidgetPage, error)
 	Widget(ctx context.Context, id string) (*Widget, error)
 	DataModels(ctx context.Context) ([]*DataModel, error)
+	DataModelVersions(ctx context.Context, dataModelID string) ([]*DataModelVersion, error)
+	DataModelVersion(ctx context.Context, dataModelID string, version int) (*DataModelVersion, error)
 	TestDeviceConnection(ctx context.Context, url string) (bool, error)
 	DeviceMetrics(ctx context.Context, deviceID string, filter *MetricFilterInput) ([]*DeviceMetric, error)
 	DeviceMetricsSeries(ctx context.Context, deviceID string, metricNames []string, filter *MetricFilterInput) ([]*MetricSeries, error)
@@ -869,12 +890,26 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.DataModel.CreatedAt(childComplexity), true
 
+	case "DataModel.currentVersion":
+		if e.complexity.DataModel.CurrentVersion == nil {
+			break
+		}
+
+		return e.complexity.DataModel.CurrentVersion(childComplexity), true
+
 	case "DataModel.description":
 		if e.complexity.DataModel.Description == nil {
 			break
 		}
 
 		return e.complexity.DataModel.Description(childComplexity), true
+
+	case "DataModel.deviceCount":
+		if e.complexity.DataModel.DeviceCount == nil {
+			break
+		}
+
+		return e.complexity.DataModel.DeviceCount(childComplexity), true
 
 	case "DataModel.id":
 		if e.complexity.DataModel.ID == nil {
@@ -904,6 +939,55 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.DataModel.UpdatedAt(childComplexity), true
 
+	case "DataModelVersion.changeDescription":
+		if e.complexity.DataModelVersion.ChangeDescription == nil {
+			break
+		}
+
+		return e.complexity.DataModelVersion.ChangeDescription(childComplexity), true
+
+	case "DataModelVersion.createdAt":
+		if e.complexity.DataModelVersion.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.DataModelVersion.CreatedAt(childComplexity), true
+
+	case "DataModelVersion.createdBy":
+		if e.complexity.DataModelVersion.CreatedBy == nil {
+			break
+		}
+
+		return e.complexity.DataModelVersion.CreatedBy(childComplexity), true
+
+	case "DataModelVersion.dataModelId":
+		if e.complexity.DataModelVersion.DataModelID == nil {
+			break
+		}
+
+		return e.complexity.DataModelVersion.DataModelID(childComplexity), true
+
+	case "DataModelVersion.id":
+		if e.complexity.DataModelVersion.ID == nil {
+			break
+		}
+
+		return e.complexity.DataModelVersion.ID(childComplexity), true
+
+	case "DataModelVersion.schema":
+		if e.complexity.DataModelVersion.Schema == nil {
+			break
+		}
+
+		return e.complexity.DataModelVersion.Schema(childComplexity), true
+
+	case "DataModelVersion.versionNumber":
+		if e.complexity.DataModelVersion.VersionNumber == nil {
+			break
+		}
+
+		return e.complexity.DataModelVersion.VersionNumber(childComplexity), true
+
 	case "Device.auth":
 		if e.complexity.Device.Auth == nil {
 			break
@@ -917,6 +1001,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Device.CreatedAt(childComplexity), true
+
+	case "Device.dataModel":
+		if e.complexity.Device.DataModel == nil {
+			break
+		}
+
+		return e.complexity.Device.DataModel(childComplexity), true
 
 	case "Device.description":
 		if e.complexity.Device.Description == nil {
@@ -1273,6 +1364,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Mutation.RecordDeviceMetrics(childComplexity, args["inputs"].([]*DeviceMetricInput)), true
 
+	case "Mutation.rollbackDataModel":
+		if e.complexity.Mutation.RollbackDataModel == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_rollbackDataModel_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.RollbackDataModel(childComplexity, args["dataModelId"].(string), args["toVersion"].(int)), true
+
 	case "Mutation.setDeviceOperation":
 		if e.complexity.Mutation.SetDeviceOperation == nil {
 			break
@@ -1343,7 +1446,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateDataModel(childComplexity, args["id"].(string), args["input"].(DataModelInput)), true
+		return e.complexity.Mutation.UpdateDataModel(childComplexity, args["id"].(string), args["input"].(UpdateDataModelInput)), true
 
 	case "Mutation.updateWidgetPositions":
 		if e.complexity.Mutation.UpdateWidgetPositions == nil {
@@ -1453,6 +1556,30 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.DashboardLayouts(childComplexity), true
+
+	case "Query.dataModelVersion":
+		if e.complexity.Query.DataModelVersion == nil {
+			break
+		}
+
+		args, err := ec.field_Query_dataModelVersion_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.DataModelVersion(childComplexity, args["dataModelId"].(string), args["version"].(int)), true
+
+	case "Query.dataModelVersions":
+		if e.complexity.Query.DataModelVersions == nil {
+			break
+		}
+
+		args, err := ec.field_Query_dataModelVersions_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.DataModelVersions(childComplexity, args["dataModelId"].(string)), true
 
 	case "Query.dataModels":
 		if e.complexity.Query.DataModels == nil {
@@ -1736,6 +1863,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputUpdateAlertRuleInput,
 		ec.unmarshalInputUpdateDashboardLayoutInput,
 		ec.unmarshalInputUpdateDashboardWidgetInput,
+		ec.unmarshalInputUpdateDataModelInput,
 		ec.unmarshalInputWidgetInput,
 		ec.unmarshalInputWidgetPositionInput,
 	)
@@ -2315,6 +2443,57 @@ func (ec *executionContext) field_Mutation_recordDeviceMetrics_argsInputs(
 	return zeroVal, nil
 }
 
+func (ec *executionContext) field_Mutation_rollbackDataModel_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_rollbackDataModel_argsDataModelID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["dataModelId"] = arg0
+	arg1, err := ec.field_Mutation_rollbackDataModel_argsToVersion(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["toVersion"] = arg1
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_rollbackDataModel_argsDataModelID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["dataModelId"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("dataModelId"))
+	if tmp, ok := rawArgs["dataModelId"]; ok {
+		return ec.unmarshalNID2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_rollbackDataModel_argsToVersion(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (int, error) {
+	if _, ok := rawArgs["toVersion"]; !ok {
+		var zeroVal int
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("toVersion"))
+	if tmp, ok := rawArgs["toVersion"]; ok {
+		return ec.unmarshalNInt2int(ctx, tmp)
+	}
+
+	var zeroVal int
+	return zeroVal, nil
+}
+
 func (ec *executionContext) field_Mutation_setDeviceOperation_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -2606,18 +2785,18 @@ func (ec *executionContext) field_Mutation_updateDataModel_argsID(
 func (ec *executionContext) field_Mutation_updateDataModel_argsInput(
 	ctx context.Context,
 	rawArgs map[string]any,
-) (DataModelInput, error) {
+) (UpdateDataModelInput, error) {
 	if _, ok := rawArgs["input"]; !ok {
-		var zeroVal DataModelInput
+		var zeroVal UpdateDataModelInput
 		return zeroVal, nil
 	}
 
 	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 	if tmp, ok := rawArgs["input"]; ok {
-		return ec.unmarshalNDataModelInput2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDataModelInput(ctx, tmp)
+		return ec.unmarshalNUpdateDataModelInput2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐUpdateDataModelInput(ctx, tmp)
 	}
 
-	var zeroVal DataModelInput
+	var zeroVal UpdateDataModelInput
 	return zeroVal, nil
 }
 
@@ -2920,6 +3099,85 @@ func (ec *executionContext) field_Query_dashboardLayout_argsID(
 
 	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
 	if tmp, ok := rawArgs["id"]; ok {
+		return ec.unmarshalNID2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_dataModelVersion_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Query_dataModelVersion_argsDataModelID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["dataModelId"] = arg0
+	arg1, err := ec.field_Query_dataModelVersion_argsVersion(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["version"] = arg1
+	return args, nil
+}
+func (ec *executionContext) field_Query_dataModelVersion_argsDataModelID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["dataModelId"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("dataModelId"))
+	if tmp, ok := rawArgs["dataModelId"]; ok {
+		return ec.unmarshalNID2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_dataModelVersion_argsVersion(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (int, error) {
+	if _, ok := rawArgs["version"]; !ok {
+		var zeroVal int
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("version"))
+	if tmp, ok := rawArgs["version"]; ok {
+		return ec.unmarshalNInt2int(ctx, tmp)
+	}
+
+	var zeroVal int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_dataModelVersions_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Query_dataModelVersions_argsDataModelID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["dataModelId"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Query_dataModelVersions_argsDataModelID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["dataModelId"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("dataModelId"))
+	if tmp, ok := rawArgs["dataModelId"]; ok {
 		return ec.unmarshalNID2string(ctx, tmp)
 	}
 
@@ -4663,6 +4921,8 @@ func (ec *executionContext) fieldContext_AlertRule_device(_ context.Context, fie
 				return ec.fieldContext_Device_host(ctx, field)
 			case "auth":
 				return ec.fieldContext_Device_auth(ctx, field)
+			case "dataModel":
+				return ec.fieldContext_Device_dataModel(ctx, field)
 			case "tags":
 				return ec.fieldContext_Device_tags(ctx, field)
 			case "createdAt":
@@ -6488,6 +6748,8 @@ func (ec *executionContext) fieldContext_DashboardWidget_device(_ context.Contex
 				return ec.fieldContext_Device_host(ctx, field)
 			case "auth":
 				return ec.fieldContext_Device_auth(ctx, field)
+			case "dataModel":
+				return ec.fieldContext_Device_dataModel(ctx, field)
 			case "tags":
 				return ec.fieldContext_Device_tags(ctx, field)
 			case "createdAt":
@@ -6844,6 +7106,94 @@ func (ec *executionContext) fieldContext_DataModel_schema(_ context.Context, fie
 	return fc, nil
 }
 
+func (ec *executionContext) _DataModel_deviceCount(ctx context.Context, field graphql.CollectedField, obj *DataModel) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataModel_deviceCount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DeviceCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataModel_deviceCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataModel",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataModel_currentVersion(ctx context.Context, field graphql.CollectedField, obj *DataModel) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataModel_currentVersion(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CurrentVersion, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataModel_currentVersion(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataModel",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _DataModel_createdAt(ctx context.Context, field graphql.CollectedField, obj *DataModel) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DataModel_createdAt(ctx, field)
 	if err != nil {
@@ -6921,6 +7271,308 @@ func (ec *executionContext) fieldContext_DataModel_updatedAt(_ context.Context, 
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Timestamp does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataModelVersion_id(ctx context.Context, field graphql.CollectedField, obj *DataModelVersion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataModelVersion_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataModelVersion_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataModelVersion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataModelVersion_dataModelId(ctx context.Context, field graphql.CollectedField, obj *DataModelVersion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataModelVersion_dataModelId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DataModelID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataModelVersion_dataModelId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataModelVersion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataModelVersion_versionNumber(ctx context.Context, field graphql.CollectedField, obj *DataModelVersion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataModelVersion_versionNumber(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.VersionNumber, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataModelVersion_versionNumber(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataModelVersion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataModelVersion_schema(ctx context.Context, field graphql.CollectedField, obj *DataModelVersion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataModelVersion_schema(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Schema, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(JSON)
+	fc.Result = res
+	return ec.marshalNJSON2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐJSON(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataModelVersion_schema(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataModelVersion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type JSON does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataModelVersion_changeDescription(ctx context.Context, field graphql.CollectedField, obj *DataModelVersion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataModelVersion_changeDescription(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ChangeDescription, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataModelVersion_changeDescription(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataModelVersion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataModelVersion_createdAt(ctx context.Context, field graphql.CollectedField, obj *DataModelVersion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataModelVersion_createdAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(Timestamp)
+	fc.Result = res
+	return ec.marshalNTimestamp2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataModelVersion_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataModelVersion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Timestamp does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DataModelVersion_createdBy(ctx context.Context, field graphql.CollectedField, obj *DataModelVersion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DataModelVersion_createdBy(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedBy, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DataModelVersion_createdBy(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DataModelVersion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
 		},
 	}
 	return fc, nil
@@ -7238,6 +7890,65 @@ func (ec *executionContext) fieldContext_Device_auth(_ context.Context, field gr
 				return ec.fieldContext_Auth_accessStrategy(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Auth", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Device_dataModel(ctx context.Context, field graphql.CollectedField, obj *Device) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Device_dataModel(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Device().DataModel(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*DataModel)
+	fc.Result = res
+	return ec.marshalODataModel2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDataModel(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Device_dataModel(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Device",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_DataModel_id(ctx, field)
+			case "name":
+				return ec.fieldContext_DataModel_name(ctx, field)
+			case "description":
+				return ec.fieldContext_DataModel_description(ctx, field)
+			case "schema":
+				return ec.fieldContext_DataModel_schema(ctx, field)
+			case "deviceCount":
+				return ec.fieldContext_DataModel_deviceCount(ctx, field)
+			case "currentVersion":
+				return ec.fieldContext_DataModel_currentVersion(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_DataModel_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_DataModel_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DataModel", field.Name)
 		},
 	}
 	return fc, nil
@@ -7680,6 +8391,8 @@ func (ec *executionContext) fieldContext_DevicePage_data(_ context.Context, fiel
 				return ec.fieldContext_Device_host(ctx, field)
 			case "auth":
 				return ec.fieldContext_Device_auth(ctx, field)
+			case "dataModel":
+				return ec.fieldContext_Device_dataModel(ctx, field)
 			case "tags":
 				return ec.fieldContext_Device_tags(ctx, field)
 			case "createdAt":
@@ -8155,6 +8868,8 @@ func (ec *executionContext) fieldContext_Mutation_createDevice(ctx context.Conte
 				return ec.fieldContext_Device_host(ctx, field)
 			case "auth":
 				return ec.fieldContext_Device_auth(ctx, field)
+			case "dataModel":
+				return ec.fieldContext_Device_dataModel(ctx, field)
 			case "tags":
 				return ec.fieldContext_Device_tags(ctx, field)
 			case "createdAt":
@@ -8232,6 +8947,8 @@ func (ec *executionContext) fieldContext_Mutation_setDeviceOperation(ctx context
 				return ec.fieldContext_Device_host(ctx, field)
 			case "auth":
 				return ec.fieldContext_Device_auth(ctx, field)
+			case "dataModel":
+				return ec.fieldContext_Device_dataModel(ctx, field)
 			case "tags":
 				return ec.fieldContext_Device_tags(ctx, field)
 			case "createdAt":
@@ -8555,6 +9272,10 @@ func (ec *executionContext) fieldContext_Mutation_createDataModel(ctx context.Co
 				return ec.fieldContext_DataModel_description(ctx, field)
 			case "schema":
 				return ec.fieldContext_DataModel_schema(ctx, field)
+			case "deviceCount":
+				return ec.fieldContext_DataModel_deviceCount(ctx, field)
+			case "currentVersion":
+				return ec.fieldContext_DataModel_currentVersion(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_DataModel_createdAt(ctx, field)
 			case "updatedAt":
@@ -8646,7 +9367,7 @@ func (ec *executionContext) _Mutation_updateDataModel(ctx context.Context, field
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpdateDataModel(rctx, fc.Args["id"].(string), fc.Args["input"].(DataModelInput))
+		return ec.resolvers.Mutation().UpdateDataModel(rctx, fc.Args["id"].(string), fc.Args["input"].(UpdateDataModelInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8679,6 +9400,10 @@ func (ec *executionContext) fieldContext_Mutation_updateDataModel(ctx context.Co
 				return ec.fieldContext_DataModel_description(ctx, field)
 			case "schema":
 				return ec.fieldContext_DataModel_schema(ctx, field)
+			case "deviceCount":
+				return ec.fieldContext_DataModel_deviceCount(ctx, field)
+			case "currentVersion":
+				return ec.fieldContext_DataModel_currentVersion(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_DataModel_createdAt(ctx, field)
 			case "updatedAt":
@@ -8695,6 +9420,79 @@ func (ec *executionContext) fieldContext_Mutation_updateDataModel(ctx context.Co
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_updateDataModel_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_rollbackDataModel(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_rollbackDataModel(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().RollbackDataModel(rctx, fc.Args["dataModelId"].(string), fc.Args["toVersion"].(int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*DataModel)
+	fc.Result = res
+	return ec.marshalNDataModel2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDataModel(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_rollbackDataModel(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_DataModel_id(ctx, field)
+			case "name":
+				return ec.fieldContext_DataModel_name(ctx, field)
+			case "description":
+				return ec.fieldContext_DataModel_description(ctx, field)
+			case "schema":
+				return ec.fieldContext_DataModel_schema(ctx, field)
+			case "deviceCount":
+				return ec.fieldContext_DataModel_deviceCount(ctx, field)
+			case "currentVersion":
+				return ec.fieldContext_DataModel_currentVersion(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_DataModel_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_DataModel_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DataModel", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_rollbackDataModel_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -9951,6 +10749,8 @@ func (ec *executionContext) fieldContext_Query_devices(_ context.Context, field 
 				return ec.fieldContext_Device_host(ctx, field)
 			case "auth":
 				return ec.fieldContext_Device_auth(ctx, field)
+			case "dataModel":
+				return ec.fieldContext_Device_dataModel(ctx, field)
 			case "tags":
 				return ec.fieldContext_Device_tags(ctx, field)
 			case "createdAt":
@@ -10077,6 +10877,8 @@ func (ec *executionContext) fieldContext_Query_device(ctx context.Context, field
 				return ec.fieldContext_Device_host(ctx, field)
 			case "auth":
 				return ec.fieldContext_Device_auth(ctx, field)
+			case "dataModel":
+				return ec.fieldContext_Device_dataModel(ctx, field)
 			case "tags":
 				return ec.fieldContext_Device_tags(ctx, field)
 			case "createdAt":
@@ -10151,6 +10953,8 @@ func (ec *executionContext) fieldContext_Query_deviceByIdAndAggregation(ctx cont
 				return ec.fieldContext_Device_host(ctx, field)
 			case "auth":
 				return ec.fieldContext_Device_auth(ctx, field)
+			case "dataModel":
+				return ec.fieldContext_Device_dataModel(ctx, field)
 			case "tags":
 				return ec.fieldContext_Device_tags(ctx, field)
 			case "createdAt":
@@ -10433,6 +11237,10 @@ func (ec *executionContext) fieldContext_Query_dataModels(_ context.Context, fie
 				return ec.fieldContext_DataModel_description(ctx, field)
 			case "schema":
 				return ec.fieldContext_DataModel_schema(ctx, field)
+			case "deviceCount":
+				return ec.fieldContext_DataModel_deviceCount(ctx, field)
+			case "currentVersion":
+				return ec.fieldContext_DataModel_currentVersion(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_DataModel_createdAt(ctx, field)
 			case "updatedAt":
@@ -10440,6 +11248,145 @@ func (ec *executionContext) fieldContext_Query_dataModels(_ context.Context, fie
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DataModel", field.Name)
 		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_dataModelVersions(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_dataModelVersions(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().DataModelVersions(rctx, fc.Args["dataModelId"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*DataModelVersion)
+	fc.Result = res
+	return ec.marshalNDataModelVersion2ᚕᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDataModelVersionᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_dataModelVersions(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_DataModelVersion_id(ctx, field)
+			case "dataModelId":
+				return ec.fieldContext_DataModelVersion_dataModelId(ctx, field)
+			case "versionNumber":
+				return ec.fieldContext_DataModelVersion_versionNumber(ctx, field)
+			case "schema":
+				return ec.fieldContext_DataModelVersion_schema(ctx, field)
+			case "changeDescription":
+				return ec.fieldContext_DataModelVersion_changeDescription(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_DataModelVersion_createdAt(ctx, field)
+			case "createdBy":
+				return ec.fieldContext_DataModelVersion_createdBy(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DataModelVersion", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_dataModelVersions_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_dataModelVersion(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_dataModelVersion(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().DataModelVersion(rctx, fc.Args["dataModelId"].(string), fc.Args["version"].(int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*DataModelVersion)
+	fc.Result = res
+	return ec.marshalODataModelVersion2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDataModelVersion(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_dataModelVersion(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_DataModelVersion_id(ctx, field)
+			case "dataModelId":
+				return ec.fieldContext_DataModelVersion_dataModelId(ctx, field)
+			case "versionNumber":
+				return ec.fieldContext_DataModelVersion_versionNumber(ctx, field)
+			case "schema":
+				return ec.fieldContext_DataModelVersion_schema(ctx, field)
+			case "changeDescription":
+				return ec.fieldContext_DataModelVersion_changeDescription(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_DataModelVersion_createdAt(ctx, field)
+			case "createdBy":
+				return ec.fieldContext_DataModelVersion_createdBy(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DataModelVersion", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_dataModelVersion_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -14908,6 +15855,54 @@ func (ec *executionContext) unmarshalInputUpdateDashboardWidgetInput(ctx context
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputUpdateDataModelInput(ctx context.Context, obj any) (UpdateDataModelInput, error) {
+	var it UpdateDataModelInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"name", "description", "schema", "changeDescription"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "description":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Description = data
+		case "schema":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("schema"))
+			data, err := ec.unmarshalOJSON2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐJSON(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Schema = data
+		case "changeDescription":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("changeDescription"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ChangeDescription = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputWidgetInput(ctx context.Context, obj any) (WidgetInput, error) {
 	var it WidgetInput
 	asMap := map[string]any{}
@@ -15988,10 +16983,83 @@ func (ec *executionContext) _DataModel(ctx context.Context, sel ast.SelectionSet
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "deviceCount":
+			out.Values[i] = ec._DataModel_deviceCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "currentVersion":
+			out.Values[i] = ec._DataModel_currentVersion(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "createdAt":
 			out.Values[i] = ec._DataModel_createdAt(ctx, field, obj)
 		case "updatedAt":
 			out.Values[i] = ec._DataModel_updatedAt(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var dataModelVersionImplementors = []string{"DataModelVersion"}
+
+func (ec *executionContext) _DataModelVersion(ctx context.Context, sel ast.SelectionSet, obj *DataModelVersion) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, dataModelVersionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("DataModelVersion")
+		case "id":
+			out.Values[i] = ec._DataModelVersion_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "dataModelId":
+			out.Values[i] = ec._DataModelVersion_dataModelId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "versionNumber":
+			out.Values[i] = ec._DataModelVersion_versionNumber(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "schema":
+			out.Values[i] = ec._DataModelVersion_schema(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "changeDescription":
+			out.Values[i] = ec._DataModelVersion_changeDescription(ctx, field, obj)
+		case "createdAt":
+			out.Values[i] = ec._DataModelVersion_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createdBy":
+			out.Values[i] = ec._DataModelVersion_createdBy(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -16083,6 +17151,39 @@ func (ec *executionContext) _Device(ctx context.Context, sel ast.SelectionSet, o
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "auth":
 			out.Values[i] = ec._Device_auth(ctx, field, obj)
+		case "dataModel":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Device_dataModel(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "tags":
 			out.Values[i] = ec._Device_tags(ctx, field, obj)
 		case "createdAt":
@@ -16394,6 +17495,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "updateDataModel":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_updateDataModel(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "rollbackDataModel":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_rollbackDataModel(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -16794,6 +17902,47 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "dataModelVersions":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_dataModelVersions(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "dataModelVersion":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_dataModelVersion(ctx, field)
 				return res
 			}
 
@@ -18160,6 +19309,60 @@ func (ec *executionContext) unmarshalNDataModelInput2githubᚗcomᚋalextargov�
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalNDataModelVersion2ᚕᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDataModelVersionᚄ(ctx context.Context, sel ast.SelectionSet, v []*DataModelVersion) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNDataModelVersion2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDataModelVersion(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNDataModelVersion2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDataModelVersion(ctx context.Context, sel ast.SelectionSet, v *DataModelVersion) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._DataModelVersion(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNDevice2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDevice(ctx context.Context, sel ast.SelectionSet, v Device) graphql.Marshaler {
 	return ec._Device(ctx, sel, &v)
 }
@@ -18554,6 +19757,11 @@ func (ec *executionContext) unmarshalNUpdateDashboardLayoutInput2githubᚗcomᚋ
 
 func (ec *executionContext) unmarshalNUpdateDashboardWidgetInput2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐUpdateDashboardWidgetInput(ctx context.Context, v any) (UpdateDashboardWidgetInput, error) {
 	res, err := ec.unmarshalInputUpdateDashboardWidgetInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNUpdateDataModelInput2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐUpdateDataModelInput(ctx context.Context, v any) (UpdateDataModelInput, error) {
+	res, err := ec.unmarshalInputUpdateDataModelInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -19147,6 +20355,13 @@ func (ec *executionContext) marshalODataModel2ᚖgithubᚗcomᚋalextargovᚋiot
 		return graphql.Null
 	}
 	return ec._DataModel(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalODataModelVersion2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDataModelVersion(ctx context.Context, sel ast.SelectionSet, v *DataModelVersion) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._DataModelVersion(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalODevice2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDevice(ctx context.Context, sel ast.SelectionSet, v *Device) graphql.Marshaler {

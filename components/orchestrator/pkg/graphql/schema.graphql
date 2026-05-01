@@ -110,6 +110,7 @@ type Device {
     tenantId: ID!
     host: Host
     auth: Auth
+    dataModel: DataModel
     tags: [String!]
     createdAt: Timestamp
     updatedAt: Timestamp
@@ -154,8 +155,20 @@ type DataModel {
     name: String!
     description: String!
     schema: JSON!
+    deviceCount: Int!
+    currentVersion: Int!
     createdAt: Timestamp
     updatedAt: Timestamp
+}
+
+type DataModelVersion {
+    id: ID!
+    dataModelId: ID!
+    versionNumber: Int!
+    schema: JSON!
+    changeDescription: String
+    createdAt: Timestamp!
+    createdBy: ID
 }
 
 type DeviceMetric {
@@ -347,6 +360,13 @@ input DataModelInput {
     schema: JSON!
 }
 
+input UpdateDataModelInput {
+    name: String
+    description: String
+    schema: JSON
+    changeDescription: String
+}
+
 input AlertConditionInput {
     groupId: Int!
     metricName: String!
@@ -433,6 +453,8 @@ type Query {
     widgetsPage(first: Int = 20, after: PageCursor): WidgetPage!
     widget(id: ID!): Widget
     dataModels: [DataModel]!
+    dataModelVersions(dataModelId: ID!): [DataModelVersion!]!
+    dataModelVersion(dataModelId: ID!, version: Int!): DataModelVersion
     testDeviceConnection(url: String!): Boolean!
     deviceMetrics(deviceId: ID!, filter: MetricFilterInput): [DeviceMetric!]!
     deviceMetricsSeries(deviceId: ID!, metricNames: [String!], filter: MetricFilterInput): [MetricSeries!]!
@@ -454,7 +476,8 @@ type Mutation {
     deleteWidget(id: ID!): String!
     createDataModel(input: DataModelInput!): DataModel!
     deleteDataModel(id: ID!): String!
-    updateDataModel(id: ID!, input: DataModelInput!): DataModel!
+    updateDataModel(id: ID!, input: UpdateDataModelInput!): DataModel!
+    rollbackDataModel(dataModelId: ID!, toVersion: Int!): DataModel!
     generateDeviceToken: String!
     recordDeviceMetric(input: DeviceMetricInput!): DeviceMetric!
     recordDeviceMetrics(inputs: [DeviceMetricInput!]!): Boolean!

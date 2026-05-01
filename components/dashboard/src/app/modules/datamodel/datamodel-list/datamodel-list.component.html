@@ -4,6 +4,15 @@
 ></app-content-header>
 
 <div class="datamodel-list__container">
+    <!-- Import file input (hidden) -->
+    <input
+        type="file"
+        #fileInput
+        accept=".json"
+        style="display: none"
+        (change)="onFileSelected($event)"
+    />
+
     <table
         mat-table
         [dataSource]="dataSource"
@@ -13,7 +22,15 @@
         <ng-container *ngFor="let column of columnsToDisplay" [matColumnDef]="column.key">
             <th mat-header-cell *matHeaderCellDef>{{ column.displayName }}</th>
             <td mat-cell *matCellDef="let element">
-                {{ element[column.key] }}
+                @if (column.key === 'deviceCount') {
+                    <span class="device-count-badge" [class.device-count-badge--zero]="element[column.key] === 0">
+                        {{ element[column.key] }}
+                    </span>
+                } @else if (column.key === 'currentVersion') {
+                    <span class="version-badge">v{{ element[column.key] }}</span>
+                } @else {
+                    {{ element[column.key] }}
+                }
             </td>
         </ng-container>
         <ng-container matColumnDef="expand">
@@ -35,6 +52,23 @@
 
                 <button
                     mat-icon-button
+                    matTooltip="Export"
+                    (click)="onExportClick($event, element)"
+                >
+                    <mat-icon>download</mat-icon>
+                </button>
+
+                <button
+                    mat-icon-button
+                    matTooltip="Version History"
+                    (click)="onHistoryClick($event, element)"
+                >
+                    <mat-icon>history</mat-icon>
+                </button>
+
+                <button
+                    mat-icon-button
+                    matTooltip="Delete"
                     (click)="onDeleteClick($event, element)"
                 >
                     <mat-icon>delete</mat-icon>

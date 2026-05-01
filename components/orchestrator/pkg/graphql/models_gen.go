@@ -211,18 +211,30 @@ type DashboardWidgetInput struct {
 }
 
 type DataModel struct {
-	ID          string     `json:"id"`
-	Name        string     `json:"name"`
-	Description string     `json:"description"`
-	Schema      JSON       `json:"schema"`
-	CreatedAt   *Timestamp `json:"createdAt,omitempty"`
-	UpdatedAt   *Timestamp `json:"updatedAt,omitempty"`
+	ID             string     `json:"id"`
+	Name           string     `json:"name"`
+	Description    string     `json:"description"`
+	Schema         JSON       `json:"schema"`
+	DeviceCount    int        `json:"deviceCount"`
+	CurrentVersion int        `json:"currentVersion"`
+	CreatedAt      *Timestamp `json:"createdAt,omitempty"`
+	UpdatedAt      *Timestamp `json:"updatedAt,omitempty"`
 }
 
 type DataModelInput struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Schema      JSON   `json:"schema"`
+}
+
+type DataModelVersion struct {
+	ID                string    `json:"id"`
+	DataModelID       string    `json:"dataModelId"`
+	VersionNumber     int       `json:"versionNumber"`
+	Schema            JSON      `json:"schema"`
+	ChangeDescription *string   `json:"changeDescription,omitempty"`
+	CreatedAt         Timestamp `json:"createdAt"`
+	CreatedBy         *string   `json:"createdBy,omitempty"`
 }
 
 type DeviceInput struct {
@@ -344,6 +356,13 @@ type UpdateDashboardWidgetInput struct {
 	DeviceID   *string `json:"deviceId,omitempty"`
 	MetricName *string `json:"metricName,omitempty"`
 	Config     *JSON   `json:"config,omitempty"`
+}
+
+type UpdateDataModelInput struct {
+	Name              *string `json:"name,omitempty"`
+	Description       *string `json:"description,omitempty"`
+	Schema            *JSON   `json:"schema,omitempty"`
+	ChangeDescription *string `json:"changeDescription,omitempty"`
 }
 
 type Widget struct {

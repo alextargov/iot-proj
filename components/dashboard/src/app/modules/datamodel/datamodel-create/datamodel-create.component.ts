@@ -8,6 +8,7 @@ import { DataModelInput } from '../../../shared/graphql/generated';
 import { Router } from '@angular/router';
 import { DatamodelService } from '../../../shared/services/datamodel/datamodel.service';
 import { JsonSchemaService } from '../../../shared/services/jsonschema/jsonschema.service';
+import { SchemaTemplate } from '../schema-templates';
 
 export enum SchemaTypeEnum {
     Object = 'object',
@@ -39,11 +40,12 @@ interface SchemaField {
     styleUrls: ['./datamodel-create.component.scss'],
 })
 export class DatamodelCreateComponent implements OnInit {
-    private exampleSchema =
+    private defaultSchema =
         '{\n  "type": "object",\n  "properties": {\n    "temperature": { "type": "number" },\n    "humidity": { "type": "number" },\n    "deviceId": { "type": "string" }\n  },\n  "required": ["temperature", "humidity"]\n}';
 
     public mode: 'ui' | 'code' = 'code';
     public selectedMode: Mode = Mode.CODE;
+    public templateUsed: SchemaTemplate | null = null;
 
     public datamodelFormGroup: UntypedFormGroup;
     public editorOptions = {
@@ -79,13 +81,27 @@ export class DatamodelCreateComponent implements OnInit {
     ) {}
 
     public ngOnInit(): void {
+        // Check for template from navigation state
+        const template: SchemaTemplate | null = history.state?.template;
+        this.templateUsed = template;
+
+        let initialName = '';
+        let initialDescription = '';
+        let initialSchema = this.defaultSchema;
+
+        if (template) {
+            initialName = template.name;
+            initialDescription = template.description;
+            initialSchema = JSON.stringify(template.schema, null, 2);
+        }
+
         this.datamodelFormGroup = this.fb.group({
-            name: ['', [Validators.required, Validators.maxLength(128)]],
-            description: ['', [Validators.required, Validators.maxLength(512)]],
-            code: [this.exampleSchema, [Validators.required]],
+            name: [initialName, [Validators.required, Validators.maxLength(128)]],
+            description: [initialDescription, [Validators.required, Validators.maxLength(512)]],
+            code: [initialSchema, [Validators.required]],
         });
 
-        this.root = JSON.parse(this.exampleSchema);
+        this.root = JSON.parse(initialSchema);
     }
 
     public editorInit(editor: any) {

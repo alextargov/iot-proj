@@ -20,6 +20,7 @@ type DeviceRepository interface {
 	ListAllGlobal(ctx context.Context) ([]*model.Device, error)
 	Update(ctx context.Context, model model.Device) error
 	Delete(ctx context.Context, id, tenantID string) error
+	CountByDataModelID(ctx context.Context, tenantID, dataModelID string) (int, error)
 }
 
 type EncryptionService interface {
@@ -123,6 +124,15 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	}
 
 	return s.deviceRepo.Delete(ctx, id, tnt)
+}
+
+func (s *service) CountByDataModelID(ctx context.Context, dataModelID string) (int, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return 0, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	return s.deviceRepo.CountByDataModelID(ctx, tnt, dataModelID)
 }
 
 func (s *service) createRelatedResources(ctx context.Context, deviceID string, device model.DeviceInput) error {

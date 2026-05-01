@@ -18,6 +18,7 @@ import (
 // Lister is an interface for listing tenant scoped entities with either externally managed tenant accesses (m2m table or view) or embedded tenant in them.
 type Lister interface {
 	List(ctx context.Context, resourceType resource.Type, tenant string, dest Collection, additionalConditions ...Condition) error
+	Count(ctx context.Context, resourceType resource.Type, tenant string, additionalConditions ...Condition) (int, error)
 	SetSelectedColumns(selectedColumns []string)
 	Clone() *universalLister
 }
@@ -140,6 +141,37 @@ func NewListerGlobal(resourceType resource.Type, tableName string, selectedColum
 // If the tenantColumn is not configured an entity with externally managed tenant accesses in m2m table / view is assumed.
 func (l *universalLister) List(ctx context.Context, resourceType resource.Type, tenant string, dest Collection, additionalConditions ...Condition) error {
 	return l.listWithTenantScope(ctx, resourceType, tenant, dest, NoLock, additionalConditions)
+}
+
+// Count counts tenant scoped entities with tenant isolation.
+func (l *universalLister) Count(ctx context.Context, resourceType resource.Type, tenant string, additionalConditions ...Condition) (int, error) {
+	if tenant == "" {
+		return 0, apperrors.NewTenantRequiredError()
+	}
+
+	if l.tenantColumn != nil {
+		additionalConditions = append(Conditions{NewEqualCondition(*l.tenantColumn, tenant)}, additionalConditions...)
+	}
+
+	persist, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	query, args, err := buildSimpleCountQuery(l.tableName, additionalConditions, true)
+	if err != nil {
+		return 0, errors.Wrap(err, "while building count query")
+	}
+
+	logger.C(ctx).Debugf("Executing DB count query: %s", query)
+
+	var count int
+	err = persist.GetContext(ctx, &count, query, args...)
+	if err != nil {
+		return 0, persistence.MapSQLError(ctx, err, resourceType, resource.List, "while counting objects in '%s' table", l.tableName)
+	}
+
+	return count, nil
 }
 
 // ListConditionTree lists tenant scoped entities matching the provided condition tree with tenant isolation.

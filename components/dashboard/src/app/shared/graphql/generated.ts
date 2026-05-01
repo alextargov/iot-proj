@@ -259,7 +259,9 @@ export enum DashboardWidgetType {
 export type DataModel = {
   __typename?: 'DataModel';
   createdAt?: Maybe<Scalars['Timestamp']['output']>;
+  currentVersion: Scalars['Int']['output'];
   description: Scalars['String']['output'];
+  deviceCount: Scalars['Int']['output'];
   id: Scalars['ID']['output'];
   name: Scalars['String']['output'];
   schema: Scalars['JSON']['output'];
@@ -272,10 +274,29 @@ export type DataModelInput = {
   schema: Scalars['JSON']['input'];
 };
 
+export type DataModelVersion = {
+  __typename?: 'DataModelVersion';
+  changeDescription?: Maybe<Scalars['String']['output']>;
+  createdAt: Scalars['Timestamp']['output'];
+  createdBy?: Maybe<Scalars['ID']['output']>;
+  dataModelId: Scalars['ID']['output'];
+  id: Scalars['ID']['output'];
+  schema: Scalars['JSON']['output'];
+  versionNumber: Scalars['Int']['output'];
+};
+
+export type UpdateDataModelInput = {
+  changeDescription?: InputMaybe<Scalars['String']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  schema?: InputMaybe<Scalars['JSON']['input']>;
+};
+
 export type Device = {
   __typename?: 'Device';
   auth?: Maybe<Auth>;
   createdAt?: Maybe<Scalars['Timestamp']['output']>;
+  dataModel?: Maybe<DataModel>;
   description?: Maybe<Scalars['String']['output']>;
   host?: Maybe<Host>;
   id: Scalars['ID']['output'];
@@ -374,6 +395,7 @@ export type Mutation = {
   generateDeviceToken: Scalars['String']['output'];
   recordDeviceMetric: DeviceMetric;
   recordDeviceMetrics: Scalars['Boolean']['output'];
+  rollbackDataModel: DataModel;
   setDeviceOperation: Device;
   setOperation: Scalars['Boolean']['output'];
   updateAlertRule: AlertRule;
@@ -492,7 +514,12 @@ export type MutationUpdateDashboardWidgetArgs = {
 
 export type MutationUpdateDataModelArgs = {
   id: Scalars['ID']['input'];
-  input: DataModelInput;
+  input: UpdateDataModelInput;
+};
+
+export type MutationRollbackDataModelArgs = {
+  dataModelId: Scalars['ID']['input'];
+  toVersion: Scalars['Int']['input'];
 };
 
 
@@ -542,6 +569,8 @@ export type Query = {
   dashboardLayout?: Maybe<DashboardLayout>;
   dashboardLayouts: Array<DashboardLayout>;
   dataModels: Array<Maybe<DataModel>>;
+  dataModelVersion?: Maybe<DataModelVersion>;
+  dataModelVersions: Array<DataModelVersion>;
   defaultDashboardLayout?: Maybe<DashboardLayout>;
   device?: Maybe<Device>;
   deviceAggregatedMetrics?: Maybe<AggregatedMetric>;
@@ -579,6 +608,15 @@ export type QueryAlertRulesArgs = {
 
 export type QueryDashboardLayoutArgs = {
   id: Scalars['ID']['input'];
+};
+
+export type QueryDataModelVersionArgs = {
+  dataModelId: Scalars['ID']['input'];
+  version: Scalars['Int']['input'];
+};
+
+export type QueryDataModelVersionsArgs = {
+  dataModelId: Scalars['ID']['input'];
 };
 
 
@@ -846,19 +884,52 @@ export type UpdateWidgetPositionsMutationVariables = Exact<{
 
 export type UpdateWidgetPositionsMutation = { __typename?: 'Mutation', updateWidgetPositions: boolean };
 
-export type DataModelInfoFragment = { __typename?: 'DataModel', id: string, name: string, description: string, schema: any, createdAt?: any | null, updatedAt?: any | null };
+export type DataModelInfoFragment = { __typename?: 'DataModel', id: string, name: string, description: string, schema: any, deviceCount: number, currentVersion: number, createdAt?: any | null, updatedAt?: any | null };
+
+export type DataModelVersionInfoFragment = { __typename?: 'DataModelVersion', id: string, dataModelId: string, versionNumber: number, schema: any, changeDescription?: string | null, createdAt: any, createdBy?: string | null };
 
 export type ListDataModelsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type ListDataModelsQuery = { __typename?: 'Query', dataModels: Array<{ __typename?: 'DataModel', id: string, name: string, description: string, schema: any, createdAt?: any | null, updatedAt?: any | null } | null> };
+export type ListDataModelsQuery = { __typename?: 'Query', dataModels: Array<{ __typename?: 'DataModel', id: string, name: string, description: string, schema: any, deviceCount: number, currentVersion: number, createdAt?: any | null, updatedAt?: any | null } | null> };
+
+export type ListDataModelVersionsQueryVariables = Exact<{
+  dataModelId: Scalars['ID']['input'];
+}>;
+
+
+export type ListDataModelVersionsQuery = { __typename?: 'Query', dataModelVersions: Array<{ __typename?: 'DataModelVersion', id: string, dataModelId: string, versionNumber: number, schema: any, changeDescription?: string | null, createdAt: any, createdBy?: string | null }> };
+
+export type GetDataModelVersionQueryVariables = Exact<{
+  dataModelId: Scalars['ID']['input'];
+  version: Scalars['Int']['input'];
+}>;
+
+
+export type GetDataModelVersionQuery = { __typename?: 'Query', dataModelVersion?: { __typename?: 'DataModelVersion', id: string, dataModelId: string, versionNumber: number, schema: any, changeDescription?: string | null, createdAt: any, createdBy?: string | null } | null };
 
 export type CreateDataModelMutationVariables = Exact<{
   input: DataModelInput;
 }>;
 
 
-export type CreateDataModelMutation = { __typename?: 'Mutation', createDataModel: { __typename?: 'DataModel', id: string, name: string, description: string, schema: any, createdAt?: any | null, updatedAt?: any | null } };
+export type CreateDataModelMutation = { __typename?: 'Mutation', createDataModel: { __typename?: 'DataModel', id: string, name: string, description: string, schema: any, deviceCount: number, currentVersion: number, createdAt?: any | null, updatedAt?: any | null } };
+
+export type UpdateDataModelMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  input: UpdateDataModelInput;
+}>;
+
+
+export type UpdateDataModelMutation = { __typename?: 'Mutation', updateDataModel: { __typename?: 'DataModel', id: string, name: string, description: string, schema: any, deviceCount: number, currentVersion: number, createdAt?: any | null, updatedAt?: any | null } };
+
+export type RollbackDataModelMutationVariables = Exact<{
+  dataModelId: Scalars['ID']['input'];
+  toVersion: Scalars['Int']['input'];
+}>;
+
+
+export type RollbackDataModelMutation = { __typename?: 'Mutation', rollbackDataModel: { __typename?: 'DataModel', id: string, name: string, description: string, schema: any, deviceCount: number, currentVersion: number, createdAt?: any | null, updatedAt?: any | null } };
 
 export type DeleteDataModelMutationVariables = Exact<{
   id: Scalars['ID']['input'];
@@ -1052,8 +1123,21 @@ export const DataModelInfoFragmentDoc = gql`
   name
   description
   schema
+  deviceCount
+  currentVersion
   createdAt
   updatedAt
+}
+    `;
+export const DataModelVersionInfoFragmentDoc = gql`
+    fragment DataModelVersionInfo on DataModelVersion {
+  id
+  dataModelId
+  versionNumber
+  schema
+  changeDescription
+  createdAt
+  createdBy
 }
     `;
 export const DeviceInfoFragmentDoc = gql`
@@ -1600,7 +1684,79 @@ export const DeleteDataModelDocument = gql`
   })
   export class DeleteDataModelGQL extends Apollo.Mutation<DeleteDataModelMutation, DeleteDataModelMutationVariables> {
     document = DeleteDataModelDocument;
-    
+
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const ListDataModelVersionsDocument = gql`
+    query ListDataModelVersions($dataModelId: ID!) {
+  dataModelVersions(dataModelId: $dataModelId) {
+    ...DataModelVersionInfo
+  }
+}
+    ${DataModelVersionInfoFragmentDoc}`;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class ListDataModelVersionsGQL extends Apollo.Query<ListDataModelVersionsQuery, ListDataModelVersionsQueryVariables> {
+    document = ListDataModelVersionsDocument;
+
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const GetDataModelVersionDocument = gql`
+    query GetDataModelVersion($dataModelId: ID!, $version: Int!) {
+  dataModelVersion(dataModelId: $dataModelId, version: $version) {
+    ...DataModelVersionInfo
+  }
+}
+    ${DataModelVersionInfoFragmentDoc}`;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class GetDataModelVersionGQL extends Apollo.Query<GetDataModelVersionQuery, GetDataModelVersionQueryVariables> {
+    document = GetDataModelVersionDocument;
+
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const UpdateDataModelDocument = gql`
+    mutation UpdateDataModel($id: ID!, $input: UpdateDataModelInput!) {
+  updateDataModel(id: $id, input: $input) {
+    ...DataModelInfo
+  }
+}
+    ${DataModelInfoFragmentDoc}`;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class UpdateDataModelGQL extends Apollo.Mutation<UpdateDataModelMutation, UpdateDataModelMutationVariables> {
+    document = UpdateDataModelDocument;
+
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const RollbackDataModelDocument = gql`
+    mutation RollbackDataModel($dataModelId: ID!, $toVersion: Int!) {
+  rollbackDataModel(dataModelId: $dataModelId, toVersion: $toVersion) {
+    ...DataModelInfo
+  }
+}
+    ${DataModelInfoFragmentDoc}`;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class RollbackDataModelGQL extends Apollo.Mutation<RollbackDataModelMutation, RollbackDataModelMutationVariables> {
+    document = RollbackDataModelDocument;
+
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }

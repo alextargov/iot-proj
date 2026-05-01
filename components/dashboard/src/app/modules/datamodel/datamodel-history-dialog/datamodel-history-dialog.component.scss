@@ -1,0 +1,97 @@
+.loading-spinner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 200px;
+}
+
+.no-versions {
+    text-align: center;
+    color: rgba(0, 0, 0, 0.6);
+    padding: 2rem;
+}
+
+.version-list {
+    table {
+        width: 100%;
+    }
+}
+
+.version-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+
+    &--current {
+        color: #1976d2;
+    }
+}
+
+.current-tag {
+    font-size: 0.7rem;
+    background: #e3f2fd;
+    color: #1976d2;
+    padding: 0.125rem 0.375rem;
+    border-radius: 4px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.version-view {
+    .version-info {
+        margin-bottom: 1rem;
+
+        p {
+            margin: 0.25rem 0;
+        }
+    }
+}
+
+.schema-view,
+.version-compare {
+    h4 {
+        margin: 0 0 0.5rem;
+        font-size: 0.9rem;
+        color: rgba(0, 0, 0, 0.6);
+    }
+}
+
+.schema-code {
+    background: #1e1e1e;
+    color: #d4d4d4;
+    padding: 1rem;
+    border-radius: 4px;
+    overflow: auto;
+    max-height: 400px;
+    font-size: 0.85rem;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.version-compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+
+    .compare-column {
+        min-width: 0;
+    }
+}
+
+mat-dialog-content {
+    min-width: 600px;
+    max-width: 900px;
+}
+
+@media (max-width: 768px) {
+    .version-compare {
+        grid-template-columns: 1fr;
+    }
+
+    mat-dialog-content {
+        min-width: auto;
+    }
+}

@@ -18,13 +18,8 @@
             </button>
 
             <button mat-stroked-button (click)="onLockButtonClick()" [disabled]="!currentLayout">
-                @if (isLocked) {
-                    <mat-icon>lock</mat-icon>
-                    Unlock
-                } @else {
-                    <mat-icon>lock_open</mat-icon>
-                    Lock
-                }
+                <mat-icon>{{ isLocked ? 'lock' : 'lock_open' }}</mat-icon>
+                {{ isLocked ? 'Unlock' : 'Lock' }}
             </button>
         </div>
     </div>

@@ -194,6 +194,26 @@ func buildCountQuery(tableName string, idColumn string, conditions Conditions, g
 	return stmtBuilder.String(), allArgs, nil
 }
 
+func buildSimpleCountQuery(tableName string, conditions Conditions, isRebindingNeeded bool) (string, []interface{}, error) {
+	var stmtBuilder strings.Builder
+	stmtBuilder.WriteString(fmt.Sprintf("SELECT COUNT(*) FROM %s", tableName))
+	if len(conditions) > 0 {
+		stmtBuilder.WriteString(" WHERE")
+	}
+
+	err := writeEnumeratedConditions(&stmtBuilder, conditions)
+	if err != nil {
+		return "", nil, errors.Wrap(err, "while writing enumerated conditions.")
+	}
+
+	allArgs := getAllArgs(conditions)
+
+	if isRebindingNeeded {
+		return getQueryFromBuilder(stmtBuilder), allArgs, nil
+	}
+	return stmtBuilder.String(), allArgs, nil
+}
+
 func buildSelectQueryWithLimitAndOffset(tableName string, selectedColumns string, conditions Conditions, orderByParams OrderByParams, limit, offset int, isRebindingNeeded bool) (string, []interface{}, error) {
 	query, args, err := buildSelectQuery(tableName, selectedColumns, conditions, orderByParams, NoLock, isRebindingNeeded)
 	if err != nil {
@@ -301,6 +321,9 @@ func writeOrderByPart(builder *strings.Builder, orderByParams OrderByParams) err
 
 // GroupByParams missing godoc
 type GroupByParams []string
+
+// NoGroupBy represents default grouping (no grouping specified)
+var NoGroupBy = GroupByParams{}
 
 func writeGroupByPart(builder *strings.Builder, groupByParams GroupByParams) error {
 	if builder == nil {

@@ -3,13 +3,37 @@ fragment DataModelInfo on DataModel {
     name
     description
     schema
+    deviceCount
+    currentVersion
     createdAt
     updatedAt
+}
+
+fragment DataModelVersionInfo on DataModelVersion {
+    id
+    dataModelId
+    versionNumber
+    schema
+    changeDescription
+    createdAt
+    createdBy
 }
 
 query ListDataModels {
     dataModels {
         ...DataModelInfo
+    }
+}
+
+query ListDataModelVersions($dataModelId: ID!) {
+    dataModelVersions(dataModelId: $dataModelId) {
+        ...DataModelVersionInfo
+    }
+}
+
+query GetDataModelVersion($dataModelId: ID!, $version: Int!) {
+    dataModelVersion(dataModelId: $dataModelId, version: $version) {
+        ...DataModelVersionInfo
     }
 }
 
@@ -19,6 +43,18 @@ mutation CreateDataModel($input: DataModelInput!) {
     }
 }
 
+mutation UpdateDataModel($id: ID!, $input: UpdateDataModelInput!) {
+    updateDataModel(id: $id, input: $input) {
+        ...DataModelInfo
+    }
+}
+
 mutation DeleteDataModel($id: ID!) {
     deleteDataModel(id: $id)
+}
+
+mutation RollbackDataModel($dataModelId: ID!, $toVersion: Int!) {
+    rollbackDataModel(dataModelId: $dataModelId, toVersion: $toVersion) {
+        ...DataModelInfo
+    }
 }

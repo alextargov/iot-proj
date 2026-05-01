@@ -62,7 +62,7 @@ func NewRootResolver(persistence persistence.Transactioner, notificationSMTPConf
 	dataModelConv := datamodel.NewConverter()
 	dataModelRepo := datamodel.NewRepository(dataModelConv)
 	dataModelSvc := datamodel.NewService(dataModelRepo, uuidService)
-	dataModelRes := datamodel.NewResolver(persistence, dataModelSvc, dataModelConv)
+	dataModelRes := datamodel.NewResolver(persistence, dataModelSvc, deviceSvc, dataModelConv)
 
 	metricConv := metric.NewConverter()
 	metricRepo := metric.NewRepository(metricConv)
@@ -158,6 +158,14 @@ func (r *queryResolver) DataModels(ctx context.Context) ([]*graphql.DataModel, e
 	return r.dataModel.DataModels(ctx)
 }
 
+func (r *queryResolver) DataModelVersions(ctx context.Context, dataModelID string) ([]*graphql.DataModelVersion, error) {
+	return r.dataModel.DataModelVersions(ctx, dataModelID)
+}
+
+func (r *queryResolver) DataModelVersion(ctx context.Context, dataModelID string, version int) (*graphql.DataModelVersion, error) {
+	return r.dataModel.DataModelVersion(ctx, dataModelID, version)
+}
+
 func (r *queryResolver) DeviceMetrics(ctx context.Context, deviceID string, filter *graphql.MetricFilterInput) ([]*graphql.DeviceMetric, error) {
 	return r.metric.DeviceMetrics(ctx, deviceID, filter)
 }
@@ -240,12 +248,16 @@ func (r *mutationResolver) CreateDataModel(ctx context.Context, in graphql.DataM
 	return r.dataModel.CreateDataModel(ctx, in)
 }
 
-func (r *mutationResolver) UpdateDataModel(ctx context.Context, id string, in graphql.DataModelInput) (*graphql.DataModel, error) {
+func (r *mutationResolver) UpdateDataModel(ctx context.Context, id string, in graphql.UpdateDataModelInput) (*graphql.DataModel, error) {
 	return r.dataModel.UpdateDataModel(ctx, id, in)
 }
 
 func (r *mutationResolver) DeleteDataModel(ctx context.Context, id string) (string, error) {
 	return r.dataModel.DeleteDataModel(ctx, id)
+}
+
+func (r *mutationResolver) RollbackDataModel(ctx context.Context, dataModelID string, toVersion int) (*graphql.DataModel, error) {
+	return r.dataModel.RollbackDataModel(ctx, dataModelID, toVersion)
 }
 
 func (r *mutationResolver) GenerateDeviceToken(ctx context.Context) (string, error) {

@@ -1,0 +1,106 @@
+<h2 mat-dialog-title>
+    @if (viewMode === 'list') {
+        Version History - {{ data.dataModel.name }}
+    } @else if (viewMode === 'view') {
+        Version {{ selectedVersion?.versionNumber }}
+    } @else {
+        Compare Versions
+    }
+</h2>
+
+<mat-dialog-content>
+    @if (loading) {
+        <div class="loading-spinner">
+            <mat-spinner diameter="40"></mat-spinner>
+        </div>
+    } @else if (viewMode === 'list') {
+        <div class="version-list">
+            @if (versions.length === 0) {
+                <p class="no-versions">No version history available.</p>
+            } @else {
+                <table mat-table [dataSource]="versions" class="mat-elevation-z2">
+                    <ng-container matColumnDef="version">
+                        <th mat-header-cell *matHeaderCellDef>Version</th>
+                        <td mat-cell *matCellDef="let version">
+                            <span class="version-badge" [class.version-badge--current]="version.versionNumber === data.dataModel.currentVersion">
+                                v{{ version.versionNumber }}
+                                @if (version.versionNumber === data.dataModel.currentVersion) {
+                                    <span class="current-tag">current</span>
+                                }
+                            </span>
+                        </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="description">
+                        <th mat-header-cell *matHeaderCellDef>Description</th>
+                        <td mat-cell *matCellDef="let version">
+                            {{ version.changeDescription || 'No description' }}
+                        </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="createdAt">
+                        <th mat-header-cell *matHeaderCellDef>Created At</th>
+                        <td mat-cell *matCellDef="let version">
+                            {{ formatDate(version.createdAt) }}
+                        </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="actions">
+                        <th mat-header-cell *matHeaderCellDef></th>
+                        <td mat-cell *matCellDef="let version">
+                            <button mat-icon-button matTooltip="View" (click)="onViewClick(version)">
+                                <mat-icon>visibility</mat-icon>
+                            </button>
+                            <button mat-icon-button matTooltip="Compare with current" (click)="onCompareClick(version)"
+                                    [disabled]="version.versionNumber === data.dataModel.currentVersion">
+                                <mat-icon>compare_arrows</mat-icon>
+                            </button>
+                            <button mat-icon-button matTooltip="Restore this version" (click)="onRestoreClick(version)"
+                                    [disabled]="version.versionNumber === data.dataModel.currentVersion">
+                                <mat-icon>restore</mat-icon>
+                            </button>
+                        </td>
+                    </ng-container>
+
+                    <tr mat-header-row *matHeaderRowDef="['version', 'description', 'createdAt', 'actions']"></tr>
+                    <tr mat-row *matRowDef="let row; columns: ['version', 'description', 'createdAt', 'actions']"></tr>
+                </table>
+            }
+        </div>
+    } @else if (viewMode === 'view' && selectedVersion) {
+        <div class="version-view">
+            <div class="version-info">
+                <p><strong>Version:</strong> {{ selectedVersion.versionNumber }}</p>
+                <p><strong>Created:</strong> {{ formatDate(selectedVersion.createdAt) }}</p>
+                @if (selectedVersion.changeDescription) {
+                    <p><strong>Description:</strong> {{ selectedVersion.changeDescription }}</p>
+                }
+            </div>
+            <div class="schema-view">
+                <h4>Schema</h4>
+                <pre class="schema-code">{{ formatSchema(selectedVersion.schema) }}</pre>
+            </div>
+        </div>
+    } @else if (viewMode === 'compare' && compareVersion) {
+        <div class="version-compare">
+            <div class="compare-column">
+                <h4>Version {{ compareVersion.versionNumber }}</h4>
+                <pre class="schema-code">{{ formatSchema(compareVersion.schema) }}</pre>
+            </div>
+            <div class="compare-column">
+                <h4>Current (v{{ data.dataModel.currentVersion }})</h4>
+                <pre class="schema-code">{{ formatSchema(data.dataModel.schema) }}</pre>
+            </div>
+        </div>
+    }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+    @if (viewMode !== 'list') {
+        <button mat-button (click)="onBackClick()">
+            <mat-icon>arrow_back</mat-icon>
+            Back
+        </button>
+    }
+    <button mat-button (click)="onClose()">Close</button>
+</mat-dialog-actions>

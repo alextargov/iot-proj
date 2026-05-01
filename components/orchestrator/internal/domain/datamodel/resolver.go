@@ -10,29 +10,40 @@ import (
 
 type Service interface {
 	CreateDataModel(ctx context.Context, input model.DataModelInput) (*model.DataModel, error)
-	UpdateDataModel(ctx context.Context, id string, input model.DataModelInput) (*model.DataModel, error)
+	UpdateDataModel(ctx context.Context, id string, input model.UpdateDataModelInput) (*model.DataModel, error)
 	DeleteDataModel(ctx context.Context, id string) error
 	ListDataModels(ctx context.Context) ([]*model.DataModel, error)
+	ListVersions(ctx context.Context, dataModelID string) ([]*model.DataModelVersion, error)
+	GetVersion(ctx context.Context, dataModelID string, versionNumber int) (*model.DataModelVersion, error)
+	RollbackToVersion(ctx context.Context, dataModelID string, toVersion int) (*model.DataModel, error)
+}
+
+type DeviceCountSvc interface {
+	CountByDataModelID(ctx context.Context, dataModelID string) (int, error)
 }
 
 type Converter interface {
 	MultipleToGraphQL(in []*model.DataModel) []*graphql.DataModel
 	ToGraphQL(in *model.DataModel) *graphql.DataModel
 	InputFromGraphQL(in graphql.DataModelInput) model.DataModelInput
+	UpdateInputFromGraphQL(in graphql.UpdateDataModelInput) model.UpdateDataModelInput
+	VersionToGraphQL(in *model.DataModelVersion) *graphql.DataModelVersion
+	MultipleVersionsToGraphQL(in []*model.DataModelVersion) []*graphql.DataModelVersion
 }
 
 type Resolver struct {
-	transact persistence.Transactioner
-
-	service   Service
-	converter Converter
+	transact       persistence.Transactioner
+	service        Service
+	deviceCountSvc DeviceCountSvc
+	converter      Converter
 }
 
-func NewResolver(transact persistence.Transactioner, service Service, conv Converter) *Resolver {
+func NewResolver(transact persistence.Transactioner, service Service, deviceCountSvc DeviceCountSvc, conv Converter) *Resolver {
 	return &Resolver{
-		transact:  transact,
-		service:   service,
-		converter: conv,
+		transact:       transact,
+		service:        service,
+		deviceCountSvc: deviceCountSvc,
+		converter:      conv,
 	}
 }
 
@@ -48,6 +59,15 @@ func (r *Resolver) DataModels(ctx context.Context) ([]*graphql.DataModel, error)
 	dataModels, err := r.service.ListDataModels(ctx)
 	if err != nil {
 		return nil, err
+	}
+
+	// Populate device counts
+	for _, dm := range dataModels {
+		count, err := r.deviceCountSvc.CountByDataModelID(ctx, dm.ID)
+		if err != nil {
+			return nil, err
+		}
+		dm.DeviceCount = count
 	}
 
 	err = tx.Commit()
@@ -82,7 +102,7 @@ func (r *Resolver) CreateDataModel(ctx context.Context, input graphql.DataModelI
 	return r.converter.ToGraphQL(dataModel), nil
 }
 
-func (r *Resolver) UpdateDataModel(ctx context.Context, id string, input graphql.DataModelInput) (*graphql.DataModel, error) {
+func (r *Resolver) UpdateDataModel(ctx context.Context, id string, input graphql.UpdateDataModelInput) (*graphql.DataModel, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -91,7 +111,7 @@ func (r *Resolver) UpdateDataModel(ctx context.Context, id string, input graphql
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	modelInput := r.converter.InputFromGraphQL(input)
+	modelInput := r.converter.UpdateInputFromGraphQL(input)
 
 	dataModel, err := r.service.UpdateDataModel(ctx, id, modelInput)
 	if err != nil {
@@ -126,4 +146,70 @@ func (r *Resolver) DeleteDataModel(ctx context.Context, id string) (string, erro
 	}
 
 	return id, nil
+}
+
+func (r *Resolver) DataModelVersions(ctx context.Context, dataModelID string) ([]*graphql.DataModelVersion, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	versions, err := r.service.ListVersions(ctx, dataModelID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return r.converter.MultipleVersionsToGraphQL(versions), nil
+}
+
+func (r *Resolver) DataModelVersion(ctx context.Context, dataModelID string, version int) (*graphql.DataModelVersion, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	v, err := r.service.GetVersion(ctx, dataModelID, version)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return r.converter.VersionToGraphQL(v), nil
+}
+
+func (r *Resolver) RollbackDataModel(ctx context.Context, dataModelID string, toVersion int) (*graphql.DataModel, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	dataModel, err := r.service.RollbackToVersion(ctx, dataModelID, toVersion)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return r.converter.ToGraphQL(dataModel), nil
 }

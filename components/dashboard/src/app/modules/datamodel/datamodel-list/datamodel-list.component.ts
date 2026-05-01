@@ -1,6 +1,6 @@
 // connect device with the app - like CMP
 
-import { Component, OnInit } from '@angular/core';
+import {Component, OnInit, ViewChild, ElementRef, ChangeDetectorRef} from '@angular/core';
 import {
     animate,
     state,
@@ -13,7 +13,13 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { DatamodelService } from '../../../shared/services/datamodel/datamodel.service';
 import { IDataModel } from '../../../shared/services/datamodel/datamodel.interface';
 import { DataModelDeleteComponent } from '../datamodel-delete/datamodel-delete.component';
+import { TemplatePickerDialogComponent } from '../template-picker-dialog/template-picker-dialog.component';
+import { DataModelHistoryDialogComponent, DataModelHistoryDialogData } from '../datamodel-history-dialog/datamodel-history-dialog.component';
 import { MatDialog } from '@angular/material/dialog';
+import { SchemaTemplate } from '../schema-templates';
+import { ToastrService } from '../../../shared/services/toastr/toastr.service';
+import { DataModelInfoFragment } from '../../../shared/graphql/generated';
+import {catchError, map, of, take} from "rxjs";
 
 @Component({
     standalone: false,
@@ -32,11 +38,15 @@ import { MatDialog } from '@angular/material/dialog';
     ],
 })
 export class DatamodelListComponent implements OnInit {
-    public dataSource = [];
+    @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
+
+    public dataSource: DataModelInfoFragment[] = [];
     // public columnsToDisplay = ['name', 'description', 'createdAt'];
     public columnsToDisplay = [
         { key: 'name', displayName: 'Name' },
         { key: 'description', displayName: 'Description' },
+        { key: 'deviceCount', displayName: 'Devices' },
+        { key: 'currentVersion', displayName: 'Version' },
         { key: 'createdAt', displayName: 'Created At' },
     ];
     public columnsToDisplayWithExpand = [
@@ -49,10 +59,18 @@ export class DatamodelListComponent implements OnInit {
         private datamodelService: DatamodelService,
         private router: Router,
         private route: ActivatedRoute,
-        private dialog: MatDialog
+        private dialog: MatDialog,
+        private toast: ToastrService,
+        private cdr: ChangeDetectorRef,
     ) {}
 
     public buttons: ContentHeaderButton[] = [
+        {
+            text: 'Import',
+            icon: 'upload',
+            action: this.onImportClick.bind(this),
+            color: '',
+        },
         {
             text: 'Create data model',
             icon: 'add',
@@ -62,17 +80,41 @@ export class DatamodelListComponent implements OnInit {
     ];
 
     public ngOnInit(): void {
-        this.route.data.subscribe(({ dataModels }) => {
-            this.dataSource = dataModels;
+        this.datamodelService.listDataModels().pipe(
+            map((dataModels) => {
+                return dataModels.map((model) => ({
+                    ...model,
+                    displayName: `${model.name} (${model.id})`,
+                }));
+            }),
+            catchError((error) => {
+                console.error('Error loading data models:', error);
+                return of([]);
+            })
+        ).subscribe({
+            next: (dataModels) => {
+                this.dataSource = dataModels;
+                console.log(dataModels)
+                this.cdr.detectChanges();
+            }
         });
     }
 
-    public async onAddClick(): Promise<void> {
-        try {
-            await this.router.navigate(['datamodel/create']);
-        } catch (e) {
-            console.log(e);
-        }
+    public onAddClick(): void {
+        const dialogRef = this.dialog.open(TemplatePickerDialogComponent, {
+            width: '600px',
+        });
+
+        dialogRef.afterClosed().subscribe((result: SchemaTemplate | null | undefined) => {
+            if (result === undefined) {
+                // User cancelled
+                return;
+            }
+            // Navigate to create page with template data
+            this.router.navigate(['datamodel/create'], {
+                state: { template: result },
+            });
+        });
     }
 
     public onToggleClick(event: MouseEvent, row: IDataModel): void {
@@ -108,5 +150,108 @@ export class DatamodelListComponent implements OnInit {
                     });
             }
         });
+    }
+
+    public onExportClick(event: MouseEvent, dataModel: DataModelInfoFragment): void {
+        event.stopPropagation();
+
+        const exportData = {
+            name: dataModel.name,
+            description: dataModel.description,
+            schema: dataModel.schema,
+            exportedAt: new Date().toISOString(),
+        };
+
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+            type: 'application/json',
+        });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${dataModel.name.toLowerCase().replace(/\s+/g, '-')}-schema.json`;
+        link.click();
+        URL.revokeObjectURL(url);
+
+        this.toast.showSuccess('Schema exported successfully');
+    }
+
+    public onHistoryClick(event: MouseEvent, dataModel: DataModelInfoFragment): void {
+        event.stopPropagation();
+
+        const dialogRef = this.dialog.open(DataModelHistoryDialogComponent, {
+            data: { dataModel } as DataModelHistoryDialogData,
+            width: '900px',
+            maxHeight: '80vh',
+        });
+
+        dialogRef.afterClosed().subscribe((refreshNeeded: boolean) => {
+            if (refreshNeeded) {
+                // Reload the data models list to reflect any version changes
+                this.datamodelService.listDataModels().subscribe({
+                    next: (dataModels) => {
+                        this.dataSource = dataModels;
+                    },
+                });
+            }
+        });
+    }
+
+    public onImportClick(): void {
+        this.fileInput.nativeElement.click();
+    }
+
+    public onFileSelected(event: Event): void {
+        const input = event.target as HTMLInputElement;
+        if (!input.files?.length) return;
+
+        const file = input.files[0];
+        const reader = new FileReader();
+
+        reader.onload = () => {
+            try {
+                const content = JSON.parse(reader.result as string);
+
+                // Validate the imported data
+                if (!content.name || !content.schema) {
+                    this.toast.showError('Invalid schema file: missing name or schema');
+                    return;
+                }
+
+                // Check for name conflicts
+                const existingNames = this.dataSource.map((dm) => dm.name.toLowerCase());
+                let importName = content.name;
+                if (existingNames.includes(importName.toLowerCase())) {
+                    importName = `${content.name} (Imported)`;
+                }
+
+                // Create the data model
+                this.datamodelService
+                    .createDataModel({
+                        name: importName,
+                        description: content.description || '',
+                        schema: content.schema,
+                    })
+                    .subscribe({
+                        next: (result) => {
+                            if (result.data?.createDataModel) {
+                                this.dataSource = [...this.dataSource, result.data.createDataModel as DataModelInfoFragment];
+                            }
+                            this.toast.showSuccess('Schema imported successfully');
+                        },
+                        error: (err) => {
+                            console.error('Error importing schema:', err);
+                            this.toast.showError('Failed to import schema');
+                        },
+                    });
+            } catch (err) {
+                console.error('Error parsing file:', err);
+                this.toast.showError('Invalid JSON file');
+            }
+
+            // Reset the file input
+            input.value = '';
+        };
+
+        reader.readAsText(file);
     }
 }

@@ -5,15 +5,16 @@ type Type string
 
 const (
 	// Device type represents device resource.
-	Device          Type = "device"
-	Widget          Type = "widget"
-	User            Type = "user"
-	DataModel       Type = "dataModel"
-	DeviceMetric    Type = "deviceMetric"
-	AlertRule       Type = "alertRule"
-	AlertEvent      Type = "alertEvent"
-	DashboardLayout Type = "dashboardLayout"
-	DashboardWidget Type = "dashboardWidget"
+	Device           Type = "device"
+	Widget           Type = "widget"
+	User             Type = "user"
+	DataModel        Type = "dataModel"
+	DataModelVersion Type = "dataModelVersion"
+	DeviceMetric     Type = "deviceMetric"
+	AlertRule        Type = "alertRule"
+	AlertEvent       Type = "alertEvent"
+	DashboardLayout  Type = "dashboardLayout"
+	DashboardWidget  Type = "dashboardWidget"
 	// Schema type represents schema resource.
 	Schema Type = "schemaMigration"
 )

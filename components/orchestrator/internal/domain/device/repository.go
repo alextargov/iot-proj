@@ -166,6 +166,11 @@ func (r *repository) Delete(ctx context.Context, id, tenantID string) error {
 	return r.deleter.DeleteOne(ctx, resource.Device, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
+// CountByDataModelID returns the number of devices using the given data model
+func (r *repository) CountByDataModelID(ctx context.Context, tenantID, dataModelID string) (int, error) {
+	return r.lister.Count(ctx, resource.Device, tenantID, repo.NewEqualCondition("data_model_id", dataModelID))
+}
+
 func (r *repository) multipleFromEntities(entities EntityCollection) ([]*model.Device, error) {
 	items := make([]*model.Device, 0, len(entities))
 	for _, ent := range entities {

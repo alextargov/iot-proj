@@ -1,0 +1,38 @@
+<h2 mat-dialog-title>Choose a Template</h2>
+
+<mat-dialog-content>
+    <p class="template-picker__description">Select a template to start with, or create a blank data model.</p>
+
+    <div class="template-picker__grid">
+        <!-- Blank option -->
+        <div class="template-picker__card"
+             [class.template-picker__card--selected]="selectedTemplate === null"
+             (click)="selectTemplate(null)">
+            <mat-icon class="template-picker__card-icon">note_add</mat-icon>
+            <div class="template-picker__card-content">
+                <h4 class="template-picker__card-title">Blank</h4>
+                <p class="template-picker__card-description">Start with an empty schema</p>
+            </div>
+        </div>
+
+        <!-- Template options -->
+        @for (template of templates; track template.id) {
+            <div class="template-picker__card"
+                 [class.template-picker__card--selected]="selectedTemplate?.id === template.id"
+                 (click)="selectTemplate(template)">
+                <mat-icon class="template-picker__card-icon">{{ template.icon }}</mat-icon>
+                <div class="template-picker__card-content">
+                    <h4 class="template-picker__card-title">{{ template.name }}</h4>
+                    <p class="template-picker__card-description">{{ template.description }}</p>
+                </div>
+            </div>
+        }
+    </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+    <button mat-button (click)="cancel()">Cancel</button>
+    <button mat-flat-button color="primary" (click)="confirm()">
+        {{ selectedTemplate ? 'Use Template' : 'Start Blank' }}
+    </button>
+</mat-dialog-actions>

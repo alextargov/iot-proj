@@ -3,6 +3,7 @@ package claims
 import (
 	"context"
 	"encoding/json"
+
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/tenant"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/logger"
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
@@ -12,35 +13,32 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/form3tech-oss/jwt-go"
-	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 )
 
 // Claims missing godoc
 type Claims struct {
-	Tenant        map[string]string     `json:"tenant"`
-	Scopes        string                `json:"scopes"`
-	ConsumerID    string                `json:"consumerID"`
-	ConsumerType  consumer.ConsumerType `json:"consumerType"`
-	OnBehalfOf    string                `json:"onBehalfOf"`
-	Region        string                `json:"region"`
-	TokenClientID string                `json:"tokenClientID"`
-	Flow          oathkeeper.AuthFlow   `json:"flow"`
-	ZID           string                `json:"zid"`
+	Tenant        map[string]string   `json:"tenant"`
+	Scopes        string              `json:"scopes"`
+	ConsumerID    string              `json:"consumerID"`
+	OnBehalfOf    string              `json:"onBehalfOf"`
+	Region        string              `json:"region"`
+	TokenClientID string              `json:"tokenClientID"`
+	Flow          oathkeeper.AuthFlow `json:"flow"`
+	ZID           string              `json:"zid"`
 	jwt.StandardClaims
 }
 
 // UnmarshalJSON implements Unmarshaler interface. The method unmarshal the data from b into Claims structure.
 func (c *Claims) UnmarshalJSON(b []byte) error {
 	tokenClaims := struct {
-		TenantString  string                `json:"tenant"`
-		Scopes        string                `json:"scopes"`
-		ConsumerID    string                `json:"consumerID"`
-		ConsumerType  consumer.ConsumerType `json:"consumerType"`
-		OnBehalfOf    string                `json:"onBehalfOf"`
-		Region        string                `json:"region"`
-		TokenClientID string                `json:"tokenClientID"`
-		Flow          oathkeeper.AuthFlow   `json:"flow"`
-		ZID           string                `json:"zid"`
+		TenantString  string              `json:"tenant"`
+		Scopes        string              `json:"scopes"`
+		ConsumerID    string              `json:"consumerID"`
+		OnBehalfOf    string              `json:"onBehalfOf"`
+		Region        string              `json:"region"`
+		TokenClientID string              `json:"tokenClientID"`
+		Flow          oathkeeper.AuthFlow `json:"flow"`
+		ZID           string              `json:"zid"`
 		jwt.StandardClaims
 	}{}
 
@@ -51,7 +49,6 @@ func (c *Claims) UnmarshalJSON(b []byte) error {
 
 	c.Scopes = tokenClaims.Scopes
 	c.ConsumerID = tokenClaims.ConsumerID
-	c.ConsumerType = tokenClaims.ConsumerType
 	c.OnBehalfOf = tokenClaims.OnBehalfOf
 	c.Region = tokenClaims.Region
 	c.TokenClientID = tokenClaims.TokenClientID
