@@ -28,9 +28,7 @@ export class DevicesListComponent implements OnInit, AfterViewInit {
         'name',
         'description',
         'tags',
-        'url',
         'status',
-        'createdAt',
         'actions',
     ];
     dataSource = new MatTableDataSource<DeviceInfoFragment>();

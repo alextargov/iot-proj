@@ -323,6 +323,10 @@ func (r *Resolver) Host(ctx context.Context, obj *graphql.Device) (*graphql.Host
 }
 
 func (r *Resolver) DataModel(ctx context.Context, obj *graphql.Device) (*graphql.DataModel, error) {
+	if obj.DataModelID == "" {
+		return nil, nil
+	}
+
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -331,7 +335,7 @@ func (r *Resolver) DataModel(ctx context.Context, obj *graphql.Device) (*graphql
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	host, err := r.dataModelSvc.GetByID(ctx, obj.DataModelID)
+	dataModel, err := r.dataModelSvc.GetByID(ctx, obj.DataModelID)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			return nil, tx.Commit()
@@ -344,5 +348,5 @@ func (r *Resolver) DataModel(ctx context.Context, obj *graphql.Device) (*graphql
 		return nil, err
 	}
 
-	return r.dataModelConv.ToGraphQL(host), nil
+	return r.dataModelConv.ToGraphQL(dataModel), nil
 }

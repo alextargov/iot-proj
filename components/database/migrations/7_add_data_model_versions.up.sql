@@ -1,3 +1,5 @@
+BEGIN;
+
 -- Add version tracking to data_models
 ALTER TABLE data_models ADD COLUMN current_version integer NOT NULL DEFAULT 1;
 
@@ -29,3 +31,5 @@ SELECT
     COALESCE(created_at, NOW()),
     user_id
 FROM data_models;
+
+COMMIT;

@@ -1,3 +1,5 @@
+BEGIN;
+
 -- Create widget_devices junction table for many-to-many relationship
 CREATE TABLE widget_devices (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -26,3 +28,5 @@ WHERE w.device_ids IS NOT NULL
 
 -- Drop the device_ids column from widgets table
 ALTER TABLE widgets DROP COLUMN device_ids;
+
+COMMIT;

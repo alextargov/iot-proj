@@ -1,0 +1,12 @@
+BEGIN;
+
+DROP TABLE IF EXISTS data_models;
+DROP TABLE IF EXISTS widgets;
+DROP TABLE IF EXISTS hosts;
+DROP TABLE IF EXISTS devices;
+DROP TABLE IF EXISTS users;
+
+DROP TYPE IF EXISTS widget_status;
+DROP TYPE IF EXISTS device_status;
+
+COMMIT;

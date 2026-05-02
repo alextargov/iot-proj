@@ -20,7 +20,7 @@
     </div>
 
     <table class="device-list__table" mat-table [dataSource]="dataSource">
-        <!-- Position Column -->
+        <!-- Name Column -->
         <ng-container matColumnDef="name">
             <th
                 class="device-list__table-header device-list__table-header-name"
@@ -93,24 +93,6 @@
             </td>
         </ng-container>
 
-        <!-- Weight Column -->
-        <ng-container matColumnDef="url">
-            <th
-                class="device-list__table-header device-list__table-header-url"
-                mat-header-cell
-                *matHeaderCellDef
-            >
-                URL
-            </th>
-            <td
-                class="device-list__table-definition"
-                mat-cell
-                *matCellDef="let element"
-            >
-                {{ element.host?.url }}
-            </td>
-        </ng-container>
-
         <!-- Status Column -->
         <ng-container matColumnDef="status">
             <th
@@ -133,24 +115,6 @@
                     <mat-icon class="status-badge__icon">{{ getStatusConfig(element.status).icon }}</mat-icon>
                     <span class="status-badge__label">{{ getStatusConfig(element.status).label }}</span>
                 </span>
-            </td>
-        </ng-container>
-
-        <!-- Symbol Column -->
-        <ng-container matColumnDef="createdAt">
-            <th
-                class="device-list__table-header device-list__table-header-createdAt"
-                mat-header-cell
-                *matHeaderCellDef
-            >
-                Created At
-            </th>
-            <td
-                class="device-list__table-definition"
-                mat-cell
-                *matCellDef="let element"
-            >
-                {{ element.createdAt | date : 'medium' }}
             </td>
         </ng-container>
 

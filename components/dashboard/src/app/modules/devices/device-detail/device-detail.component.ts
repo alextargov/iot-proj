@@ -1,5 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import {Component, OnInit, OnDestroy, ChangeDetectorRef} from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import {finalize, Subject, takeUntil} from 'rxjs';
 import { DeviceService } from '../../../shared/services/device/device.service';
 import {
     DeviceInfoFragment,
@@ -18,10 +19,12 @@ interface StatusConfig {
     templateUrl: './device-detail.component.html',
     styleUrls: ['./device-detail.component.scss'],
 })
-export class DeviceDetailComponent implements OnInit {
+export class DeviceDetailComponent implements OnInit, OnDestroy {
     public device: DeviceInfoFragment | null = null;
     public isLoading = true;
     public deviceId: string = '';
+
+    private readonly destroy$ = new Subject<void>();
 
     private readonly statusConfigs: Record<string, StatusConfig> = {
         [DeviceStatus.Active]: {
@@ -49,7 +52,8 @@ export class DeviceDetailComponent implements OnInit {
     constructor(
         private route: ActivatedRoute,
         private router: Router,
-        private deviceService: DeviceService
+        private deviceService: DeviceService,
+        private cdr: ChangeDetectorRef
     ) {}
 
     ngOnInit(): void {
@@ -61,9 +65,21 @@ export class DeviceDetailComponent implements OnInit {
         }
     }
 
+    ngOnDestroy(): void {
+        this.destroy$.next();
+        this.destroy$.complete();
+    }
+
     private loadDevice(): void {
         this.isLoading = true;
-        this.deviceService.getDevice(this.deviceId).subscribe({
+        this.deviceService.getDevice(this.deviceId)
+            .pipe(
+                takeUntil(this.destroy$),
+                finalize(() => {
+                    this.cdr.detectChanges()
+                })
+            )
+            .subscribe({
             next: (device) => {
                 this.device = device;
                 this.isLoading = false;
@@ -72,7 +88,7 @@ export class DeviceDetailComponent implements OnInit {
                 console.error('Failed to load device:', err);
                 this.isLoading = false;
                 this.router.navigate(['/devices']);
-            },
+            }
         });
     }
 

@@ -1,3 +1,5 @@
+BEGIN;
+
 DROP INDEX IF EXISTS idx_alert_events_tenant;
 DROP INDEX IF EXISTS idx_alert_events_device;
 DROP INDEX IF EXISTS idx_alert_events_rule;
@@ -11,3 +13,5 @@ DROP TABLE IF EXISTS alert_events;
 DROP TABLE IF EXISTS alert_notifications;
 DROP TABLE IF EXISTS alert_conditions;
 DROP TABLE IF EXISTS alert_rules;
+
+COMMIT;

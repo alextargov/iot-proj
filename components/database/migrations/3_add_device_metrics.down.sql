@@ -1,1 +1,5 @@
+BEGIN;
+
 DROP TABLE IF EXISTS device_metrics;
+
+COMMIT;

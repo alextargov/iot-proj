@@ -1,3 +1,5 @@
+BEGIN;
+
 -- Drop indices
 DROP INDEX IF EXISTS idx_dashboard_widgets_tenant;
 DROP INDEX IF EXISTS idx_dashboard_widgets_device;
@@ -11,3 +13,5 @@ DROP TABLE IF EXISTS dashboard_layouts;
 
 -- Drop enum type
 DROP TYPE IF EXISTS dashboard_widget_type;
+
+COMMIT;

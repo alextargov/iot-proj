@@ -1,3 +1,5 @@
+BEGIN;
+
 -- Alert rules with multi-condition support
 CREATE TABLE alert_rules (
     id uuid PRIMARY KEY,
@@ -61,3 +63,5 @@ CREATE INDEX idx_alert_notifications_rule ON alert_notifications(alert_rule_id);
 CREATE INDEX idx_alert_events_rule ON alert_events(alert_rule_id, triggered_at DESC);
 CREATE INDEX idx_alert_events_device ON alert_events(device_id, triggered_at DESC);
 CREATE INDEX idx_alert_events_tenant ON alert_events(tenant_id, triggered_at DESC);
+
+COMMIT;

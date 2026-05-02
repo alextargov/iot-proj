@@ -1,3 +1,5 @@
+BEGIN;
+
 CREATE TYPE device_status AS ENUM (
     'INITIAL',
     'ACTIVE',
@@ -65,3 +67,5 @@ CREATE TABLE data_models (
     created_at timestamp,
     updated_at timestamp
 );
+
+COMMIT;

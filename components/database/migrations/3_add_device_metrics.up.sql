@@ -1,3 +1,5 @@
+BEGIN;
+
 CREATE TABLE device_metrics (
     id varchar(256) PRIMARY KEY,
     device_id uuid NOT NULL,
@@ -13,3 +15,5 @@ CREATE TABLE device_metrics (
 CREATE INDEX idx_device_metrics_device_time ON device_metrics(device_id, recorded_at DESC);
 CREATE INDEX idx_device_metrics_tenant ON device_metrics(tenant_id);
 CREATE INDEX idx_device_metrics_name ON device_metrics(device_id, metric_name, recorded_at DESC);
+
+COMMIT;

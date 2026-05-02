@@ -1,3 +1,5 @@
+BEGIN;
+
 -- Add back device_ids column to widgets table
 ALTER TABLE widgets ADD COLUMN device_ids jsonb;
 
@@ -20,3 +22,5 @@ DROP INDEX IF EXISTS idx_widget_devices_device;
 
 -- Drop the junction table
 DROP TABLE IF EXISTS widget_devices;
+
+COMMIT;

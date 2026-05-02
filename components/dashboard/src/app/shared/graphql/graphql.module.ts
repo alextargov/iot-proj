@@ -1,5 +1,5 @@
 import { provideHttpClient, withInterceptorsFromDi, HttpHeaders } from '@angular/common/http';
-import { NgModule, inject } from '@angular/core';
+import { NgModule, inject, NgZone } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import {
     ApolloLink,
@@ -63,7 +63,8 @@ const createWsLink = (authService: AuthService) => {
 
 export function createDefaultApollo(
     httpLink: HttpLink,
-    authService: AuthService
+    authService: AuthService,
+    ngZone: NgZone
 ) {
     const cache = new InMemoryCache({});
 
@@ -105,6 +106,8 @@ export function createDefaultApollo(
                 errorPolicy: 'all' as const,
             },
         },
+        shouldBatch: true,
+        runInZone: ngZone,
     };
 }
 
@@ -115,7 +118,8 @@ export function createDefaultApollo(
         provideApollo(() => {
             const httpLink = inject(HttpLink);
             const authService = inject(AuthService);
-            return createDefaultApollo(httpLink, authService);
+            const ngZone = inject(NgZone);
+            return createDefaultApollo(httpLink, authService, ngZone);
         }),
     ],
 })

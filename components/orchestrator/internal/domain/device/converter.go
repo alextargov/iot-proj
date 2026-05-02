@@ -138,6 +138,7 @@ func (c *converter) ToGraphQL(in *model.Device) *graphql.Device {
 		Status:      graphql.DeviceStatus(in.Status),
 		Host:        c.hostConv.ToGraphQL(in.Host),
 		Auth:        c.authConv.ToGraphQL(in.Auth),
+		DataModelID: in.DataModelID,
 		Tags:        in.Tags,
 		CreatedAt:   graphql.TimePtrToTimestampPtr(in.CreatedAt),
 		UpdatedAt:   graphql.TimePtrToTimestampPtr(in.UpdatedAt),

@@ -1,3 +1,5 @@
+BEGIN;
+
 -- Dashboard widget types
 CREATE TYPE dashboard_widget_type AS ENUM (
     'GAUGE',
@@ -47,3 +49,5 @@ CREATE INDEX idx_dashboard_layouts_default ON dashboard_layouts(tenant_id, is_de
 CREATE INDEX idx_dashboard_widgets_layout ON dashboard_widgets(dashboard_layout_id);
 CREATE INDEX idx_dashboard_widgets_device ON dashboard_widgets(device_id);
 CREATE INDEX idx_dashboard_widgets_tenant ON dashboard_widgets(tenant_id);
+
+COMMIT;
