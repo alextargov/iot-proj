@@ -308,6 +308,16 @@ input DeviceInput {
     tags: [String!]
 }
 
+input UpdateDeviceInput {
+    name: String
+    description: String
+    status: DeviceStatus
+    host: HostInput
+    auth: AuthInput
+    dataModel: String
+    tags: [String!]
+}
+
 input WidgetInput {
     name: String!
     description: String
@@ -469,6 +479,7 @@ type Query {
 
 type Mutation {
     createDevice(input: DeviceInput!): Device!
+    updateDevice(id: ID!, input: UpdateDeviceInput!): Device!
     setDeviceOperation(id: ID!, op: OperationType!): Device!
     setOperation(op: OperationType!, data: Any): Boolean!
     deleteDevice(id: String!): String!

@@ -3,11 +3,13 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"net/http"
+
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/auth"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/model"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/logger"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/persistence"
 	"golang.org/x/crypto/bcrypt"
-	"net/http"
 )
 
 type UserService interface {
@@ -18,6 +20,7 @@ type UserService interface {
 
 type JWTService interface {
 	GenerateToken(username string) (string, error)
+	ValidateToken(token string) (*auth.JwtClaim, error)
 }
 
 type authHandler struct {

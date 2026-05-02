@@ -287,6 +287,10 @@ func (r *mutationResolver) CreateDevice(ctx context.Context, in graphql.DeviceIn
 	return r.device.CreateDevice(ctx, in)
 }
 
+func (r *mutationResolver) UpdateDevice(ctx context.Context, id string, in graphql.UpdateDeviceInput) (*graphql.Device, error) {
+	return r.device.UpdateDevice(ctx, id, in)
+}
+
 func (r *mutationResolver) SetDeviceOperation(ctx context.Context, id string, op graphql.OperationType) (*graphql.Device, error) {
 	return r.device.SetDeviceOperation(ctx, id, op)
 }

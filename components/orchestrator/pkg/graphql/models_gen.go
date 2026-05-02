@@ -368,6 +368,16 @@ type UpdateDataModelInput struct {
 	ChangeDescription *string `json:"changeDescription,omitempty"`
 }
 
+type UpdateDeviceInput struct {
+	Name        *string       `json:"name,omitempty"`
+	Description *string       `json:"description,omitempty"`
+	Status      *DeviceStatus `json:"status,omitempty"`
+	Host        *HostInput    `json:"host,omitempty"`
+	Auth        *AuthInput    `json:"auth,omitempty"`
+	DataModel   *string       `json:"dataModel,omitempty"`
+	Tags        []string      `json:"tags,omitempty"`
+}
+
 type Widget struct {
 	ID             string       `json:"id"`
 	Name           string       `json:"name"`

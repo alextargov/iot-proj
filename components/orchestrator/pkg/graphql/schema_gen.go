@@ -251,6 +251,7 @@ type ComplexityRoot struct {
 		UpdateDashboardLayout func(childComplexity int, id string, input UpdateDashboardLayoutInput) int
 		UpdateDashboardWidget func(childComplexity int, id string, input UpdateDashboardWidgetInput) int
 		UpdateDataModel       func(childComplexity int, id string, input UpdateDataModelInput) int
+		UpdateDevice          func(childComplexity int, id string, input UpdateDeviceInput) int
 		UpdateWidgetPositions func(childComplexity int, layoutID string, positions []*WidgetPositionInput) int
 	}
 
@@ -333,6 +334,7 @@ type DeviceResolver interface {
 }
 type MutationResolver interface {
 	CreateDevice(ctx context.Context, input DeviceInput) (*Device, error)
+	UpdateDevice(ctx context.Context, id string, input UpdateDeviceInput) (*Device, error)
 	SetDeviceOperation(ctx context.Context, id string, op OperationType) (*Device, error)
 	SetOperation(ctx context.Context, op OperationType, data any) (bool, error)
 	DeleteDevice(ctx context.Context, id string) (string, error)
@@ -1462,6 +1464,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Mutation.UpdateDataModel(childComplexity, args["id"].(string), args["input"].(UpdateDataModelInput)), true
 
+	case "Mutation.updateDevice":
+		if e.complexity.Mutation.UpdateDevice == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateDevice_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateDevice(childComplexity, args["id"].(string), args["input"].(UpdateDeviceInput)), true
+
 	case "Mutation.updateWidgetPositions":
 		if e.complexity.Mutation.UpdateWidgetPositions == nil {
 			break
@@ -1890,6 +1904,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputUpdateDashboardLayoutInput,
 		ec.unmarshalInputUpdateDashboardWidgetInput,
 		ec.unmarshalInputUpdateDataModelInput,
+		ec.unmarshalInputUpdateDeviceInput,
 		ec.unmarshalInputWidgetInput,
 		ec.unmarshalInputWidgetPositionInput,
 	)
@@ -2868,6 +2883,57 @@ func (ec *executionContext) field_Mutation_updateDataModel_argsInput(
 	}
 
 	var zeroVal UpdateDataModelInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_updateDevice_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_updateDevice_argsID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	arg1, err := ec.field_Mutation_updateDevice_argsInput(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg1
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_updateDevice_argsID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["id"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+	if tmp, ok := rawArgs["id"]; ok {
+		return ec.unmarshalNID2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_updateDevice_argsInput(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (UpdateDeviceInput, error) {
+	if _, ok := rawArgs["input"]; !ok {
+		var zeroVal UpdateDeviceInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+	if tmp, ok := rawArgs["input"]; ok {
+		return ec.unmarshalNUpdateDeviceInput2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐUpdateDeviceInput(ctx, tmp)
+	}
+
+	var zeroVal UpdateDeviceInput
 	return zeroVal, nil
 }
 
@@ -8987,6 +9053,85 @@ func (ec *executionContext) fieldContext_Mutation_createDevice(ctx context.Conte
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_createDevice_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateDevice(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_updateDevice(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpdateDevice(rctx, fc.Args["id"].(string), fc.Args["input"].(UpdateDeviceInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*Device)
+	fc.Result = res
+	return ec.marshalNDevice2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDevice(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_updateDevice(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Device_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Device_name(ctx, field)
+			case "description":
+				return ec.fieldContext_Device_description(ctx, field)
+			case "status":
+				return ec.fieldContext_Device_status(ctx, field)
+			case "tenantId":
+				return ec.fieldContext_Device_tenantId(ctx, field)
+			case "host":
+				return ec.fieldContext_Device_host(ctx, field)
+			case "auth":
+				return ec.fieldContext_Device_auth(ctx, field)
+			case "dataModel":
+				return ec.fieldContext_Device_dataModel(ctx, field)
+			case "tags":
+				return ec.fieldContext_Device_tags(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Device_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Device_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Device", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateDevice_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -16096,6 +16241,75 @@ func (ec *executionContext) unmarshalInputUpdateDataModelInput(ctx context.Conte
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputUpdateDeviceInput(ctx context.Context, obj any) (UpdateDeviceInput, error) {
+	var it UpdateDeviceInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"name", "description", "status", "host", "auth", "dataModel", "tags"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "description":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Description = data
+		case "status":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("status"))
+			data, err := ec.unmarshalODeviceStatus2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDeviceStatus(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Status = data
+		case "host":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("host"))
+			data, err := ec.unmarshalOHostInput2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐHostInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Host = data
+		case "auth":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("auth"))
+			data, err := ec.unmarshalOAuthInput2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐAuthInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Auth = data
+		case "dataModel":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dataModel"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DataModel = data
+		case "tags":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tags"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Tags = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputWidgetInput(ctx context.Context, obj any) (WidgetInput, error) {
 	var it WidgetInput
 	asMap := map[string]any{}
@@ -17632,6 +17846,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "createDevice":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_createDevice(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updateDevice":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateDevice(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -19978,6 +20199,11 @@ func (ec *executionContext) unmarshalNUpdateDataModelInput2githubᚗcomᚋalexta
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalNUpdateDeviceInput2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐUpdateDeviceInput(ctx context.Context, v any) (UpdateDeviceInput, error) {
+	res, err := ec.unmarshalInputUpdateDeviceInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) marshalNWidget2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐWidget(ctx context.Context, sel ast.SelectionSet, v Widget) graphql.Marshaler {
 	return ec._Widget(ctx, sel, &v)
 }
@@ -20582,6 +20808,22 @@ func (ec *executionContext) marshalODevice2ᚖgithubᚗcomᚋalextargovᚋiotᚑ
 		return graphql.Null
 	}
 	return ec._Device(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalODeviceStatus2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDeviceStatus(ctx context.Context, v any) (*DeviceStatus, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(DeviceStatus)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalODeviceStatus2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDeviceStatus(ctx context.Context, sel ast.SelectionSet, v *DeviceStatus) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) marshalOHost2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐHost(ctx context.Context, sel ast.SelectionSet, v *Host) graphql.Marshaler {

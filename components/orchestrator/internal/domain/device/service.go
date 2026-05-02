@@ -35,6 +35,8 @@ type UUIDService interface {
 
 type HostService interface {
 	Create(ctx context.Context, deviceID string, hostInput model.HostInput) (*model.Host, error)
+	GetByDeviceID(ctx context.Context, id string) (*model.Host, error)
+	Update(ctx context.Context, id string, hostInput model.HostInput) error
 }
 
 type service struct {
@@ -104,9 +106,40 @@ func (s *service) Create(ctx context.Context, device model.DeviceInput) (string,
 	return id, err
 }
 
-func (s *service) Update(ctx context.Context, device model.DeviceInput) error {
-	return nil
-	//return s.deviceRepo.Update(ctx, device)
+func (s *service) Update(ctx context.Context, id string, input model.UpdateDeviceInput) (*model.Device, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	device, err := s.deviceRepo.Get(ctx, id, tnt)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting device %s", id)
+	}
+
+	input.ToModel(device)
+
+	if err := s.deviceRepo.Update(ctx, *device); err != nil {
+		return nil, errors.Wrapf(err, "while updating device %s", id)
+	}
+
+	// Handle host update if provided
+	if input.Host != nil {
+		existingHost, err := s.hostService.GetByDeviceID(ctx, id)
+		if err != nil {
+			// Host doesn't exist, create it
+			if _, err := s.hostService.Create(ctx, id, *input.Host); err != nil {
+				return nil, errors.Wrapf(err, "while creating host for device %s", id)
+			}
+		} else {
+			// Host exists, update it
+			if err := s.hostService.Update(ctx, existingHost.ID, *input.Host); err != nil {
+				return nil, errors.Wrapf(err, "while updating host for device %s", id)
+			}
+		}
+	}
+
+	return s.deviceRepo.Get(ctx, id, tnt)
 }
 
 func (s *service) Exists(ctx context.Context, id string) (bool, error) {

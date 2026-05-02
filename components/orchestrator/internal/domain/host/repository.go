@@ -72,3 +72,9 @@ func (r *repository) CreateForDevice(ctx context.Context, item model.Host) error
 func (r *repository) DeleteAllForDevice(ctx context.Context, id string) error {
 	return r.deleterGlobal.DeleteManyGlobal(ctx, repo.Conditions{repo.NewEqualCondition(deviceIDColumn, id)})
 }
+
+func (r *repository) Update(ctx context.Context, item model.Host) error {
+	logger.C(ctx).Debugf("Updating host with id %s", item.ID)
+	entity := r.conv.ToEntity(item)
+	return r.updaterGlobal.UpdateSingleGlobal(ctx, entity)
+}

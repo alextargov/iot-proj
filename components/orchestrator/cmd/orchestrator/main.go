@@ -176,7 +176,8 @@ func initAPIHandler(ctx context.Context, cfg config, db persistence.Transactione
 	metricSvc := metric.NewService(metricRepo, uidService)
 
 	// Create metrics handler using the shared metric service
-	metricsHandler := handlers.NewMetricsHandler(db, metricSvc, deviceSvc)
+	// Supports dual auth: device tokens and user JWTs
+	metricsHandler := handlers.NewMetricsHandler(db, metricSvc, deviceSvc, userService, jwtWrapper)
 
 	mainRouter := mux.NewRouter()
 

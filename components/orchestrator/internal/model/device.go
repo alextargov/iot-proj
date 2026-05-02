@@ -35,6 +35,38 @@ func (di *DeviceInput) ToDevice(id string) Device {
 	}
 }
 
+type UpdateDeviceInput struct {
+	Name        *string
+	Description *string
+	Status      *DeviceStatus
+	Host        *HostInput
+	Auth        *AuthInput
+	DataModel   *string
+	Tags        []string
+}
+
+// ToModel applies non-nil fields from the update input to an existing device
+func (udi *UpdateDeviceInput) ToModel(device *Device) {
+	if udi.Name != nil {
+		device.Name = *udi.Name
+	}
+	if udi.Description != nil {
+		device.Description = udi.Description
+	}
+	if udi.Status != nil {
+		device.Status = *udi.Status
+	}
+	if udi.Auth != nil {
+		device.Auth = udi.Auth.ToAuth()
+	}
+	if udi.DataModel != nil {
+		device.DataModelID = *udi.DataModel
+	}
+	if udi.Tags != nil {
+		device.Tags = udi.Tags
+	}
+}
+
 type Device struct {
 	ID                 string       `json:"id"`
 	TenantID           string       `json:"tenantID"`

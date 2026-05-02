@@ -27,6 +27,35 @@ const TestDeviceConnectionDocument = gql`
     }
 `;
 
+const UpdateDeviceDocument = gql`
+    mutation UpdateDevice($id: ID!, $input: UpdateDeviceInput!) {
+        updateDevice(id: $id, input: $input) {
+            id
+            name
+            description
+            status
+        }
+    }
+`;
+
+interface UpdateDeviceMutation {
+    updateDevice: DeviceInfoFragment;
+}
+
+interface UpdateDeviceInput {
+    name?: string;
+    description?: string;
+    status?: DeviceStatus;
+    host?: {
+        url: string;
+        turnOnEndpoint?: string;
+        turnOffEndpoint?: string;
+    };
+    auth?: any;
+    dataModel?: string;
+    tags?: string[];
+}
+
 const GetDeviceDocument = gql`
     query GetDevice($id: ID!) {
         device(id: $id) {
@@ -158,6 +187,19 @@ export class DeviceService {
             mutation: DeleteDeviceDocument,
             variables: {
                 id,
+            },
+        });
+    }
+
+    public updateDevice(
+        id: string,
+        input: UpdateDeviceInput
+    ): Observable<FetchResult<UpdateDeviceMutation>> {
+        return this.apollo.mutate<UpdateDeviceMutation>({
+            mutation: UpdateDeviceDocument,
+            variables: {
+                id,
+                input,
             },
         });
     }

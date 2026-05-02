@@ -29,6 +29,8 @@ type MetricsHandler struct {
 	db        persistence.Transactioner
 	metricSvc MetricService
 	deviceSvc DeviceService
+	userSvc   UserService
+	jwtSvc    JWTService
 }
 
 // MetricPayload represents the JSON payload for recording a metric
@@ -46,57 +48,81 @@ type MetricsPayload struct {
 }
 
 // NewMetricsHandler creates a new metrics handler
-func NewMetricsHandler(db persistence.Transactioner, metricSvc MetricService, deviceSvc DeviceService) *MetricsHandler {
+func NewMetricsHandler(db persistence.Transactioner, metricSvc MetricService, deviceSvc DeviceService, userSvc UserService, jwtSvc JWTService) *MetricsHandler {
 	return &MetricsHandler{
 		db:        db,
 		metricSvc: metricSvc,
 		deviceSvc: deviceSvc,
+		userSvc:   userSvc,
+		jwtSvc:    jwtSvc,
 	}
 }
 
-// extractDeviceToken extracts a device token from the Authorization header
-// Expects format: "Device <token>" or "Bearer <token>"
-func extractDeviceToken(r *http.Request) string {
-	auth := r.Header.Get("Authorization")
-	if auth == "" {
-		return ""
+// authResult holds the result of authentication
+type authResult struct {
+	// For device token auth
+	Device *model.Device
+	// For JWT auth
+	User     *model.User
+	TenantID string
+}
+
+// authenticateRequest tries to authenticate the request using either device token or JWT
+// Returns authResult with either Device (for device token) or User (for JWT)
+func (h *MetricsHandler) authenticateRequest(ctx context.Context, r *http.Request, expectedDeviceID string) (*authResult, error) {
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" {
+		return nil, nil
 	}
 
-	parts := strings.SplitN(auth, " ", 2)
+	parts := strings.SplitN(authHeader, " ", 2)
 	if len(parts) != 2 {
-		return ""
+		return nil, nil
 	}
 
 	scheme := strings.ToLower(parts[0])
-	if scheme == "device" || scheme == "bearer" {
-		return parts[1]
+	token := parts[1]
+
+	// Try device token auth first (scheme: "device")
+	if scheme == "device" {
+		device, err := h.deviceSvc.GetByToken(ctx, token)
+		if err != nil {
+			return nil, err
+		}
+		if expectedDeviceID != "" && device.ID != expectedDeviceID {
+			return nil, nil // Token doesn't match expected device
+		}
+		return &authResult{Device: device, TenantID: device.TenantID}, nil
 	}
 
-	return ""
-}
+	// Try JWT auth (scheme: "bearer")
+	if scheme == "bearer" {
+		// First try as device token (backward compatibility)
+		device, err := h.deviceSvc.GetByToken(ctx, token)
+		if err == nil {
+			if expectedDeviceID == "" || device.ID == expectedDeviceID {
+				return &authResult{Device: device, TenantID: device.TenantID}, nil
+			}
+		}
 
-// validateDeviceToken validates the device token and returns the device if valid
-func (h *MetricsHandler) validateDeviceToken(ctx context.Context, r *http.Request, expectedDeviceID string) (*model.Device, error) {
-	token := extractDeviceToken(r)
-	if token == "" {
-		return nil, nil
+		// Try as JWT
+		if h.jwtSvc != nil {
+			claims, err := h.jwtSvc.ValidateToken(token)
+			if err == nil && h.userSvc != nil {
+				user, err := h.userSvc.GetByUsername(ctx, claims.Username)
+				if err == nil {
+					return &authResult{User: user, TenantID: user.ID}, nil
+				}
+			}
+		}
 	}
 
-	device, err := h.deviceSvc.GetByToken(ctx, token)
-	if err != nil {
-		return nil, err
-	}
-
-	// If expectedDeviceID is provided, verify the token belongs to that device
-	if expectedDeviceID != "" && device.ID != expectedDeviceID {
-		return nil, nil
-	}
-
-	return device, nil
+	return nil, nil
 }
 
 // RecordMetrics handles POST /api/v1/metrics
 // Accepts a batch of metrics to record
+// Supports both device token auth and JWT auth
 func (h *MetricsHandler) RecordMetrics(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	w.Header().Set("Content-Type", "application/json")
@@ -176,7 +202,9 @@ func (h *MetricsHandler) RecordMetrics(w http.ResponseWriter, r *http.Request) {
 
 // RecordDeviceMetrics handles POST /api/v1/devices/{deviceId}/metrics
 // Records metrics for a specific device
-// Requires device token authentication via "Authorization: Device <token>" or "Authorization: Bearer <token>"
+// Supports dual authentication:
+//   - Device token: "Authorization: Device <token>" - device authenticates itself
+//   - JWT: "Authorization: Bearer <jwt>" - user/admin records metrics on behalf of device
 func (h *MetricsHandler) RecordDeviceMetrics(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	w.Header().Set("Content-Type", "application/json")
@@ -209,29 +237,53 @@ func (h *MetricsHandler) RecordDeviceMetrics(w http.ResponseWriter, r *http.Requ
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	// Validate device token if provided
-	token := extractDeviceToken(r)
+	// Try dual authentication (device token or JWT)
+	authRes, err := h.authenticateRequest(ctx, r, deviceID)
+	if err != nil {
+		logger.C(ctx).Warnf("Authentication error: %v", err)
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Authentication failed"})
+		return
+	}
+
+	var tenantID string
 	var device *model.Device
 
-	if token != "" {
-		device, err = h.deviceSvc.GetByToken(ctx, token)
-		if err != nil {
-			logger.C(ctx).Warnf("Invalid device token: %v", err)
-			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(map[string]string{"error": "Invalid device token"})
-			return
-		}
+	if authRes != nil {
+		if authRes.Device != nil {
+			// Device token auth - device authenticates itself
+			device = authRes.Device
+			tenantID = authRes.TenantID
 
-		// Verify token belongs to the requested device
-		if device.ID != deviceID {
-			logger.C(ctx).Warnf("Token device ID mismatch: token=%s, requested=%s", device.ID, deviceID)
-			w.WriteHeader(http.StatusForbidden)
-			json.NewEncoder(w).Encode(map[string]string{"error": "Token does not match device"})
-			return
+			// Verify token belongs to the requested device
+			if device.ID != deviceID {
+				logger.C(ctx).Warnf("Token device ID mismatch: token=%s, requested=%s", device.ID, deviceID)
+				w.WriteHeader(http.StatusForbidden)
+				json.NewEncoder(w).Encode(map[string]string{"error": "Token does not match device"})
+				return
+			}
+		} else if authRes.User != nil {
+			// JWT auth - user/admin recording metrics on behalf of device
+			tenantID = authRes.TenantID
+
+			// Verify the device belongs to this user's tenant
+			device, err = h.deviceSvc.GetByID(ctx, deviceID)
+			if err != nil {
+				logger.C(ctx).Errorf("Device %s not found: %v", deviceID, err)
+				w.WriteHeader(http.StatusNotFound)
+				json.NewEncoder(w).Encode(map[string]string{"error": "Device not found"})
+				return
+			}
+
+			if device.TenantID != tenantID {
+				logger.C(ctx).Warnf("User %s attempted to record metrics for device %s owned by different tenant", authRes.User.Username, deviceID)
+				w.WriteHeader(http.StatusForbidden)
+				json.NewEncoder(w).Encode(map[string]string{"error": "Device not owned by this user"})
+				return
+			}
 		}
 	} else {
-		// No token provided - fall back to looking up device by ID
-		// This maintains backward compatibility but should be deprecated
+		// No auth provided - fall back to looking up device by ID (backward compatibility)
 		device, err = h.deviceSvc.GetByID(ctx, deviceID)
 		if err != nil {
 			logger.C(ctx).Errorf("Device %s not found: %v", deviceID, err)
@@ -239,6 +291,7 @@ func (h *MetricsHandler) RecordDeviceMetrics(w http.ResponseWriter, r *http.Requ
 			json.NewEncoder(w).Encode(map[string]string{"error": "Device not found"})
 			return
 		}
+		tenantID = device.TenantID
 	}
 
 	recorded := 0
@@ -261,7 +314,7 @@ func (h *MetricsHandler) RecordDeviceMetrics(w http.ResponseWriter, r *http.Requ
 			}
 		}
 
-		if _, err := h.metricSvc.RecordMetricWithTenant(ctx, input, device.TenantID); err != nil {
+		if _, err := h.metricSvc.RecordMetricWithTenant(ctx, input, tenantID); err != nil {
 			logger.C(ctx).Errorf("Error recording metric: %v", err)
 			continue
 		}

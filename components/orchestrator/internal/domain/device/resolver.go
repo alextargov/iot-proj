@@ -14,6 +14,7 @@ import (
 
 type DeviceConverter interface {
 	InputFromGraphQL(in graphql.DeviceInput) model.DeviceInput
+	UpdateInputFromGraphQL(in graphql.UpdateDeviceInput) model.UpdateDeviceInput
 	MultipleToGraphQL(in []*model.Device) []*graphql.Device
 	ToGraphQL(in *model.Device) *graphql.Device
 }
@@ -22,7 +23,7 @@ type DeviceSvc interface {
 	ListAll(ctx context.Context) ([]*model.Device, error)
 	ListPage(ctx context.Context, pageSize int, cursor string) ([]*model.Device, *pagination.Page, int, error)
 	Create(ctx context.Context, device model.DeviceInput) (string, error)
-	Update(ctx context.Context, device model.DeviceInput) error
+	Update(ctx context.Context, id string, input model.UpdateDeviceInput) (*model.Device, error)
 	Exists(ctx context.Context, id string) (bool, error)
 	Delete(ctx context.Context, id string) error
 	GetByID(ctx context.Context, id string) (*model.Device, error)
@@ -174,6 +175,30 @@ func (r *Resolver) CreateDevice(ctx context.Context, input graphql.DeviceInput) 
 	}
 
 	device, err := r.deviceSvc.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return r.deviceConverter.ToGraphQL(device), nil
+}
+
+func (r *Resolver) UpdateDevice(ctx context.Context, id string, input graphql.UpdateDeviceInput) (*graphql.Device, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	convertedIn := r.deviceConverter.UpdateInputFromGraphQL(input)
+
+	device, err := r.deviceSvc.Update(ctx, id, convertedIn)
 	if err != nil {
 		return nil, err
 	}

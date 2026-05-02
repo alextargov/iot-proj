@@ -12,6 +12,7 @@ type HostRepository interface {
 	GetByDeviceID(ctx context.Context, id, tnt string) (*model.Host, error)
 	CreateForDevice(ctx context.Context, item model.Host) error
 	DeleteAllForDevice(ctx context.Context, id string) error
+	Update(ctx context.Context, item model.Host) error
 }
 
 type EncryptionService interface {
@@ -73,4 +74,22 @@ func (s *service) DeleteByDeviceID(ctx context.Context, deviceID string) error {
 	logger.C(ctx).Debugf("Deleting host for tenant %s", tnt)
 
 	return s.hostRepo.DeleteAllForDevice(ctx, deviceID)
+}
+
+func (s *service) Update(ctx context.Context, id string, hostInput model.HostInput) error {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	logger.C(ctx).Debugf("Updating host %s for tenant %s", id, tnt)
+
+	host := model.Host{
+		ID:              id,
+		Url:             hostInput.Url,
+		TurnOnEndpoint:  hostInput.TurnOnEndpoint,
+		TurnOffEndpoint: hostInput.TurnOffEndpoint,
+	}
+
+	return s.hostRepo.Update(ctx, host)
 }

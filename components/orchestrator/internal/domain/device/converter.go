@@ -102,6 +102,24 @@ func (c *converter) InputFromGraphQL(in graphql.DeviceInput) model.DeviceInput {
 	}
 }
 
+func (c *converter) UpdateInputFromGraphQL(in graphql.UpdateDeviceInput) model.UpdateDeviceInput {
+	var status *model.DeviceStatus
+	if in.Status != nil {
+		s := model.DeviceStatus(*in.Status)
+		status = &s
+	}
+
+	return model.UpdateDeviceInput{
+		Name:        in.Name,
+		Description: in.Description,
+		Status:      status,
+		Host:        c.hostConv.InputFromGraphQL(in.Host),
+		Auth:        c.authConv.InputFromGraphQL(in.Auth),
+		DataModel:   in.DataModel,
+		Tags:        in.Tags,
+	}
+}
+
 func timePtrToTimestampPtr(time *time.Time) *graphql.Timestamp {
 	if time == nil {
 		return nil
