@@ -96,6 +96,7 @@ func main() {
 		status.NewManager(mgrClient, appCode, k8s.NewPodManager(k8sClient, "system"), k8s.NewDeploymentManager(k8sClient, "system"), time.Second*10),
 		k8s.NewControllerClient(mgrClient),
 		appCode,
+		mgr.GetEventRecorderFor("application-controller"),
 	)
 
 	if err = controller.SetupWithManager(mgr); err != nil {

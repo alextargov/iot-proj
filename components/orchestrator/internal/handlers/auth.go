@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/apperrors"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/auth"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/model"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/logger"
@@ -43,15 +44,13 @@ func (h *authHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode("Invalid request payload")
+		apperrors.WriteBadRequest(w, "Invalid request payload")
 		return
 	}
 
 	tx, err := h.db.Begin()
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode("Error while starting transaction")
+		apperrors.WriteInternalError(w, "Error while starting transaction")
 		return
 	}
 	defer h.db.RollbackUnlessCommitted(ctx, tx)
@@ -60,22 +59,19 @@ func (h *authHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 	exists, err := h.userService.Exists(ctx, user.Username)
 	if err != nil {
-		logger.C(ctx).Errorf("Error while checking for existance %+v", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode("Error checking user existence")
+		logger.C(ctx).Errorf("Error while checking for existence %+v", err.Error())
+		apperrors.WriteInternalError(w, "Error checking user existence")
 		return
 	}
 
 	if exists {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode("User already exists")
+		apperrors.WriteErrorWithStatus(w, http.StatusConflict, "User already exists")
 		return
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode("Error hashing user password")
+		apperrors.WriteInternalError(w, "Error hashing user password")
 		return
 	}
 
@@ -83,17 +79,16 @@ func (h *authHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 	if _, err = h.userService.Create(ctx, user); err != nil {
 		logger.C(ctx).Errorf("Error while creating a user %+v", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode("Error creating user")
+		apperrors.WriteInternalError(w, "Error creating user")
 		return
 	}
 
 	if err = tx.Commit(); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode("Error committing transaction")
+		apperrors.WriteInternalError(w, "Error committing transaction")
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(user)
 }
@@ -104,15 +99,13 @@ func (h *authHandler) Login(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
 		logger.C(ctx).Errorf("Error while decoding %+v", err.Error())
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode("Invalid request payload")
+		apperrors.WriteBadRequest(w, "Invalid request payload")
 		return
 	}
 
 	tx, err := h.db.Begin()
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode("Error while starting transaction")
+		apperrors.WriteInternalError(w, "Error while starting transaction")
 		return
 	}
 	defer h.db.RollbackUnlessCommitted(ctx, tx)
@@ -121,16 +114,14 @@ func (h *authHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	exists, err := h.userService.Exists(ctx, user.Username)
 	if err != nil {
-		logger.C(ctx).Errorf("Error while checking for existance %+v", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode("Error checking user existence")
+		logger.C(ctx).Errorf("Error while checking for existence %+v", err.Error())
+		apperrors.WriteInternalError(w, "Error checking user existence")
 		return
 	}
 
 	if !exists {
 		logger.C(ctx).Errorf("User with name %s does not exist", user.Username)
-		w.WriteHeader(http.StatusUnauthorized)
-		json.NewEncoder(w).Encode("User does not exist")
+		apperrors.WriteUnauthorized(w, "Invalid credentials")
 		return
 	}
 
@@ -139,30 +130,26 @@ func (h *authHandler) Login(w http.ResponseWriter, r *http.Request) {
 	userFromService, err := h.userService.GetByUsername(ctx, user.Username)
 	if err != nil {
 		logger.C(ctx).Errorf("Error while getting user %+v", err.Error())
-		w.WriteHeader(http.StatusUnauthorized)
-		json.NewEncoder(w).Encode("Error getting user from service")
+		apperrors.WriteUnauthorized(w, "Invalid credentials")
 		return
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(userFromService.Password), []byte(user.Password))
 	if err != nil {
 		logger.C(ctx).Errorf("Error while comparing passwords %+v", err.Error())
-		w.WriteHeader(http.StatusUnauthorized)
-		json.NewEncoder(w).Encode("Invalid credentials")
+		apperrors.WriteUnauthorized(w, "Invalid credentials")
 		return
 	}
 
 	tokenString, err := h.jwtService.GenerateToken(user.Username)
 	if err != nil {
 		logger.C(ctx).Errorf("Error while generating a token %+v", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode("Error generating token")
+		apperrors.WriteInternalError(w, "Error generating token")
 		return
 	}
 
 	if err = tx.Commit(); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode("Error committing transaction")
+		apperrors.WriteInternalError(w, "Error committing transaction")
 		return
 	}
 

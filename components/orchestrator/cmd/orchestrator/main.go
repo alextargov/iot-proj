@@ -23,6 +23,7 @@ import (
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/widget"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/handlers"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/k8s"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/middlewares"
 	authmiddleware "github.com/alextargov/iot-proj/components/orchestrator/internal/middlewares/auth"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/middlewares/correlation"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/notification"
@@ -180,6 +181,10 @@ func initAPIHandler(ctx context.Context, cfg config, db persistence.Transactione
 	metricsHandler := handlers.NewMetricsHandler(db, metricSvc, deviceSvc, userService, jwtWrapper)
 
 	mainRouter := mux.NewRouter()
+
+	// Apply rate limiting to the main router
+	rateLimiter := middlewares.NewRateLimiter(middlewares.DefaultRateLimitConfig())
+	mainRouter.Use(rateLimiter.Middleware)
 
 	mainRouter.HandleFunc("/login", authHandler.Login).Methods(http.MethodPost)
 	mainRouter.HandleFunc("/register", authHandler.Register).Methods(http.MethodPost)

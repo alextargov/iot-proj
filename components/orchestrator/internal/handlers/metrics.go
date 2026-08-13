@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/apperrors"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/model"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/logger"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/persistence"
@@ -130,22 +131,19 @@ func (h *MetricsHandler) RecordMetrics(w http.ResponseWriter, r *http.Request) {
 	var payload MetricsPayload
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		logger.C(ctx).Errorf("Error decoding metrics payload: %v", err)
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid request payload"})
+		apperrors.WriteBadRequest(w, "Invalid request payload")
 		return
 	}
 
 	if len(payload.Metrics) == 0 {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{"error": "No metrics provided"})
+		apperrors.WriteBadRequest(w, "No metrics provided")
 		return
 	}
 
 	tx, err := h.db.Begin()
 	if err != nil {
 		logger.C(ctx).Errorf("Error starting transaction: %v", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Internal server error"})
+		apperrors.WriteInternalError(w, "Internal server error")
 		return
 	}
 	defer h.db.RollbackUnlessCommitted(ctx, tx)
@@ -188,8 +186,7 @@ func (h *MetricsHandler) RecordMetrics(w http.ResponseWriter, r *http.Request) {
 
 	if err := tx.Commit(); err != nil {
 		logger.C(ctx).Errorf("Error committing transaction: %v", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to save metrics"})
+		apperrors.WriteInternalError(w, "Failed to save metrics")
 		return
 	}
 
@@ -213,24 +210,21 @@ func (h *MetricsHandler) RecordDeviceMetrics(w http.ResponseWriter, r *http.Requ
 	deviceID := vars["deviceId"]
 
 	if deviceID == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Device ID required"})
+		apperrors.WriteBadRequest(w, "Device ID required")
 		return
 	}
 
 	var metrics []MetricPayload
 	if err := json.NewDecoder(r.Body).Decode(&metrics); err != nil {
 		logger.C(ctx).Errorf("Error decoding metrics: %v", err)
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid request payload"})
+		apperrors.WriteBadRequest(w, "Invalid request payload")
 		return
 	}
 
 	tx, err := h.db.Begin()
 	if err != nil {
 		logger.C(ctx).Errorf("Error starting transaction: %v", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Internal server error"})
+		apperrors.WriteInternalError(w, "Internal server error")
 		return
 	}
 	defer h.db.RollbackUnlessCommitted(ctx, tx)
@@ -241,8 +235,7 @@ func (h *MetricsHandler) RecordDeviceMetrics(w http.ResponseWriter, r *http.Requ
 	authRes, err := h.authenticateRequest(ctx, r, deviceID)
 	if err != nil {
 		logger.C(ctx).Warnf("Authentication error: %v", err)
-		w.WriteHeader(http.StatusUnauthorized)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Authentication failed"})
+		apperrors.WriteUnauthorized(w, "Authentication failed")
 		return
 	}
 
@@ -258,8 +251,7 @@ func (h *MetricsHandler) RecordDeviceMetrics(w http.ResponseWriter, r *http.Requ
 			// Verify token belongs to the requested device
 			if device.ID != deviceID {
 				logger.C(ctx).Warnf("Token device ID mismatch: token=%s, requested=%s", device.ID, deviceID)
-				w.WriteHeader(http.StatusForbidden)
-				json.NewEncoder(w).Encode(map[string]string{"error": "Token does not match device"})
+				apperrors.WriteForbidden(w, "Token does not match device")
 				return
 			}
 		} else if authRes.User != nil {
@@ -270,15 +262,13 @@ func (h *MetricsHandler) RecordDeviceMetrics(w http.ResponseWriter, r *http.Requ
 			device, err = h.deviceSvc.GetByID(ctx, deviceID)
 			if err != nil {
 				logger.C(ctx).Errorf("Device %s not found: %v", deviceID, err)
-				w.WriteHeader(http.StatusNotFound)
-				json.NewEncoder(w).Encode(map[string]string{"error": "Device not found"})
+				apperrors.WriteNotFound(w, "Device not found")
 				return
 			}
 
 			if device.TenantID != tenantID {
 				logger.C(ctx).Warnf("User %s attempted to record metrics for device %s owned by different tenant", authRes.User.Username, deviceID)
-				w.WriteHeader(http.StatusForbidden)
-				json.NewEncoder(w).Encode(map[string]string{"error": "Device not owned by this user"})
+				apperrors.WriteForbidden(w, "Device not owned by this user")
 				return
 			}
 		}
@@ -287,8 +277,7 @@ func (h *MetricsHandler) RecordDeviceMetrics(w http.ResponseWriter, r *http.Requ
 		device, err = h.deviceSvc.GetByID(ctx, deviceID)
 		if err != nil {
 			logger.C(ctx).Errorf("Device %s not found: %v", deviceID, err)
-			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(map[string]string{"error": "Device not found"})
+			apperrors.WriteNotFound(w, "Device not found")
 			return
 		}
 		tenantID = device.TenantID
@@ -323,8 +312,7 @@ func (h *MetricsHandler) RecordDeviceMetrics(w http.ResponseWriter, r *http.Requ
 
 	if err := tx.Commit(); err != nil {
 		logger.C(ctx).Errorf("Error committing transaction: %v", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to save metrics"})
+		apperrors.WriteInternalError(w, "Failed to save metrics")
 		return
 	}
 

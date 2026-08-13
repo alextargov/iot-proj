@@ -8,6 +8,7 @@ import (
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/apperrors"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/model"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/pagination"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/transaction"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/graphql"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/persistence"
 )
@@ -71,25 +72,13 @@ func NewResolver(transact persistence.Transactioner, deviceSvc DeviceSvc, hostSv
 }
 
 func (r *Resolver) Devices(ctx context.Context) ([]*graphql.Device, error) {
-	tx, err := r.transact.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer r.transact.RollbackUnlessCommitted(ctx, tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	devices, err := r.deviceSvc.ListAll(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return nil, err
-	}
-
-	return r.deviceConverter.MultipleToGraphQL(devices), nil
+	return transaction.WithReadOnlyTransaction(ctx, r.transact, func(ctx context.Context) ([]*graphql.Device, error) {
+		devices, err := r.deviceSvc.ListAll(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return r.deviceConverter.MultipleToGraphQL(devices), nil
+	})
 }
 
 func (r *Resolver) DevicesPage(ctx context.Context, first *int, after *string) (*graphql.DevicePage, error) {
@@ -133,25 +122,13 @@ func (r *Resolver) DevicesPage(ctx context.Context, first *int, after *string) (
 }
 
 func (r *Resolver) Device(ctx context.Context, id string) (*graphql.Device, error) {
-	tx, err := r.transact.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer r.transact.RollbackUnlessCommitted(ctx, tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	device, err := r.deviceSvc.GetByID(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return nil, err
-	}
-
-	return r.deviceConverter.ToGraphQL(device), nil
+	return transaction.WithReadOnlyTransaction(ctx, r.transact, func(ctx context.Context) (*graphql.Device, error) {
+		device, err := r.deviceSvc.GetByID(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		return r.deviceConverter.ToGraphQL(device), nil
+	})
 }
 
 func (r *Resolver) DeviceByIDAndAggregation(ctx context.Context, id string, aggregation graphql.AggregationType) (*graphql.Device, error) {
@@ -159,81 +136,48 @@ func (r *Resolver) DeviceByIDAndAggregation(ctx context.Context, id string, aggr
 }
 
 func (r *Resolver) CreateDevice(ctx context.Context, input graphql.DeviceInput) (*graphql.Device, error) {
-	tx, err := r.transact.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+	return transaction.WithTransactionResult(ctx, r.transact, func(ctx context.Context) (*graphql.Device, error) {
+		convertedIn := r.deviceConverter.InputFromGraphQL(input)
 
-	ctx = persistence.SaveToContext(ctx, tx)
+		id, err := r.deviceSvc.Create(ctx, convertedIn)
+		if err != nil {
+			return nil, err
+		}
 
-	convertedIn := r.deviceConverter.InputFromGraphQL(input)
+		device, err := r.deviceSvc.GetByID(ctx, id)
+		if err != nil {
+			return nil, err
+		}
 
-	id, err := r.deviceSvc.Create(ctx, convertedIn)
-	if err != nil {
-		return nil, err
-	}
-
-	device, err := r.deviceSvc.GetByID(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return nil, err
-	}
-
-	return r.deviceConverter.ToGraphQL(device), nil
+		return r.deviceConverter.ToGraphQL(device), nil
+	})
 }
 
 func (r *Resolver) UpdateDevice(ctx context.Context, id string, input graphql.UpdateDeviceInput) (*graphql.Device, error) {
-	tx, err := r.transact.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+	return transaction.WithTransactionResult(ctx, r.transact, func(ctx context.Context) (*graphql.Device, error) {
+		convertedIn := r.deviceConverter.UpdateInputFromGraphQL(input)
 
-	ctx = persistence.SaveToContext(ctx, tx)
+		device, err := r.deviceSvc.Update(ctx, id, convertedIn)
+		if err != nil {
+			return nil, err
+		}
 
-	convertedIn := r.deviceConverter.UpdateInputFromGraphQL(input)
-
-	device, err := r.deviceSvc.Update(ctx, id, convertedIn)
-	if err != nil {
-		return nil, err
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return nil, err
-	}
-
-	return r.deviceConverter.ToGraphQL(device), nil
+		return r.deviceConverter.ToGraphQL(device), nil
+	})
 }
 
 func (r *Resolver) DeleteDevice(ctx context.Context, id string) (string, error) {
-	tx, err := r.transact.Begin()
-	if err != nil {
-		return "", err
-	}
-	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+	return transaction.WithTransactionResult(ctx, r.transact, func(ctx context.Context) (string, error) {
+		if err := r.hostSvc.DeleteByDeviceID(ctx, id); err != nil {
+			return "", err
+		}
 
-	ctx = persistence.SaveToContext(ctx, tx)
+		if err := r.deviceSvc.Delete(ctx, id); err != nil {
+			return "", err
+		}
 
-	if err = r.hostSvc.DeleteByDeviceID(ctx, id); err != nil {
-		return "", err
-	}
-
-	if err = r.deviceSvc.Delete(ctx, id); err != nil {
-		return "", err
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return "", err
-	}
-
-	return id, nil
+		return id, nil
+	})
 }
 
 func (r *Resolver) SetDeviceOperation(ctx context.Context, id string, op graphql.OperationType) (*graphql.Device, error) {
