@@ -3,27 +3,19 @@ import { RouterModule, Routes } from '@angular/router';
 import { DevicesListComponent } from './devices-list/devices-list.component';
 import { DeviceCreateComponent } from './device-create/device-create.component';
 import { DeviceDetailComponent } from './device-detail/device-detail.component';
-import { AuthGuard } from '../../shared/guards/auth.guard';
 
 const routes: Routes = [
     {
-        path: 'devices',
-        children: [
-            {
-                path: '',
-                component: DevicesListComponent,
-            },
-            {
-                path: 'create',
-                pathMatch: 'full',
-                component: DeviceCreateComponent,
-            },
-            {
-                path: ':id',
-                component: DeviceDetailComponent,
-            },
-        ],
-        canActivate: [AuthGuard],
+        path: '',
+        component: DevicesListComponent,
+    },
+    {
+        path: 'create',
+        component: DeviceCreateComponent,
+    },
+    {
+        path: ':id',
+        component: DeviceDetailComponent,
     },
 ];
 

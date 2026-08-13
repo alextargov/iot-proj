@@ -6,7 +6,6 @@ import (
 	"github.com/alextargov/iot-proj/components/controller/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/watch"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"time"
 
@@ -16,6 +15,12 @@ import (
 )
 
 var log = ctrl.Log.WithName("manager")
+
+// RequeueResult is returned when the reconciler should requeue after a delay
+type RequeueResult struct {
+	Requeue      bool
+	RequeueAfter time.Duration
+}
 
 type statusUpdaterFunc func(application *v1alpha1.Application)
 
@@ -28,11 +33,11 @@ type Function interface {
 }
 
 type PodManager interface {
-	Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error)
+	Get(ctx context.Context, name, namespace string) (*v1.Pod, error)
 }
 
 type DeploymentManager interface {
-	Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error)
+	Get(ctx context.Context, name, namespace string) (*appsv1.Deployment, error)
 }
 
 // manager implements the StatusManager interface
@@ -78,7 +83,7 @@ func (m *manager) Initialize(ctx context.Context, application *v1alpha1.Applicat
 	})
 }
 
-// BuildImage sets the initial status of an Application CR.
+// BuildImage deploys the image builder and updates status to StateBuildStarted.
 func (m *manager) BuildImage(ctx context.Context, application *v1alpha1.Application) error {
 	if err := application.Validate(); err != nil {
 		return err
@@ -89,14 +94,14 @@ func (m *manager) BuildImage(ctx context.Context, application *v1alpha1.Applicat
 		return err
 	}
 
-	logUpdateStatusWith(v1alpha1.StateBuildReady)
+	logUpdateStatusWith(v1alpha1.StateBuildStarted)
 	return m.updateStatusFunc(ctx, application, func(application *v1alpha1.Application) {
 		status := &application.Status
-		status.Phase = v1alpha1.StateBuildReady
+		status.Phase = v1alpha1.StateBuildStarted
 	})
 }
 
-// BuildError sets the initial status of an Application CR.
+// BuildError sets the error status for a build failure.
 func (m *manager) BuildError(ctx context.Context, application *v1alpha1.Application) error {
 	if err := application.Validate(); err != nil {
 		return err
@@ -104,7 +109,6 @@ func (m *manager) BuildError(ctx context.Context, application *v1alpha1.Applicat
 
 	return m.updateStatusFunc(ctx, application, func(application *v1alpha1.Application) {
 		status := &application.Status
-		//status.Phase = v1alpha1.StateBuildError
 		status.Error = v1alpha1.ErrorState{
 			Type:    v1alpha1.BuildErrorType,
 			Message: "build error",
@@ -112,7 +116,7 @@ func (m *manager) BuildError(ctx context.Context, application *v1alpha1.Applicat
 	})
 }
 
-// StateCodeObtained sets the initial status of an Application CR.
+// ObtainCode creates the code configmap and updates status to StateCodeObtained.
 func (m *manager) ObtainCode(ctx context.Context, application *v1alpha1.Application) error {
 	if err := application.Validate(); err != nil {
 		return err
@@ -131,37 +135,50 @@ func (m *manager) ObtainCode(ctx context.Context, application *v1alpha1.Applicat
 	})
 }
 
-func (m *manager) WatchBuildReady(ctx context.Context, application *v1alpha1.Application) error {
-	for {
-		select {
-		case <-ctx.Done():
-			log.Info("Context cancelled, stopping config map watcher...")
+// CheckBuildReady checks if the builder pod has completed. Returns a RequeueResult indicating
+// whether the reconciler should requeue (build still in progress) or proceed (build complete).
+// This replaces the blocking WatchBuildReady method with a non-blocking check pattern.
+func (m *manager) CheckBuildReady(ctx context.Context, application *v1alpha1.Application) (*RequeueResult, error) {
+	builderName := application.Name + "-builder"
 
-			return nil
-		default:
+	pod, err := m.podMgr.Get(ctx, builderName, application.Namespace)
+	if err != nil {
+		log.Error(err, fmt.Sprintf("Could not get builder pod %s", builderName))
+		// Requeue to check again later
+		return &RequeueResult{Requeue: true, RequeueAfter: m.reconnectInterval}, nil
+	}
+
+	log.Info(fmt.Sprintf("Builder pod %s phase: %s", builderName, pod.Status.Phase))
+
+	switch pod.Status.Phase {
+	case v1.PodSucceeded:
+		// Build completed successfully, update status
+		logUpdateStatusWith(v1alpha1.StateBuildReady)
+		if err := m.updateStatusFunc(ctx, application, func(application *v1alpha1.Application) {
+			status := &application.Status
+			status.Phase = v1alpha1.StateBuildReady
+		}); err != nil {
+			return nil, err
 		}
+		// No requeue needed, status change will trigger next reconcile
+		return &RequeueResult{Requeue: false}, nil
 
-		log.Info("Starting watcher for configmap changes...")
-		watcher, err := m.podMgr.Watch(ctx, metav1.ListOptions{
-			FieldSelector: "metadata.name=" + application.Name + "-builder",
-			Watch:         true,
-		})
-		if err != nil {
-			log.Error(err, fmt.Sprintf("Could not initialize watcher. Sleep for %s and try again...", m.reconnectInterval.String()))
-			time.Sleep(m.reconnectInterval)
-			continue
+	case v1.PodFailed:
+		// Build failed
+		log.Info(fmt.Sprintf("Builder pod %s failed", builderName))
+		if err := m.BuildError(ctx, application); err != nil {
+			return nil, err
 		}
-		log.Info("Waiting for image builder events...")
+		return &RequeueResult{Requeue: false}, nil
 
-		m.processPodEvents(ctx, watcher.ResultChan(), application)
-
-		// Cleanup any allocated resources
-		watcher.Stop()
-		time.Sleep(m.reconnectInterval)
+	default:
+		// Build still in progress (Pending, Running, Unknown)
+		log.Info(fmt.Sprintf("Builder pod %s still running, will requeue", builderName))
+		return &RequeueResult{Requeue: true, RequeueAfter: m.reconnectInterval}, nil
 	}
 }
 
-// Deploy sets the initial status of an Application CR.
+// Deploy creates the deployment and service, then updates status to StateDeploymentStarted.
 func (m *manager) Deploy(ctx context.Context, application *v1alpha1.Application) error {
 	if err := application.Validate(); err != nil {
 		return err
@@ -192,45 +209,50 @@ func (m *manager) Deploy(ctx context.Context, application *v1alpha1.Application)
 	})
 }
 
-// DeploymentError sets the initial status of an Application CR.
+// DeploymentError sets the error status for a deployment failure.
 func (m *manager) DeploymentError(ctx context.Context, application *v1alpha1.Application, errMsg string) error {
 	if err := application.Validate(); err != nil {
 		return err
 	}
 
 	return m.updateStatusFunc(ctx, application, func(application *v1alpha1.Application) {
-		//status := &application.Status
-		//status.Phase = v1alpha1.StateDeploymentError
-		//status.Error = errMsg
+		status := &application.Status
+		status.Error = v1alpha1.ErrorState{
+			Type:    v1alpha1.DeploymentErrorType,
+			Message: errMsg,
+		}
 	})
 }
 
-func (m *manager) WatchDeployReady(ctx context.Context, application *v1alpha1.Application) error {
-	for {
-		select {
-		case <-ctx.Done():
-			log.Info("Context cancelled, stopping deployment watcher...")
-			return nil
-		default:
-		}
-
-		log.Info("Starting watcher for Deployment changes...")
-		watcher, err := m.deploymentMgr.Watch(ctx, metav1.ListOptions{
-			FieldSelector: "metadata.name=" + application.Name,
-			Watch:         true,
-		})
-		if err != nil {
-			log.Error(err, fmt.Sprintf("Could not initialize watcher. Sleep for %s and try again...", m.reconnectInterval.String()))
-			time.Sleep(m.reconnectInterval)
-			continue
-		}
-		log.Info("Waiting for Deployment events...")
-
-		m.processDeploymentEvents(ctx, watcher.ResultChan(), application)
-
-		watcher.Stop()
-		time.Sleep(m.reconnectInterval)
+// CheckDeployReady checks if the deployment is ready. Returns a RequeueResult indicating
+// whether the reconciler should requeue (deployment not ready) or proceed (deployment ready).
+// This replaces the blocking WatchDeployReady method with a non-blocking check pattern.
+func (m *manager) CheckDeployReady(ctx context.Context, application *v1alpha1.Application) (*RequeueResult, error) {
+	deployment, err := m.deploymentMgr.Get(ctx, application.Name, application.Namespace)
+	if err != nil {
+		log.Error(err, fmt.Sprintf("Could not get deployment %s", application.Name))
+		// Requeue to check again later
+		return &RequeueResult{Requeue: true, RequeueAfter: m.reconnectInterval}, nil
 	}
+
+	log.Info(fmt.Sprintf("Deployment %s: available replicas %d", application.Name, deployment.Status.AvailableReplicas))
+
+	if deployment.Status.AvailableReplicas >= int32(1) {
+		// Deployment is ready
+		logUpdateStatusWith(v1alpha1.StateDeploymentReady)
+		if err := m.updateStatusFunc(ctx, application, func(application *v1alpha1.Application) {
+			status := &application.Status
+			status.Phase = v1alpha1.StateDeploymentReady
+		}); err != nil {
+			return nil, err
+		}
+		// No requeue needed, we're done
+		return &RequeueResult{Requeue: false}, nil
+	}
+
+	// Deployment not ready yet
+	log.Info(fmt.Sprintf("Deployment %s not ready yet, will requeue", application.Name))
+	return &RequeueResult{Requeue: true, RequeueAfter: m.reconnectInterval}, nil
 }
 
 func (m *manager) updateStatusFunc(ctx context.Context, application *v1alpha1.Application, statusUpdaterFunc statusUpdaterFunc) error {
@@ -246,81 +268,6 @@ func (m *manager) updateStatusFunc(ctx context.Context, application *v1alpha1.Ap
 		// The error is expected, and should be ignored - kubernetes-sigs/controller-runtime#1464
 		return m.mgrClient.Status().Update(ctx, application)
 	})
-}
-
-func (m *manager) processPodEvents(ctx context.Context, events <-chan watch.Event, application *v1alpha1.Application) {
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case ev, ok := <-events:
-			if !ok {
-				return
-			}
-			switch ev.Type {
-			case watch.Added:
-				fallthrough
-			case watch.Modified:
-				log.Info("Pod updated")
-				pod, ok := ev.Object.(*v1.Pod)
-				if !ok {
-					log.Info("Unexpected error: object is not pod. Try again")
-					continue
-				}
-				if pod.Status.Phase == v1.PodSucceeded {
-					logUpdateStatusWith(v1alpha1.StateBuildReady)
-					if err := m.updateStatusFunc(ctx, application, func(application *v1alpha1.Application) {
-						status := &application.Status
-						status.Phase = v1alpha1.StateBuildReady
-					}); err != nil {
-						log.Error(err, fmt.Sprintf("while updating status to \"%s\"", v1alpha1.StateBuildReady))
-					}
-
-					ctx.Done()
-				}
-			case watch.Error:
-				log.Info("Error event is received, stop pod watcher and try again...")
-				return
-			}
-		}
-	}
-}
-
-func (m *manager) processDeploymentEvents(ctx context.Context, events <-chan watch.Event, application *v1alpha1.Application) {
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case ev, ok := <-events:
-			if !ok {
-				return
-			}
-			switch ev.Type {
-			case watch.Added:
-				fallthrough
-			case watch.Modified:
-				deployment, ok := ev.Object.(*appsv1.Deployment)
-				if !ok {
-					log.Info("Unexpected error: object is not Deployment. Try again")
-					continue
-				}
-				if deployment.Status.AvailableReplicas >= int32(1) {
-					logUpdateStatusWith(v1alpha1.StateDeploymentReady)
-					if err := m.updateStatusFunc(ctx, application, func(application *v1alpha1.Application) {
-						status := &application.Status
-						status.Phase = v1alpha1.StateDeploymentReady
-					}); err != nil {
-						log.Error(err, fmt.Sprintf("while updating status to \"%s\"", v1alpha1.StateDeploymentReady))
-					}
-
-					ctx.Done()
-				}
-			case watch.Error:
-				log.Info("Error event is received, stop Deployment watcher and try again...")
-				return
-			}
-		}
-	}
 }
 
 func logUpdateStatusWith(state v1alpha1.State) {

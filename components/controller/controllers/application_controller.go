@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	opv1alpha1 "github.com/alextargov/iot-proj/components/controller/api/v1alpha1"
-	"github.com/alextargov/iot-proj/components/controller/internal/log"
+	logger "github.com/alextargov/iot-proj/components/controller/internal/log"
 	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -37,8 +37,8 @@ func NewApplicationReconciler(statusManager StatusManager, k8sClient KubernetesC
 //+kubebuilder:rbac:groups=controller,resources=applications/finalizers,verbs=update
 
 func (r *ApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := ctrl.Log.WithValues("application", req.NamespacedName)
-	ctx = logger.ContextWithLogger(ctx, logger)
+	log := ctrl.Log.WithValues("application", req.NamespacedName)
+	ctx = logger.ContextWithLogger(ctx, log)
 
 	application, err := r.k8sClient.Get(ctx, req.NamespacedName)
 	if err != nil {
@@ -87,19 +87,29 @@ func (r *ApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		}
 	case opv1alpha1.StateCodeObtained:
 		if err := r.statusManager.BuildImage(ctx, application); err != nil {
-			return r.handleError(ctx, err, opv1alpha1.StateInitial, application.Name)
+			return r.handleError(ctx, err, opv1alpha1.StateCodeObtained, application.Name)
 		}
 	case opv1alpha1.StateBuildStarted:
-		if err := r.statusManager.WatchBuildReady(ctx, application); err != nil {
-			return r.handleError(ctx, err, opv1alpha1.StateInitial, application.Name)
+		// Non-blocking check - requeue if build not ready yet
+		result, err := r.statusManager.CheckBuildReady(ctx, application)
+		if err != nil {
+			return r.handleError(ctx, err, opv1alpha1.StateBuildStarted, application.Name)
+		}
+		if result != nil && result.Requeue {
+			return ctrl.Result{RequeueAfter: result.RequeueAfter}, nil
 		}
 	case opv1alpha1.StateBuildReady:
 		if err := r.statusManager.Deploy(ctx, application); err != nil {
-			return r.handleError(ctx, err, opv1alpha1.StateInitial, application.Name)
+			return r.handleError(ctx, err, opv1alpha1.StateBuildReady, application.Name)
 		}
 	case opv1alpha1.StateDeploymentStarted:
-		if err := r.statusManager.WatchDeployReady(ctx, application); err != nil {
-			return r.handleError(ctx, err, opv1alpha1.StateInitial, application.Name)
+		// Non-blocking check - requeue if deployment not ready yet
+		result, err := r.statusManager.CheckDeployReady(ctx, application)
+		if err != nil {
+			return r.handleError(ctx, err, opv1alpha1.StateDeploymentStarted, application.Name)
+		}
+		if result != nil && result.Requeue {
+			return ctrl.Result{RequeueAfter: result.RequeueAfter}, nil
 		}
 	}
 

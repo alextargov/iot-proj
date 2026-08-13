@@ -72,8 +72,6 @@ func main() {
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
-		MetricsBindAddress:     metricsAddr,
-		Port:                   9443,
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "3ed46138.controller",
@@ -95,7 +93,7 @@ func main() {
 	appCode := function.NewFunctionBuilder(mgrClient)
 
 	controller := controllers.NewApplicationReconciler(
-		status.NewManager(mgrClient, appCode, k8sClient.CoreV1().Pods("system"), k8sClient.AppsV1().Deployments("system"), time.Second),
+		status.NewManager(mgrClient, appCode, k8s.NewPodManager(k8sClient, "system"), k8s.NewDeploymentManager(k8sClient, "system"), time.Second*10),
 		k8s.NewControllerClient(mgrClient),
 		appCode,
 	)

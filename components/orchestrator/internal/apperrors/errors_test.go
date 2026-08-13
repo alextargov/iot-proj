@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+	"github.com/alextargov/iot-proj/components/orchestrator/pkg/resource"
 
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/apperrors"
 	errors1 "github.com/pkg/errors"

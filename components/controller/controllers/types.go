@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"github.com/alextargov/iot-proj/components/controller/api/v1alpha1"
+	"github.com/alextargov/iot-proj/components/controller/internal/k8s/status"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -11,12 +12,12 @@ import (
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . StatusManager
 type StatusManager interface {
 	Initialize(ctx context.Context, application *v1alpha1.Application) error
-	WatchBuildReady(ctx context.Context, application *v1alpha1.Application) error
+	CheckBuildReady(ctx context.Context, application *v1alpha1.Application) (*status.RequeueResult, error)
 	BuildError(ctx context.Context, application *v1alpha1.Application) error
 	ObtainCode(ctx context.Context, application *v1alpha1.Application) error
 	BuildImage(ctx context.Context, application *v1alpha1.Application) error
 	Deploy(ctx context.Context, application *v1alpha1.Application) error
-	WatchDeployReady(ctx context.Context, application *v1alpha1.Application) error
+	CheckDeployReady(ctx context.Context, application *v1alpha1.Application) (*status.RequeueResult, error)
 	DeploymentError(ctx context.Context, application *v1alpha1.Application, errMsg string) error
 }
 

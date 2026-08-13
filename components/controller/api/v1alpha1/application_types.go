@@ -1,20 +1,42 @@
 package v1alpha1
 
 import (
+	"fmt"
+	"strings"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // ApplicationSpec defines the desired state of Application
 type ApplicationSpec struct {
+	// ApplicationID is the unique identifier for the application
 	ApplicationID string `json:"application_id,omitempty"`
-	WidgetID      string `json:"widget_id,omitempty"`
-	SourceCode    string `json:"source_code,omitempty"`
-	Workspace     string `json:"workspace,omitempty"`
-	NodeVersion   string `json:"node_version,omitempty"`
-	ReplicasCount int    `json:"replicas_count,omitempty"`
+
+	// WidgetID is the ID of the widget that owns this application
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	WidgetID string `json:"widget_id"`
+
+	// SourceCode contains the JavaScript code to run
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	SourceCode string `json:"source_code"`
+
+	// Workspace is the working directory for the application
+	Workspace string `json:"workspace,omitempty"`
+
+	// NodeVersion specifies the Node.js version to use
+	// +kubebuilder:default="18"
+	NodeVersion string `json:"node_version,omitempty"`
+
+	// ReplicasCount is the number of replicas for the deployment
+	// +kubebuilder:default=1
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=10
+	ReplicasCount int `json:"replicas_count,omitempty"`
 }
 
-// +kubebuilder:validation:Enum=Initial;Code Obtained;Build Ready;Image Ready;Deployment Ready;Deployment Started;
+// +kubebuilder:validation:Enum=Initial;Code Obtained;Build Started;Build Ready;Deployment Ready;Deployment Started
 type State string
 
 const (
@@ -49,6 +71,10 @@ type ApplicationStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:printcolumn:name="Phase",type=string,JSONPath=`.status.phase`
+//+kubebuilder:printcolumn:name="Widget",type=string,JSONPath=`.spec.widget_id`
+//+kubebuilder:printcolumn:name="Replicas",type=integer,JSONPath=`.spec.replicas_count`
+//+kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 
 // Application is the Schema for the applications API
 type Application struct {
@@ -59,7 +85,26 @@ type Application struct {
 	Status ApplicationStatus `json:"status,omitempty"`
 }
 
+// Validate performs validation on the Application spec
 func (in Application) Validate() error {
+	var errs []string
+
+	if in.Spec.WidgetID == "" {
+		errs = append(errs, "widget_id is required")
+	}
+	if in.Spec.SourceCode == "" {
+		errs = append(errs, "source_code is required")
+	}
+	if in.Spec.ReplicasCount < 0 {
+		errs = append(errs, "replicas_count must be >= 0")
+	}
+	if in.Spec.ReplicasCount > 10 {
+		errs = append(errs, "replicas_count must be <= 10")
+	}
+
+	if len(errs) > 0 {
+		return fmt.Errorf("validation failed: %s", strings.Join(errs, "; "))
+	}
 	return nil
 }
 

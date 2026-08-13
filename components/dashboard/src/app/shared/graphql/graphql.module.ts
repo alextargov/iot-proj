@@ -50,7 +50,7 @@ const createAuthLink = (authService: AuthService) =>
 const createWsLink = (authService: AuthService) => {
     return new GraphQLWsLink(
         createClient({
-            url: 'ws://localhost:8080/graphql',
+            url: environment.wsUrl,
             connectionParams: () => {
                 const token = authService.getToken();
                 return token ? { Authorization: `Bearer ${token}` } : {};
@@ -70,7 +70,7 @@ export function createDefaultApollo(
 
     // create http
     const http = httpLink.create({
-        uri: 'http://localhost:8080/graphql',
+        uri: environment.apiUrl,
         withCredentials: true,
     });
 

@@ -1,6 +1,6 @@
 package resource
 
-// Type represents a resource type in compass.
+// Type represents a resource type in the IoT platform.
 type Type string
 
 const (
@@ -8,6 +8,7 @@ const (
 	Device           Type = "device"
 	Widget           Type = "widget"
 	User             Type = "user"
+	Host             Type = "host"
 	DataModel        Type = "dataModel"
 	DataModelVersion Type = "dataModelVersion"
 	DeviceMetric     Type = "deviceMetric"
@@ -17,6 +18,11 @@ const (
 	DashboardWidget  Type = "dashboardWidget"
 	// Schema type represents schema resource.
 	Schema Type = "schemaMigration"
+
+	// Legacy types kept for test compatibility
+	Application                Type = "application"
+	AutomaticScenarioAssigment Type = "automaticScenarioAssignment"
+	Label                      Type = "label"
 )
 
 // SQLOperation represents an SQL operation
