@@ -7,7 +7,7 @@ import (
 
 type Entity struct {
 	ID             string          `db:"id"`
-	TenantID       string          `db:"user_id"`
+	TenantID       string          `db:"tenant_id"`
 	Name           string          `db:"name"`
 	Description    string          `db:"description"`
 	Schema         json.RawMessage `db:"schema"`
