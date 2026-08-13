@@ -6,16 +6,10 @@ import { MatTableDataSource } from '@angular/material/table';
 import { DeviceService } from 'src/app/shared/services/device/device.service';
 import { ContentHeaderButton } from '../../../shared/components/content-header/content-header.component';
 import { Router } from '@angular/router';
-import { DeviceInfoFragment, DeviceStatus } from 'src/app/shared/graphql/generated';
+import { DeviceInfoFragment } from 'src/app/shared/graphql/generated';
 import { MatDialog } from '@angular/material/dialog';
 import { DeviceDeleteComponent } from '../device-delete/device-delete.component';
-
-interface StatusConfig {
-    icon: string;
-    label: string;
-    cssClass: string;
-    tooltip: string;
-}
+import { getDeviceStatusConfig, StatusConfig } from 'src/app/shared/utils/status-config.utils';
 
 @Component({
     standalone: false,
@@ -43,33 +37,6 @@ export class DevicesListComponent implements OnInit, AfterViewInit {
             color: 'primary',
         },
     ];
-
-    private readonly statusConfigs: Record<string, StatusConfig> = {
-        [DeviceStatus.Active]: {
-            icon: 'check_circle',
-            label: 'Active',
-            cssClass: 'status--active',
-            tooltip: 'Device is online and operational',
-        },
-        [DeviceStatus.Initial]: {
-            icon: 'hourglass_empty',
-            label: 'Initial',
-            cssClass: 'status--initial',
-            tooltip: 'Device is initializing',
-        },
-        [DeviceStatus.Error]: {
-            icon: 'error',
-            label: 'Error',
-            cssClass: 'status--error',
-            tooltip: 'Device encountered an error',
-        },
-        [DeviceStatus.Unreachable]: {
-            icon: 'cloud_off',
-            label: 'Unreachable',
-            cssClass: 'status--unreachable',
-            tooltip: 'Device is not reachable',
-        },
-    };
 
     @ViewChild(MatPaginator) public paginator: MatPaginator;
 
@@ -139,14 +106,7 @@ export class DevicesListComponent implements OnInit, AfterViewInit {
     }
 
     public getStatusConfig(status: string): StatusConfig {
-        return (
-            this.statusConfigs[status] || {
-                icon: 'help',
-                label: 'Unknown',
-                cssClass: 'status--unknown',
-                tooltip: 'Unknown status',
-            }
-        );
+        return getDeviceStatusConfig(status);
     }
 
     public async onAddClick(): Promise<void> {

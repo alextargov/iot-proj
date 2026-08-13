@@ -8,6 +8,8 @@ import { Subject, Observable, filter, map } from 'rxjs';
 export interface EventMap {
     'user:login': { userId: string; username: string };
     'user:logout': void;
+    'onLoginChange': Record<string, never>; // Legacy event for backward compatibility
+    'onDashboardChange': Record<string, never>; // Legacy event for backward compatibility
     'device:created': { deviceId: string };
     'device:updated': { deviceId: string };
     'device:deleted': { deviceId: string };

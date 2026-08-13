@@ -15,6 +15,7 @@ import { BlocklyModule } from '../blockly';
 import { LoginDialogComponent } from './login/login-dialog.component';
 import { SchemaNodeEditorComponent } from './schema-node-editor/schema-node-editor.component';
 import { CoreModule } from '../../core/core.module';
+import { DeviceStatusPipe, WidgetStatusPipe, StatusConfigPipe } from '../pipes/status.pipe';
 
 @NgModule({
     imports: [
@@ -35,6 +36,9 @@ import { CoreModule } from '../../core/core.module';
         ContentHeaderComponent,
         LoginDialogComponent,
         SchemaNodeEditorComponent,
+        DeviceStatusPipe,
+        WidgetStatusPipe,
+        StatusConfigPipe,
     ],
     exports: [
         CommonModule,
@@ -42,6 +46,9 @@ import { CoreModule } from '../../core/core.module';
         ContentHeaderComponent,
         LoginDialogComponent,
         SchemaNodeEditorComponent,
+        DeviceStatusPipe,
+        WidgetStatusPipe,
+        StatusConfigPipe,
     ],
 })
 export class ComponentsModule {}
