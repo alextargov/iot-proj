@@ -105,6 +105,22 @@ func NewValidNullableBool(boolean bool) sql.NullBool {
 	}
 }
 
+// NewNullableTime returns a new sql.NullTime based on the given time pointer
+func NewNullableTime(t *time.Time) sql.NullTime {
+	if t != nil {
+		return sql.NullTime{Time: *t, Valid: true}
+	}
+	return sql.NullTime{}
+}
+
+// TimePtrFromNullableTime returns a time pointer based on the given sql.NullTime
+func TimePtrFromNullableTime(t sql.NullTime) *time.Time {
+	if t.Valid {
+		return &t.Time
+	}
+	return nil
+}
+
 // StringPtrFromNullableString returns a string pointer based on the given sql.NullString
 func StringPtrFromNullableString(sqlString sql.NullString) *string {
 	if sqlString.Valid {

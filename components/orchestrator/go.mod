@@ -26,6 +26,7 @@ require (
 	github.com/vektah/gqlparser/v2 v2.5.30
 	github.com/vrischmann/envconfig v1.4.1
 	golang.org/x/crypto v0.39.0
+	golang.org/x/time v0.12.0
 	k8s.io/apimachinery v0.33.2
 	sigs.k8s.io/controller-runtime v0.21.0
 )
@@ -82,7 +83,6 @@ require (
 	golang.org/x/sys v0.33.0 // indirect
 	golang.org/x/term v0.32.0 // indirect
 	golang.org/x/text v0.26.0 // indirect
-	golang.org/x/time v0.12.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.5.0 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect

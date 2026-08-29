@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/alert"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/audit"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/auth"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/dashboard_layout"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/dashboard_widget"
@@ -15,6 +16,7 @@ import (
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/device"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/host"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/metric"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/user"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/widget"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/k8s"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/model"
@@ -56,6 +58,8 @@ type RootResolver struct {
 	alert           *alert.Resolver
 	dashboardLayout *dashboard_layout.Resolver
 	dashboardWidget *dashboard_widget.Resolver
+	user            *user.Resolver
+	audit           *audit.Resolver
 	metricPubSub    *pubsub.MetricPubSub
 	deviceSvc       DeviceServiceWithToken
 }
@@ -116,6 +120,13 @@ func NewRootResolver(persistence persistence.Transactioner, notificationSMTPConf
 
 	deviceRes := device.NewResolver(persistence, deviceSvc, hostSvc, dataModelSvc, deviceConv, hostConv, dataModelConv)
 	widgetRes := widget.NewResolver(persistence, widgetSvc, widgetConv, scheduler, cronScheduler)
+	userRes := user.NewResolver()
+
+	// Audit domain
+	auditConv := audit.NewConverter()
+	auditRepo := audit.NewRepository(auditConv)
+	auditSvc := audit.NewService(auditRepo, uuidService, auditConv)
+	auditRes := audit.NewResolver(persistence, auditSvc, auditConv)
 
 	return &RootResolver{
 		persistence:     persistence,
@@ -126,6 +137,8 @@ func NewRootResolver(persistence persistence.Transactioner, notificationSMTPConf
 		alert:           alertRes,
 		dashboardLayout: dashboardLayoutRes,
 		dashboardWidget: dashboardWidgetRes,
+		user:            userRes,
+		audit:           auditRes,
 		metricPubSub:    metricPubSub,
 		deviceSvc:       deviceSvc,
 	}
@@ -148,6 +161,10 @@ func (r *RootResolver) Subscription() graphql.SubscriptionResolver {
 
 type queryResolver struct {
 	*RootResolver
+}
+
+func (r *queryResolver) Me(ctx context.Context) (*graphql.User, error) {
+	return r.user.Me(ctx)
 }
 
 type subscriptionResolver struct {
@@ -263,6 +280,14 @@ func (r *queryResolver) DashboardLayout(ctx context.Context, id string) (*graphq
 
 func (r *queryResolver) DefaultDashboardLayout(ctx context.Context) (*graphql.DashboardLayout, error) {
 	return r.dashboardLayout.DefaultDashboardLayout(ctx)
+}
+
+func (r *queryResolver) AuditLogs(ctx context.Context, first *int, after *string) (*graphql.AuditLogPage, error) {
+	return r.audit.AuditLogs(ctx, first, after)
+}
+
+func (r *queryResolver) AuditLogsForResource(ctx context.Context, resourceType string, resourceID string, first *int) ([]*graphql.AuditLog, error) {
+	return r.audit.AuditLogsForResource(ctx, resourceType, resourceID, first)
 }
 
 func (r *queryResolver) TestDeviceConnection(ctx context.Context, url string) (bool, error) {

@@ -12,12 +12,21 @@ import { DeviceDetailComponent } from './device-detail/device-detail.component';
 import { MonacoEditorModule } from 'ngx-monaco-editor-v2';
 import { ChartsModule } from '../../shared/components/charts/charts.module';
 
+// Device create sub-components
+import { DeviceMetadataFormComponent } from './device-create/components/device-metadata-form/device-metadata-form.component';
+import { DeviceAuthFormComponent } from './device-create/components/device-auth-form/device-auth-form.component';
+import { DeviceDatamodelFormComponent } from './device-create/components/device-datamodel-form/device-datamodel-form.component';
+
 @NgModule({
     declarations: [
         DeviceCreateComponent,
         DevicesListComponent,
         DeviceDeleteComponent,
         DeviceDetailComponent,
+        // Device create sub-components
+        DeviceMetadataFormComponent,
+        DeviceAuthFormComponent,
+        DeviceDatamodelFormComponent,
     ],
     exports: [],
     imports: [

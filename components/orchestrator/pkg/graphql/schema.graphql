@@ -69,6 +69,24 @@ enum DashboardWidgetType {
     TABLE
 }
 
+enum AuditAction {
+    CREATE
+    UPDATE
+    DELETE
+}
+
+enum AuditStatus {
+    SUCCESS
+    FAILURE
+}
+
+type User {
+    id: ID!
+    username: String!
+    createdAt: Timestamp
+    updatedAt: Timestamp
+}
+
 type BearerTokenCredentialData {
     token: String!
 }
@@ -277,6 +295,28 @@ type DashboardWidget {
     updatedAt: Timestamp
 }
 
+type AuditLog {
+    id: ID!
+    userId: ID!
+    username: String!
+    action: AuditAction!
+    resourceType: String!
+    resourceId: ID
+    resourceName: String
+    details: String
+    ipAddress: String
+    userAgent: String
+    status: AuditStatus!
+    errorMessage: String
+    createdAt: Timestamp
+}
+
+type AuditLogPage implements Pageable {
+    data: [AuditLog!]!
+    pageInfo: PageInfo!
+    totalCount: Int!
+}
+
 input DeviceMetricInput {
     deviceId: ID!
     metricName: String!
@@ -455,6 +495,7 @@ input WidgetPositionInput {
 }
 
 type Query {
+    me: User
     devices: [Device]!
     devicesPage(first: Int = 20, after: PageCursor): DevicePage!
     device(id: ID!): Device
@@ -475,6 +516,8 @@ type Query {
     dashboardLayouts: [DashboardLayout!]!
     dashboardLayout(id: ID!): DashboardLayout
     defaultDashboardLayout: DashboardLayout
+    auditLogs(first: Int = 50, after: PageCursor): AuditLogPage!
+    auditLogsForResource(resourceType: String!, resourceId: ID!, first: Int = 20): [AuditLog!]!
 }
 
 type Mutation {

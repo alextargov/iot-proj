@@ -14,12 +14,19 @@ import { BlocklyModule } from '../../shared/blockly';
 import { MatInputModule } from '@angular/material/input';
 import { WidgetDeleteComponent } from './widget-delete/widget-delete.component';
 
+// Widget create sub-components
+import { WidgetScheduleFormComponent } from './widget-create/components/widget-schedule-form/widget-schedule-form.component';
+import { WidgetTemplateSelectorComponent } from './widget-create/components/widget-template-selector/widget-template-selector.component';
+
 @NgModule({
     declarations: [
         WidgetsComponent,
         WidgetCreateComponent,
         WidgetDetailsComponent,
         WidgetDeleteComponent,
+        // Widget create sub-components
+        WidgetScheduleFormComponent,
+        WidgetTemplateSelectorComponent,
     ],
     exports: [
         WidgetsComponent,

@@ -1,0 +1,33 @@
+.metadata-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.url-section {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+
+  .url-field {
+    flex: 1;
+  }
+
+  button {
+    margin-top: 4px;
+  }
+}
+
+.endpoint-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.tags-section {
+  margin-top: 8px;
+}

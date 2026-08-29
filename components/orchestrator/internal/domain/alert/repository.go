@@ -23,10 +23,11 @@ const (
 )
 
 var (
-	ruleColumns         = []string{"id", "tenant_id", "device_id", "name", "description", "severity", "enabled", "cooldown_minutes", "last_triggered_at", "created_at", "updated_at"}
-	conditionColumns    = []string{"id", "alert_rule_id", "group_id", "metric_name", "operator", "threshold", "created_at"}
-	notificationColumns = []string{"id", "alert_rule_id", "type", "config", "created_at"}
-	eventColumns        = []string{"id", "alert_rule_id", "device_id", "tenant_id", "triggered_values", "status", "triggered_at", "resolved_at", "created_at"}
+	ruleColumns          = []string{"id", "tenant_id", "device_id", "name", "description", "severity", "enabled", "cooldown_minutes", "last_triggered_at", "created_at", "updated_at"}
+	ruleUpdatableColumns = []string{"name", "description", "severity", "enabled", "cooldown_minutes", "updated_at"}
+	conditionColumns     = []string{"id", "alert_rule_id", "group_id", "metric_name", "operator", "threshold", "created_at"}
+	notificationColumns  = []string{"id", "alert_rule_id", "type", "config", "created_at"}
+	eventColumns         = []string{"id", "alert_rule_id", "device_id", "tenant_id", "triggered_values", "status", "triggered_at", "resolved_at", "created_at"}
 )
 
 // RuleEntityConverter defines the interface for rule entity conversion
@@ -44,30 +45,61 @@ type RuleEntityConverter interface {
 }
 
 type repository struct {
-	ruleCreator  repo.Creator
-	ruleLister   repo.Lister
-	ruleGetter   repo.SingleGetter
-	ruleDeleter  repo.Deleter
+	// Rule operations using repo helpers
+	ruleCreator repo.Creator
+	ruleLister  repo.Lister
+	ruleGetter  repo.SingleGetter
+	ruleDeleter repo.Deleter
+	ruleUpdater repo.Updater
+
+	// Condition operations using repo helpers
+	conditionDeleter repo.Deleter
+	conditionLister  repo.ListerGlobal
+
+	// Notification operations using repo helpers
+	notificationDeleter repo.Deleter
+	notificationLister  repo.ListerGlobal
+
+	// Event operations using repo helpers
 	eventCreator repo.CreatorGlobal
-	conv         RuleEntityConverter
+	eventGetter  repo.SingleGetterGlobal
+	eventLister  repo.ListerGlobal
+
+	conv RuleEntityConverter
 }
 
 // NewRepository creates a new alert repository
 func NewRepository(converter RuleEntityConverter) *repository {
 	return &repository{
-		ruleCreator:  repo.NewCreator(ruleTableName, ruleColumns),
-		ruleLister:   repo.NewLister(ruleTableName, ruleColumns),
-		ruleGetter:   repo.NewSingleGetter(ruleTableName, ruleColumns),
-		ruleDeleter:  repo.NewDeleter(ruleTableName),
+		// Rules
+		ruleCreator: repo.NewCreator(ruleTableName, ruleColumns),
+		ruleLister:  repo.NewListerWithEmbeddedTenant(ruleTableName, tenantColumn, ruleColumns),
+		ruleGetter:  repo.NewSingleGetterWithEmbeddedTenant(ruleTableName, tenantColumn, ruleColumns),
+		ruleDeleter: repo.NewDeleter(ruleTableName),
+		ruleUpdater: repo.NewUpdater(ruleTableName, ruleUpdatableColumns, []string{"id"}),
+
+		// Conditions
+		conditionDeleter: repo.NewDeleter(conditionTableName),
+		conditionLister:  repo.NewListerGlobal(resource.AlertRule, conditionTableName, conditionColumns),
+
+		// Notifications
+		notificationDeleter: repo.NewDeleter(notificationTableName),
+		notificationLister:  repo.NewListerGlobal(resource.AlertRule, notificationTableName, notificationColumns),
+
+		// Events
 		eventCreator: repo.NewCreatorGlobal(resource.AlertEvent, eventTableName, eventColumns),
-		conv:         converter,
+		eventGetter:  repo.NewSingleGetterGlobal(resource.AlertEvent, eventTableName, eventColumns),
+		eventLister:  repo.NewListerGlobal(resource.AlertEvent, eventTableName, eventColumns),
+
+		conv: converter,
 	}
 }
+
+// ==================== Rule Operations ====================
 
 // CreateRule creates a new alert rule
 func (r *repository) CreateRule(ctx context.Context, rule model.AlertRule) error {
 	entity := r.conv.RuleToEntity(rule)
-
 	now := time.Now()
 	entity.CreatedAt = &now
 
@@ -87,23 +119,7 @@ func (r *repository) GetRuleByID(ctx context.Context, id string) (*model.AlertRu
 		return nil, err
 	}
 
-	rule := r.conv.RuleFromEntity(&entity)
-
-	// Load conditions
-	conditions, err := r.getConditionsForRule(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-	rule.Conditions = conditions
-
-	// Load notifications
-	notifications, err := r.getNotificationsForRule(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-	rule.Notifications = notifications
-
-	return rule, nil
+	return r.loadRuleRelations(ctx, &entity)
 }
 
 // GetRulesByDeviceID retrieves all alert rules for a device
@@ -118,60 +134,26 @@ func (r *repository) GetRulesByDeviceID(ctx context.Context, deviceID string) ([
 		return nil, err
 	}
 
-	rules := r.conv.MultipleRulesFromEntity(entities)
-
-	// Load conditions and notifications for each rule
-	for _, rule := range rules {
-		conditions, err := r.getConditionsForRule(ctx, rule.ID)
-		if err != nil {
-			return nil, err
-		}
-		rule.Conditions = conditions
-
-		notifications, err := r.getNotificationsForRule(ctx, rule.ID)
-		if err != nil {
-			return nil, err
-		}
-		rule.Notifications = notifications
-	}
-
-	return rules, nil
+	return r.loadMultipleRuleRelations(ctx, entities)
 }
 
 // GetEnabledRulesForDevice retrieves enabled alert rules for a device (used by evaluator)
 func (r *repository) GetEnabledRulesForDevice(ctx context.Context, deviceID string) ([]*model.AlertRule, error) {
-	persist, err := persistence.FromCtx(ctx)
+	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	stmt := fmt.Sprintf("SELECT %s FROM %s WHERE device_id = $1 AND enabled = true",
-		strings.Join(ruleColumns, ", "),
-		ruleTableName)
-
 	var entities RuleEntityCollection
-	if err := persist.SelectContext(ctx, &entities, stmt, deviceID); err != nil {
+	conditions := repo.Conditions{
+		repo.NewEqualCondition("device_id", deviceID),
+		repo.NewEqualCondition("enabled", true),
+	}
+	if err := r.ruleLister.List(ctx, resource.AlertRule, tnt, &entities, conditions...); err != nil {
 		return nil, err
 	}
 
-	rules := r.conv.MultipleRulesFromEntity(entities)
-
-	// Load conditions and notifications for each rule
-	for _, rule := range rules {
-		conditions, err := r.getConditionsForRule(ctx, rule.ID)
-		if err != nil {
-			return nil, err
-		}
-		rule.Conditions = conditions
-
-		notifications, err := r.getNotificationsForRule(ctx, rule.ID)
-		if err != nil {
-			return nil, err
-		}
-		rule.Notifications = notifications
-	}
-
-	return rules, nil
+	return r.loadMultipleRuleRelations(ctx, entities)
 }
 
 // GetRulesByTenant retrieves all alert rules for a tenant with pagination
@@ -181,22 +163,21 @@ func (r *repository) GetRulesByTenant(ctx context.Context, first *int, after *st
 		return nil, 0, err
 	}
 
-	persist, err := persistence.FromCtx(ctx)
+	// Count total using repo helper
+	totalCount, err := r.ruleLister.Count(ctx, resource.AlertRule, tnt)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	// Count total
-	countStmt := fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE tenant_id = $1", ruleTableName)
-	var totalCount int
-	if err := persist.GetContext(ctx, &totalCount, countStmt, tnt); err != nil {
-		return nil, 0, err
-	}
-
-	// Build query
+	// List with limit (pagination handled via raw SQL for cursor support)
 	limit := 20
 	if first != nil && *first > 0 {
 		limit = *first
+	}
+
+	persist, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return nil, 0, err
 	}
 
 	stmt := fmt.Sprintf("SELECT %s FROM %s WHERE tenant_id = $1 ORDER BY created_at DESC LIMIT $2",
@@ -208,21 +189,9 @@ func (r *repository) GetRulesByTenant(ctx context.Context, first *int, after *st
 		return nil, 0, err
 	}
 
-	rules := r.conv.MultipleRulesFromEntity(entities)
-
-	// Load conditions and notifications for each rule
-	for _, rule := range rules {
-		conditions, err := r.getConditionsForRule(ctx, rule.ID)
-		if err != nil {
-			return nil, 0, err
-		}
-		rule.Conditions = conditions
-
-		notifications, err := r.getNotificationsForRule(ctx, rule.ID)
-		if err != nil {
-			return nil, 0, err
-		}
-		rule.Notifications = notifications
+	rules, err := r.loadMultipleRuleRelations(ctx, entities)
+	if err != nil {
+		return nil, 0, err
 	}
 
 	return rules, totalCount, nil
@@ -230,31 +199,23 @@ func (r *repository) GetRulesByTenant(ctx context.Context, first *int, after *st
 
 // UpdateRule updates an alert rule
 func (r *repository) UpdateRule(ctx context.Context, rule model.AlertRule) error {
-	persist, err := persistence.FromCtx(ctx)
+	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return err
 	}
 
 	now := time.Now()
-	stmt := fmt.Sprintf(`UPDATE %s SET
-		name = $1,
-		description = $2,
-		severity = $3,
-		enabled = $4,
-		cooldown_minutes = $5,
-		updated_at = $6
-		WHERE id = $7`, ruleTableName)
+	entity := &RuleEntity{
+		ID:              rule.ID,
+		Name:            rule.Name,
+		Description:     repo.NewNullableString(rule.Description),
+		Severity:        string(rule.Severity),
+		Enabled:         rule.Enabled,
+		CooldownMinutes: rule.CooldownMinutes,
+		UpdatedAt:       repo.NewNullableTime(&now),
+	}
 
-	_, err = persist.ExecContext(ctx, stmt,
-		rule.Name,
-		rule.Description,
-		string(rule.Severity),
-		rule.Enabled,
-		rule.CooldownMinutes,
-		now,
-		rule.ID)
-
-	return err
+	return r.ruleUpdater.UpdateSingle(ctx, resource.AlertRule, tnt, entity)
 }
 
 // UpdateRuleLastTriggered updates the last_triggered_at timestamp
@@ -279,7 +240,9 @@ func (r *repository) DeleteRule(ctx context.Context, id string) error {
 	return r.ruleDeleter.DeleteOne(ctx, resource.AlertRule, tnt, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
-// CreateConditions creates conditions for a rule
+// ==================== Condition Operations ====================
+
+// CreateConditions creates conditions for a rule (batch insert)
 func (r *repository) CreateConditions(ctx context.Context, ruleID string, conditions []model.AlertConditionInput, uuidGen func() string) error {
 	if len(conditions) == 0 {
 		return nil
@@ -317,23 +280,24 @@ func (r *repository) CreateConditions(ctx context.Context, ruleID string, condit
 		strings.Join(conditionColumns, ", "),
 		strings.Join(values, ", "))
 
+	logger.C(ctx).Debugf("Batch inserting %d conditions for rule %s", len(conditions), ruleID)
 	_, err = persist.ExecContext(ctx, stmt, args...)
 	return err
 }
 
 // DeleteConditionsForRule deletes all conditions for a rule
 func (r *repository) DeleteConditionsForRule(ctx context.Context, ruleID string) error {
-	persist, err := persistence.FromCtx(ctx)
+	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return err
 	}
 
-	stmt := fmt.Sprintf("DELETE FROM %s WHERE alert_rule_id = $1", conditionTableName)
-	_, err = persist.ExecContext(ctx, stmt, ruleID)
-	return err
+	return r.conditionDeleter.DeleteMany(ctx, resource.AlertRule, tnt, repo.Conditions{repo.NewEqualCondition("alert_rule_id", ruleID)})
 }
 
-// CreateNotifications creates notifications for a rule
+// ==================== Notification Operations ====================
+
+// CreateNotifications creates notifications for a rule (batch insert)
 func (r *repository) CreateNotifications(ctx context.Context, ruleID string, notifications []model.AlertNotificationInput, uuidGen func() string) error {
 	if len(notifications) == 0 {
 		return nil
@@ -369,26 +333,26 @@ func (r *repository) CreateNotifications(ctx context.Context, ruleID string, not
 		strings.Join(notificationColumns, ", "),
 		strings.Join(values, ", "))
 
+	logger.C(ctx).Debugf("Batch inserting %d notifications for rule %s", len(notifications), ruleID)
 	_, err = persist.ExecContext(ctx, stmt, args...)
 	return err
 }
 
 // DeleteNotificationsForRule deletes all notifications for a rule
 func (r *repository) DeleteNotificationsForRule(ctx context.Context, ruleID string) error {
-	persist, err := persistence.FromCtx(ctx)
+	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return err
 	}
 
-	stmt := fmt.Sprintf("DELETE FROM %s WHERE alert_rule_id = $1", notificationTableName)
-	_, err = persist.ExecContext(ctx, stmt, ruleID)
-	return err
+	return r.notificationDeleter.DeleteMany(ctx, resource.AlertRule, tnt, repo.Conditions{repo.NewEqualCondition("alert_rule_id", ruleID)})
 }
+
+// ==================== Event Operations ====================
 
 // CreateEvent creates an alert event
 func (r *repository) CreateEvent(ctx context.Context, event model.AlertEvent) error {
 	entity := r.conv.EventToEntity(event)
-
 	now := time.Now()
 	entity.CreatedAt = &now
 
@@ -396,124 +360,34 @@ func (r *repository) CreateEvent(ctx context.Context, event model.AlertEvent) er
 	return r.eventCreator.Create(ctx, entity)
 }
 
-// GetEventsByRuleID retrieves events for a rule
+// GetEventByID retrieves an event by ID
+func (r *repository) GetEventByID(ctx context.Context, id string) (*model.AlertEvent, error) {
+	var entity EventEntity
+	if err := r.eventGetter.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entity); err != nil {
+		return nil, err
+	}
+
+	return r.conv.EventFromEntity(&entity), nil
+}
+
+// GetEventsByRuleID retrieves events for a rule with pagination
 func (r *repository) GetEventsByRuleID(ctx context.Context, ruleID string, first *int, after *string) ([]*model.AlertEvent, int, error) {
-	persist, err := persistence.FromCtx(ctx)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	// Count total
-	countStmt := fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE alert_rule_id = $1", eventTableName)
-	var totalCount int
-	if err := persist.GetContext(ctx, &totalCount, countStmt, ruleID); err != nil {
-		return nil, 0, err
-	}
-
-	// Build query
-	limit := 20
-	if first != nil && *first > 0 {
-		limit = *first
-	}
-
-	stmt := fmt.Sprintf("SELECT %s FROM %s WHERE alert_rule_id = $1 ORDER BY triggered_at DESC LIMIT $2",
-		strings.Join(eventColumns, ", "),
-		eventTableName)
-
-	var entities EventEntityCollection
-	if err := persist.SelectContext(ctx, &entities, stmt, ruleID, limit); err != nil {
-		return nil, 0, err
-	}
-
-	return r.conv.MultipleEventsFromEntity(entities), totalCount, nil
+	return r.getEventsPaginated(ctx, "alert_rule_id", ruleID, first)
 }
 
-// GetEventsByDeviceID retrieves events for a device
+// GetEventsByDeviceID retrieves events for a device with pagination
 func (r *repository) GetEventsByDeviceID(ctx context.Context, deviceID string, first *int, after *string) ([]*model.AlertEvent, int, error) {
-	persist, err := persistence.FromCtx(ctx)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	// Count total
-	countStmt := fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE device_id = $1", eventTableName)
-	var totalCount int
-	if err := persist.GetContext(ctx, &totalCount, countStmt, deviceID); err != nil {
-		return nil, 0, err
-	}
-
-	// Build query
-	limit := 20
-	if first != nil && *first > 0 {
-		limit = *first
-	}
-
-	stmt := fmt.Sprintf("SELECT %s FROM %s WHERE device_id = $1 ORDER BY triggered_at DESC LIMIT $2",
-		strings.Join(eventColumns, ", "),
-		eventTableName)
-
-	var entities EventEntityCollection
-	if err := persist.SelectContext(ctx, &entities, stmt, deviceID, limit); err != nil {
-		return nil, 0, err
-	}
-
-	return r.conv.MultipleEventsFromEntity(entities), totalCount, nil
+	return r.getEventsPaginated(ctx, "device_id", deviceID, first)
 }
 
-// GetEventsByTenant retrieves events for a tenant
+// GetEventsByTenant retrieves events for a tenant with pagination
 func (r *repository) GetEventsByTenant(ctx context.Context, first *int, after *string) ([]*model.AlertEvent, int, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	persist, err := persistence.FromCtx(ctx)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	// Count total
-	countStmt := fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE tenant_id = $1", eventTableName)
-	var totalCount int
-	if err := persist.GetContext(ctx, &totalCount, countStmt, tnt); err != nil {
-		return nil, 0, err
-	}
-
-	// Build query
-	limit := 20
-	if first != nil && *first > 0 {
-		limit = *first
-	}
-
-	stmt := fmt.Sprintf("SELECT %s FROM %s WHERE tenant_id = $1 ORDER BY triggered_at DESC LIMIT $2",
-		strings.Join(eventColumns, ", "),
-		eventTableName)
-
-	var entities EventEntityCollection
-	if err := persist.SelectContext(ctx, &entities, stmt, tnt, limit); err != nil {
-		return nil, 0, err
-	}
-
-	return r.conv.MultipleEventsFromEntity(entities), totalCount, nil
-}
-
-// GetEventByID retrieves an event by ID
-func (r *repository) GetEventByID(ctx context.Context, id string) (*model.AlertEvent, error) {
-	persist, err := persistence.FromCtx(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	stmt := fmt.Sprintf("SELECT %s FROM %s WHERE id = $1",
-		strings.Join(eventColumns, ", "),
-		eventTableName)
-
-	var entity EventEntity
-	if err := persist.GetContext(ctx, &entity, stmt, id); err != nil {
-		return nil, err
-	}
-
-	return r.conv.EventFromEntity(&entity), nil
+	return r.getEventsPaginated(ctx, tenantColumn, tnt, first)
 }
 
 // UpdateEventStatus updates the status of an event
@@ -538,40 +412,97 @@ func (r *repository) UpdateEventStatus(ctx context.Context, id string, status mo
 	return err
 }
 
-// Helper functions
+// ==================== Helper Functions ====================
 
-func (r *repository) getConditionsForRule(ctx context.Context, ruleID string) ([]model.AlertConditionGroup, error) {
-	persist, err := persistence.FromCtx(ctx)
+// loadRuleRelations loads conditions and notifications for a single rule
+func (r *repository) loadRuleRelations(ctx context.Context, entity *RuleEntity) (*model.AlertRule, error) {
+	rule := r.conv.RuleFromEntity(entity)
+
+	conditions, err := r.getConditionsForRule(ctx, rule.ID)
 	if err != nil {
 		return nil, err
 	}
+	rule.Conditions = conditions
 
-	stmt := fmt.Sprintf("SELECT %s FROM %s WHERE alert_rule_id = $1 ORDER BY group_id, id",
-		strings.Join(conditionColumns, ", "),
-		conditionTableName)
+	notifications, err := r.getNotificationsForRule(ctx, rule.ID)
+	if err != nil {
+		return nil, err
+	}
+	rule.Notifications = notifications
 
+	return rule, nil
+}
+
+// loadMultipleRuleRelations loads conditions and notifications for multiple rules
+func (r *repository) loadMultipleRuleRelations(ctx context.Context, entities RuleEntityCollection) ([]*model.AlertRule, error) {
+	rules := r.conv.MultipleRulesFromEntity(entities)
+
+	for _, rule := range rules {
+		conditions, err := r.getConditionsForRule(ctx, rule.ID)
+		if err != nil {
+			return nil, err
+		}
+		rule.Conditions = conditions
+
+		notifications, err := r.getNotificationsForRule(ctx, rule.ID)
+		if err != nil {
+			return nil, err
+		}
+		rule.Notifications = notifications
+	}
+
+	return rules, nil
+}
+
+// getConditionsForRule retrieves conditions using repo helper
+func (r *repository) getConditionsForRule(ctx context.Context, ruleID string) ([]model.AlertConditionGroup, error) {
 	var entities ConditionEntityCollection
-	if err := persist.SelectContext(ctx, &entities, stmt, ruleID); err != nil {
+	if err := r.conditionLister.ListGlobal(ctx, &entities, repo.NewEqualCondition("alert_rule_id", ruleID)); err != nil {
 		return nil, err
 	}
 
 	return r.conv.GroupConditionsFromEntities(entities), nil
 }
 
+// getNotificationsForRule retrieves notifications using repo helper
 func (r *repository) getNotificationsForRule(ctx context.Context, ruleID string) ([]model.AlertNotification, error) {
-	persist, err := persistence.FromCtx(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	stmt := fmt.Sprintf("SELECT %s FROM %s WHERE alert_rule_id = $1",
-		strings.Join(notificationColumns, ", "),
-		notificationTableName)
-
 	var entities NotificationEntityCollection
-	if err := persist.SelectContext(ctx, &entities, stmt, ruleID); err != nil {
+	if err := r.notificationLister.ListGlobal(ctx, &entities, repo.NewEqualCondition("alert_rule_id", ruleID)); err != nil {
 		return nil, err
 	}
 
 	return r.conv.MultipleNotificationsFromEntity(entities), nil
+}
+
+// getEventsPaginated is a helper for paginated event queries
+func (r *repository) getEventsPaginated(ctx context.Context, filterColumn, filterValue string, first *int) ([]*model.AlertEvent, int, error) {
+	persist, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Count total
+	countStmt := fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE %s = $1", eventTableName, filterColumn)
+	var totalCount int
+	if err := persist.GetContext(ctx, &totalCount, countStmt, filterValue); err != nil {
+		return nil, 0, err
+	}
+
+	// Build query with limit
+	limit := 20
+	if first != nil && *first > 0 {
+		limit = *first
+	}
+
+	stmt := fmt.Sprintf("SELECT %s FROM %s WHERE %s = $1 ORDER BY triggered_at DESC LIMIT $2",
+		strings.Join(eventColumns, ", "),
+		eventTableName,
+		filterColumn)
+
+	var entities EventEntityCollection
+	if err := persist.SelectContext(ctx, &entities, stmt, filterValue, limit); err != nil {
+		return nil, 0, err
+	}
+
+	return r.conv.MultipleEventsFromEntity(entities), totalCount, nil
 }

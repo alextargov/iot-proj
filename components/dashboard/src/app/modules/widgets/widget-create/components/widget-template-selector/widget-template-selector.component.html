@@ -1,0 +1,20 @@
+<div class="template-selector">
+  <div class="category" *ngFor="let category of templateCategories">
+    <h4 class="category-title">
+      <mat-icon>{{ category.icon }}</mat-icon>
+      {{ category.name }}
+    </h4>
+
+    <div class="template-grid">
+      <div class="template-card"
+           *ngFor="let template of getTemplatesByCategory(category.id)"
+           [class.selected]="isSelected(template)"
+           (click)="selectTemplate(template)">
+        <mat-icon class="template-icon">{{ template.icon }}</mat-icon>
+        <span class="template-name">{{ template.name }}</span>
+        <span class="template-description">{{ template.description }}</span>
+        <mat-icon class="check-icon" *ngIf="isSelected(template)">check_circle</mat-icon>
+      </div>
+    </div>
+  </div>
+</div>

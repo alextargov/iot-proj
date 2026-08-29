@@ -1,0 +1,51 @@
+.schedule-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.schedule-options {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-left: 24px;
+}
+
+.full-width {
+  width: 100%;
+}
+
+mat-option {
+  .preset-label {
+    font-weight: 500;
+  }
+
+  .preset-description {
+    display: block;
+    font-size: 0.85em;
+    color: #666;
+  }
+}
+
+.schedule-preview {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: #e3f2fd;
+  border-radius: 4px;
+  color: #1565c0;
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+
+  code {
+    background: rgba(0, 0, 0, 0.1);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: monospace;
+  }
+}

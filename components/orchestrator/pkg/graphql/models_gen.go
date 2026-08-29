@@ -102,6 +102,32 @@ func (AlertRulePage) IsPageable()                 {}
 func (this AlertRulePage) GetPageInfo() *PageInfo { return this.PageInfo }
 func (this AlertRulePage) GetTotalCount() int     { return this.TotalCount }
 
+type AuditLog struct {
+	ID           string      `json:"id"`
+	UserID       string      `json:"userId"`
+	Username     string      `json:"username"`
+	Action       AuditAction `json:"action"`
+	ResourceType string      `json:"resourceType"`
+	ResourceID   *string     `json:"resourceId,omitempty"`
+	ResourceName *string     `json:"resourceName,omitempty"`
+	Details      *string     `json:"details,omitempty"`
+	IPAddress    *string     `json:"ipAddress,omitempty"`
+	UserAgent    *string     `json:"userAgent,omitempty"`
+	Status       AuditStatus `json:"status"`
+	ErrorMessage *string     `json:"errorMessage,omitempty"`
+	CreatedAt    *Timestamp  `json:"createdAt,omitempty"`
+}
+
+type AuditLogPage struct {
+	Data       []*AuditLog `json:"data"`
+	PageInfo   *PageInfo   `json:"pageInfo"`
+	TotalCount int         `json:"totalCount"`
+}
+
+func (AuditLogPage) IsPageable()                 {}
+func (this AuditLogPage) GetPageInfo() *PageInfo { return this.PageInfo }
+func (this AuditLogPage) GetTotalCount() int     { return this.TotalCount }
+
 type Auth struct {
 	CredentialForDevice  CredentialData `json:"credentialForDevice,omitempty"`
 	CredentialForService *string        `json:"credentialForService,omitempty"`
@@ -376,6 +402,13 @@ type UpdateDeviceInput struct {
 	Auth        *AuthInput    `json:"auth,omitempty"`
 	DataModel   *string       `json:"dataModel,omitempty"`
 	Tags        []string      `json:"tags,omitempty"`
+}
+
+type User struct {
+	ID        string     `json:"id"`
+	Username  string     `json:"username"`
+	CreatedAt *Timestamp `json:"createdAt,omitempty"`
+	UpdatedAt *Timestamp `json:"updatedAt,omitempty"`
 }
 
 type Widget struct {
@@ -660,6 +693,118 @@ func (e *AlertSeverity) UnmarshalJSON(b []byte) error {
 }
 
 func (e AlertSeverity) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type AuditAction string
+
+const (
+	AuditActionCreate AuditAction = "CREATE"
+	AuditActionUpdate AuditAction = "UPDATE"
+	AuditActionDelete AuditAction = "DELETE"
+)
+
+var AllAuditAction = []AuditAction{
+	AuditActionCreate,
+	AuditActionUpdate,
+	AuditActionDelete,
+}
+
+func (e AuditAction) IsValid() bool {
+	switch e {
+	case AuditActionCreate, AuditActionUpdate, AuditActionDelete:
+		return true
+	}
+	return false
+}
+
+func (e AuditAction) String() string {
+	return string(e)
+}
+
+func (e *AuditAction) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = AuditAction(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid AuditAction", str)
+	}
+	return nil
+}
+
+func (e AuditAction) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *AuditAction) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e AuditAction) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type AuditStatus string
+
+const (
+	AuditStatusSuccess AuditStatus = "SUCCESS"
+	AuditStatusFailure AuditStatus = "FAILURE"
+)
+
+var AllAuditStatus = []AuditStatus{
+	AuditStatusSuccess,
+	AuditStatusFailure,
+}
+
+func (e AuditStatus) IsValid() bool {
+	switch e {
+	case AuditStatusSuccess, AuditStatusFailure:
+		return true
+	}
+	return false
+}
+
+func (e AuditStatus) String() string {
+	return string(e)
+}
+
+func (e *AuditStatus) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = AuditStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid AuditStatus", str)
+	}
+	return nil
+}
+
+func (e AuditStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *AuditStatus) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e AuditStatus) MarshalJSON() ([]byte, error) {
 	var buf bytes.Buffer
 	e.MarshalGQL(&buf)
 	return buf.Bytes(), nil

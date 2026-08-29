@@ -1,0 +1,42 @@
+<div class="datamodel-form">
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Data Model</mat-label>
+    <input matInput
+           [formControl]="$any(form.get('dataModel'))"
+           [matAutocomplete]="auto"
+           placeholder="Select or search data model">
+    <mat-autocomplete #auto="matAutocomplete"
+                      [displayWith]="displayDataModel"
+                      (optionSelected)="onDataModelSelected($event)">
+      <mat-option *ngFor="let dataModel of filteredDataModels | async" [value]="dataModel">
+        <span class="datamodel-name">{{ dataModel.name }}</span>
+        <span class="datamodel-description">{{ dataModel.description }}</span>
+      </mat-option>
+    </mat-autocomplete>
+  </mat-form-field>
+
+  <div class="schema-preview" *ngIf="form.get('dataModel')?.value">
+    <div class="preview-header">
+      <h4>Schema Preview</h4>
+      <mat-button-toggle-group [(value)]="mode">
+        <mat-button-toggle value="code" (click)="onCodeToggleClick()">
+          <mat-icon>code</mat-icon> Code
+        </mat-button-toggle>
+        <mat-button-toggle value="ui" (click)="onUiToggleClick()">
+          <mat-icon>account_tree</mat-icon> UI
+        </mat-button-toggle>
+      </mat-button-toggle-group>
+    </div>
+
+    <div class="preview-content">
+      <ngx-monaco-editor *ngIf="mode === 'code'"
+                         [options]="editorOptions"
+                         [ngModel]="form.get('dataModel')?.value?.schema | json">
+      </ngx-monaco-editor>
+
+      <app-schema-node-editor *ngIf="mode === 'ui'"
+                              [field]="schema">
+      </app-schema-node-editor>
+    </div>
+  </div>
+</div>

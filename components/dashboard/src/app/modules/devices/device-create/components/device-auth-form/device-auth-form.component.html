@@ -1,0 +1,94 @@
+<div class="auth-form">
+  <h3>Communication Direction</h3>
+
+  <div class="communication-options">
+    <mat-checkbox [formControl]="$any(form.get('communicationToDevice'))" (click)="onEnableConnectionClick($event, 'toDevice')">
+      Server → Device (send commands to device)
+    </mat-checkbox>
+
+    <mat-checkbox [formControl]="$any(form.get('communicationToServer'))" (click)="onEnableConnectionClick($event, 'toServer')">
+      Device → Server (device sends metrics)
+    </mat-checkbox>
+  </div>
+
+  <!-- Server → Device Auth Configuration -->
+  <div class="auth-section" *ngIf="form.get('communicationToDevice')?.value">
+    <h4>Device Authentication</h4>
+    <p class="hint">Configure how the server authenticates with the device</p>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Authorization Policy</mat-label>
+      <mat-select [(value)]="selectedAuthorizationPolicy">
+        <mat-option *ngFor="let policy of authorizationPolicies" [value]="policy">
+          {{ policy }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <!-- Basic Auth -->
+    <div class="credential-fields" *ngIf="selectedAuthorizationPolicy === authPolicy.Basic">
+      <mat-form-field appearance="outline">
+        <mat-label>Username</mat-label>
+        <input matInput [formControl]="$any(form.get('authCredentialsBasicUsername'))">
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Password</mat-label>
+        <input matInput type="password" [formControl]="$any(form.get('authCredentialsBasicPassword'))">
+      </mat-form-field>
+    </div>
+
+    <!-- OAuth -->
+    <div class="credential-fields" *ngIf="selectedAuthorizationPolicy === authPolicy.OAuth">
+      <mat-form-field appearance="outline">
+        <mat-label>Client ID</mat-label>
+        <input matInput [formControl]="$any(form.get('authCredentialsOAuthClientID'))">
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Client Secret</mat-label>
+        <input matInput type="password" [formControl]="$any(form.get('authCredentialsOAuthClientSecret'))">
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>OAuth URL</mat-label>
+        <input matInput [formControl]="$any(form.get('authCredentialsOAuthURL'))">
+      </mat-form-field>
+    </div>
+
+    <!-- Certificate OAuth -->
+    <div class="credential-fields" *ngIf="selectedAuthorizationPolicy === authPolicy.Certificate">
+      <mat-form-field appearance="outline">
+        <mat-label>Client ID</mat-label>
+        <input matInput [formControl]="$any(form.get('authCredentialsCertificateClientID'))">
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Certificate URL</mat-label>
+        <input matInput [formControl]="$any(form.get('authCredentialsCertificateClientSecret'))">
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Certificate (PEM)</mat-label>
+        <textarea matInput [formControl]="$any(form.get('authCredentialsCertificateClientCert'))" rows="4"></textarea>
+      </mat-form-field>
+    </div>
+
+    <!-- Bearer Token -->
+    <div class="credential-fields" *ngIf="selectedAuthorizationPolicy === authPolicy.Bearer">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Bearer Token</mat-label>
+        <input matInput [formControl]="$any(form.get('authCredentialsBearerToken'))">
+      </mat-form-field>
+    </div>
+  </div>
+
+  <!-- Device → Server Token -->
+  <div class="auth-section" *ngIf="form.get('communicationToServer')?.value">
+    <h4>Device Communication Token</h4>
+    <p class="hint">Token will be generated after device creation</p>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Generated Token</mat-label>
+      <input matInput #tokenInput readonly placeholder="Token will appear here after device creation">
+      <button mat-icon-button matSuffix (click)="copyToken()">
+        <mat-icon>content_copy</mat-icon>
+      </button>
+    </mat-form-field>
+  </div>
+</div>

@@ -1,0 +1,28 @@
+<div class="schedule-form">
+  <mat-checkbox [(ngModel)]="enableScheduling" (change)="onEnableChange()">
+    Enable Scheduled Execution
+  </mat-checkbox>
+
+  <div class="schedule-options" *ngIf="enableScheduling">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Schedule Preset</mat-label>
+      <mat-select [(value)]="selectedPreset" (selectionChange)="onPresetChange($event.value)">
+        <mat-option *ngFor="let preset of schedulePresets" [value]="preset">
+          <span class="preset-label">{{ preset.label }}</span>
+          <span class="preset-description" *ngIf="preset.description">{{ preset.description }}</span>
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width" *ngIf="selectedPreset?.value === 'custom'">
+      <mat-label>Custom Cron Expression</mat-label>
+      <input matInput [(ngModel)]="customSchedule" (ngModelChange)="onCustomScheduleChange()" placeholder="*/5 * * * *">
+      <mat-hint>Format: minute hour day-of-month month day-of-week</mat-hint>
+    </mat-form-field>
+
+    <div class="schedule-preview" *ngIf="getScheduleValue()">
+      <mat-icon>schedule</mat-icon>
+      <span>Schedule: <code>{{ getScheduleValue() }}</code></span>
+    </div>
+  </div>
+</div>

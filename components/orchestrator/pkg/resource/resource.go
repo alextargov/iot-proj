@@ -16,6 +16,7 @@ const (
 	AlertEvent       Type = "alertEvent"
 	DashboardLayout  Type = "dashboardLayout"
 	DashboardWidget  Type = "dashboardWidget"
+	AuditLog         Type = "auditLog"
 	// Schema type represents schema resource.
 	Schema Type = "schemaMigration"
 
