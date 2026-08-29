@@ -32,8 +32,8 @@ import (
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/graphql"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/logger"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/persistence"
+	coderws "github.com/coder/websocket"
 	"github.com/gorilla/mux"
-	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
 	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
@@ -205,12 +205,12 @@ func initAPIHandler(ctx context.Context, cfg config, db persistence.Transactione
 
 	srv.AddTransport(&transport.Websocket{
 		KeepAlivePingInterval: 10 * time.Second,
-		Upgrader: websocket.Upgrader{
-			CheckOrigin: func(r *http.Request) bool {
-				return true
+		Implementation: transport.CoderWebsocketImplementation{
+			AcceptOptions: coderws.AcceptOptions{
+				// Preserve the previous CheckOrigin: return true behaviour,
+				// which allowed connections from any origin.
+				InsecureSkipVerify: true,
 			},
-			ReadBufferSize:  1024,
-			WriteBufferSize: 1024,
 		},
 	})
 
