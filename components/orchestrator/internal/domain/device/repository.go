@@ -13,11 +13,11 @@ import (
 
 const (
 	tableName    string = `public.devices`
-	tenantColumn        = `user_id`
+	tenantColumn        = `tenant_id`
 )
 
 var (
-	updatableTableColumns = []string{"name", "description", "user_id", "status", "data_model_id", "auth", "tags", "communication_token", "created_at", "updated_at"}
+	updatableTableColumns = []string{"name", "description", "tenant_id", "status", "data_model_id", "auth", "tags", "communication_token", "created_at", "updated_at"}
 	idTableColumns        = []string{"id"}
 	tableColumns          = append(idTableColumns, updatableTableColumns...)
 )

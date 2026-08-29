@@ -25,6 +25,9 @@ ENV DB_PORT=5432
 ENV DB_USER=postgres
 ENV DB_PASSWORD=postgres
 ENV DB_NAME=postgres
+# In-container locations where the files below are copied
+ENV MIGRATIONS_DIR=/migrations
+ENV SEED_FILE=/seeds/seed.sql
 
 # Working directory
 WORKDIR /migrate

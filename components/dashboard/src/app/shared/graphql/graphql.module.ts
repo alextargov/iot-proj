@@ -1,6 +1,5 @@
 import { provideHttpClient, withInterceptorsFromDi, HttpHeaders } from '@angular/common/http';
 import { NgModule, inject, NgZone } from '@angular/core';
-import { BrowserModule } from '@angular/platform-browser';
 import {
     ApolloLink,
     InMemoryCache,
@@ -112,7 +111,6 @@ export function createDefaultApollo(
 }
 
 @NgModule({
-    imports: [BrowserModule],
     providers: [
         provideHttpClient(withInterceptorsFromDi()),
         provideApollo(() => {

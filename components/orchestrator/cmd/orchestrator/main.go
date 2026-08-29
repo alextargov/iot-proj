@@ -62,7 +62,7 @@ type config struct {
 	Database persistence.DatabaseConfig
 	Config   auth.Config
 
-	ApplicationsNamespace string
+	ApplicationsNamespace string `envconfig:"default=default,APP_APPLICATIONS_NAMESPACE"`
 
 	Log logger.Config
 }

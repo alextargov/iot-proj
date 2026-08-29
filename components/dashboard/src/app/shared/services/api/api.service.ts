@@ -6,7 +6,7 @@ import { catchError } from 'rxjs/operators';
 
 import { AppConfigService } from '../app-config/app-config.service';
 
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class ApiService {
     constructor(
         private readonly appConfigService: AppConfigService,

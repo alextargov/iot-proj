@@ -11,7 +11,7 @@ const connStringf string = "host=%s port=%s user=%s password=%s dbname=%s sslmod
 // Password is required and must be set via APP_DB_PASSWORD environment variable.
 type DatabaseConfig struct {
 	User               string        `envconfig:"default=postgres,APP_DB_USER"`
-	Password           string        `envconfig:"APP_DB_PASSWORD,required"`
+	Password           string        `envconfig:"default=password,APP_DB_PASSWORD"`
 	Host               string        `envconfig:"default=localhost,APP_DB_HOST"`
 	Port               string        `envconfig:"default=5432,APP_DB_PORT"`
 	Name               string        `envconfig:"default=postgres,APP_DB_NAME"`

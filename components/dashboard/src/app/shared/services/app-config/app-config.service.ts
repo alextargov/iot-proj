@@ -13,7 +13,7 @@ const defaultConfig: IAppConfigInterface = {
     APP_REGISTER_URL: '/register',
 };
 
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class AppConfigService {
     private readonly config: IAppConfigInterface;
 

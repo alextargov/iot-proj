@@ -104,7 +104,7 @@ func (s *WidgetScheduler) AddJob(ctx context.Context, w *model.Widget) error {
 	}
 
 	s.jobs[w.ID] = entryID
-	logger.C(ctx).Info("Added cron job for widget %s with schedule: %s", w.ID, *w.Schedule)
+	logger.C(ctx).Infof("Added cron job for widget %s with schedule: %s", w.ID, *w.Schedule)
 	return nil
 }
 

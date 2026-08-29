@@ -2,14 +2,19 @@
 
 set -e
 
+# Directory of this script, so default paths resolve whether run locally
+# (files live next to this script) or in the container (where the Dockerfile
+# copies them to /migrations and /seeds).
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
+
 # Variables (replace these with actual values or pass them via environment variables)
 DB_HOST=${DB_HOST:-"localhost"}
 DB_PORT=${DB_PORT:-5432}
 DB_USER=${DB_USER:-"postgres"}
 DB_PASSWORD=${DB_PASSWORD:-"password"}
-DB_NAME=${DB_NAME:-"mydatabase"}
-MIGRATIONS_DIR=${MIGRATIONS_DIR:-"/migrations"}
-SEED_FILE=${SEED_FILE:-"/seeds/seed.sql"}
+DB_NAME=${DB_NAME:-"postgres"}
+MIGRATIONS_DIR=${MIGRATIONS_DIR:-"$SCRIPT_DIR/migrations"}
+SEED_FILE=${SEED_FILE:-"$SCRIPT_DIR/seeds/seed.sql"}
 
 # Construct the PostgreSQL URL
 DB_URL="postgres://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=disable"

@@ -1,7 +1,7 @@
 import { ToastrService as ToasterSvc } from 'ngx-toastr';
 import { Injectable } from '@angular/core';
 
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class ToastrService {
     constructor(private toastr: ToasterSvc) {}
 

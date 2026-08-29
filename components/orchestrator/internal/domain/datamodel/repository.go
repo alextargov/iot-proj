@@ -13,11 +13,11 @@ import (
 const (
 	tableName        string = `public.data_models`
 	versionTableName string = `public.data_model_versions`
-	tenantColumn     string = `user_id`
+	tenantColumn     string = `tenant_id`
 )
 
 var (
-	updatableTableColumns = []string{"name", "description", "user_id", "schema", "current_version", "created_at", "updated_at"}
+	updatableTableColumns = []string{"name", "description", "tenant_id", "schema", "current_version", "created_at", "updated_at"}
 	idTableColumns        = []string{"id"}
 	tableColumns          = append(idTableColumns, updatableTableColumns...)
 

@@ -4,15 +4,16 @@
 -- =====================
 -- Users
 -- =====================
-INSERT INTO users (id, username, password, created_at, updated_at) VALUES
-('f7e39a3d-2229-49e0-86aa-b359730f45ec', 'alex', '$2a$10$wXOGXaMPaDwxxgjqIJjRhuxXGIIDjni1vVfeAx7aQWYakujmgkytG', now(), now());
-
-
 BEGIN;
+INSERT INTO users (id, username, password, created_at, updated_at) VALUES
+('f7e39a3d-2229-49e0-86aa-b359730f45ec', 'alex', '$2a$10$wXOGXaMPaDwxxgjqIJjRhuxXGIIDjni1vVfeAx7aQWYakujmgkytG', now(), now())
+ON CONFLICT (id) DO NOTHING;
+
+
 -- =====================
 -- Data Models
 -- =====================
-INSERT INTO data_models (id, user_id, name, description, schema, created_at, updated_at) VALUES
+INSERT INTO data_models (id, tenant_id, name, description, schema, created_at, updated_at) VALUES
 ('d1a2b3c4-d5e6-4789-abcd-ef0123456789', 'f7e39a3d-2229-49e0-86aa-b359730f45ec', 'Temperature Sensor', 'Schema for temperature sensors',
  '{"type": "object", "properties": {"temperature": {"type": "number", "unit": "celsius"}, "humidity": {"type": "number", "unit": "percent"}}}', now(), now()),
 ('d2b3c4d5-e6f7-4890-bcde-f01234567890', 'f7e39a3d-2229-49e0-86aa-b359730f45ec', 'Smart Light', 'Schema for smart light devices',
@@ -22,12 +23,13 @@ INSERT INTO data_models (id, user_id, name, description, schema, created_at, upd
 ('d4d5e6f7-a8b9-4012-def0-123456789012', 'f7e39a3d-2229-49e0-86aa-b359730f45ec', 'Motion Sensor', 'Schema for motion detection sensors',
  '{"type": "object", "properties": {"motion_detected": {"type": "boolean"}, "last_motion_at": {"type": "string", "format": "date-time"}}}', now(), now()),
 ('d5e6f7a8-b9c0-4123-ef01-234567890123', 'f7e39a3d-2229-49e0-86aa-b359730f45ec', 'Door/Window Sensor', 'Schema for contact sensors',
- '{"type": "object", "properties": {"is_open": {"type": "boolean"}, "battery_level": {"type": "integer", "min": 0, "max": 100}}}', now(), now());
+ '{"type": "object", "properties": {"is_open": {"type": "boolean"}, "battery_level": {"type": "integer", "min": 0, "max": 100}}}', now(), now())
+ON CONFLICT (id) DO NOTHING;
 
 -- =====================
 -- Devices
 -- =====================
-INSERT INTO devices (id, user_id, name, description, status, data_model_id, tags, auth, created_at, updated_at) VALUES
+INSERT INTO devices (id, tenant_id, name, description, status, data_model_id, tags, auth, created_at, updated_at) VALUES
 ('1d254c4e-8f52-4889-b9fc-0ea97259a2df', 'f7e39a3d-2229-49e0-86aa-b359730f45ec', 'Living Room Thermostat', 'Main living room temperature sensor', 'ACTIVE',
  'd1a2b3c4-d5e6-4789-abcd-ef0123456789', '["living-room", "temperature", "climate"]',
  '{"credential": {"basic": {"username": "sensor1", "password": "secret123"}}}', now(), now()),
@@ -54,7 +56,8 @@ INSERT INTO devices (id, user_id, name, description, status, data_model_id, tags
  '{}', now(), now()),
 ('9f0dc4c6-a7da-4007-d7b4-8fcb50d7c0f7', 'f7e39a3d-2229-49e0-86aa-b359730f45ec', 'Solar Panel Monitor', 'Solar energy production monitor', 'ACTIVE',
  'd3c4d5e6-f7a8-4901-cdef-012345678901', '["solar", "energy", "renewable"]',
- '{}', now(), now());
+ '{}', now(), now())
+ON CONFLICT (id) DO NOTHING;
 
 -- =====================
 -- Hosts (Device endpoints)
@@ -68,12 +71,13 @@ INSERT INTO hosts (id, device_id, url, turn_on_endpoint, turn_off_endpoint) VALU
 ('a6f7a8b9-c0d1-4234-f012-345678901234', '6c7a9193-d4a7-4dd4-a4e1-5cfe27a4f7c4', 'http://192.168.1.105:8080', NULL, NULL),
 ('a7a8b9c0-d1e2-4345-0123-456789012345', '7d8ba2a4-e5b8-4ee5-b5f2-6daf38b5a8d5', 'http://192.168.1.106:8080', NULL, NULL),
 ('a8b9c0d1-e2f3-4456-1234-567890123456', '8e9cb3b5-f6c9-4ff6-c6a3-7eba49c6b9e6', 'http://192.168.1.107:8080', '/light/on', '/light/off'),
-('a9c0d1e2-f3a4-4567-2345-678901234567', '9f0dc4c6-a7da-4007-d7b4-8fcb50d7c0f7', 'http://192.168.1.108:8080', NULL, NULL);
+('a9c0d1e2-f3a4-4567-2345-678901234567', '9f0dc4c6-a7da-4007-d7b4-8fcb50d7c0f7', 'http://192.168.1.108:8080', NULL, NULL)
+ON CONFLICT (id) DO NOTHING;
 
 -- =====================
 -- Widgets (with schedules)
 -- =====================
-INSERT INTO widgets (id, user_id, name, description, status, schedule, last_executed_at, created_at, updated_at) VALUES
+INSERT INTO widgets (id, tenant_id, name, description, status, schedule, last_executed_at, created_at, updated_at) VALUES
 ('b1a2b3c4-d5e6-4789-abcd-ef0123456789', 'f7e39a3d-2229-49e0-86aa-b359730f45ec', 'Temperature Alert', 'Send alert when living room temp exceeds 30C', 'ACTIVE',
  '*/5 * * * *', now() - interval '5 minutes', now(), now()),
 ('b2b3c4d5-e6f7-4890-bcde-f01234567890', 'f7e39a3d-2229-49e0-86aa-b359730f45ec', 'Daily Report', 'Generate daily temperature report', 'ACTIVE',
@@ -83,7 +87,8 @@ INSERT INTO widgets (id, user_id, name, description, status, schedule, last_exec
 ('b4d5e6f7-a8b9-4012-def0-123456789012', 'f7e39a3d-2229-49e0-86aa-b359730f45ec', 'Light Controller', 'Manual light control widget', 'ACTIVE',
  NULL, NULL, now(), now()),
 ('b5e6f7a8-b9c0-4123-ef01-234567890123', 'f7e39a3d-2229-49e0-86aa-b359730f45ec', 'Inactive Widget', 'Paused automation', 'INACTIVE',
- '*/15 * * * *', NULL, now(), now());
+ '*/15 * * * *', NULL, now(), now())
+ON CONFLICT (id) DO NOTHING;
 
 -- =====================
 -- Widget Devices (many-to-many relationship)
@@ -99,7 +104,8 @@ INSERT INTO widget_devices (id, widget_id, device_id, created_at) VALUES
 -- Light Controller -> Kitchen Light
 ('c4d5e6f7-a8b9-4012-def0-123456789012', 'b4d5e6f7-a8b9-4012-def0-123456789012', '3f476e60-a174-4aa1-d1be-2acb9471c4f1', now()),
 -- Inactive Widget -> Living Room Thermostat
-('c5e6f7a8-b9c0-4123-ef01-234567890123', 'b5e6f7a8-b9c0-4123-ef01-234567890123', '1d254c4e-8f52-4889-b9fc-0ea97259a2df', now());
+('c5e6f7a8-b9c0-4123-ef01-234567890123', 'b5e6f7a8-b9c0-4123-ef01-234567890123', '1d254c4e-8f52-4889-b9fc-0ea97259a2df', now())
+ON CONFLICT (id) DO NOTHING;
 
 -- =====================
 -- Device Metrics (sample historical data)
@@ -206,7 +212,8 @@ INSERT INTO device_metrics (id, device_id, tenant_id, metric_name, metric_value,
 ('d0090001-0001-4001-a001-000000000004', '9f0dc4c6-a7da-4007-d7b4-8fcb50d7c0f7', 'f7e39a3d-2229-49e0-86aa-b359730f45ec', 'power', 1800.0, 'W', now(), now()),
 ('d0090001-0001-4001-a001-000000000005', '9f0dc4c6-a7da-4007-d7b4-8fcb50d7c0f7', 'f7e39a3d-2229-49e0-86aa-b359730f45ec', 'voltage', 48.2, 'V', now() - interval '8 hours', now()),
 ('d0090001-0001-4001-a001-000000000006', '9f0dc4c6-a7da-4007-d7b4-8fcb50d7c0f7', 'f7e39a3d-2229-49e0-86aa-b359730f45ec', 'voltage', 52.1, 'V', now() - interval '4 hours', now()),
-('d0090001-0001-4001-a001-000000000007', '9f0dc4c6-a7da-4007-d7b4-8fcb50d7c0f7', 'f7e39a3d-2229-49e0-86aa-b359730f45ec', 'voltage', 50.8, 'V', now(), now());
+('d0090001-0001-4001-a001-000000000007', '9f0dc4c6-a7da-4007-d7b4-8fcb50d7c0f7', 'f7e39a3d-2229-49e0-86aa-b359730f45ec', 'voltage', 50.8, 'V', now(), now())
+ON CONFLICT (id) DO NOTHING;
 
 -- =====================
 -- Alert Rules
@@ -250,7 +257,8 @@ INSERT INTO alert_rules (id, tenant_id, device_id, name, description, severity, 
 -- Garage offline alert
 ('e8b9c0d1-e2f3-4456-1234-567890123456', 'f7e39a3d-2229-49e0-86aa-b359730f45ec', '5b698082-c396-4cc3-f3d0-4bed1693e6b3',
  'Garage Sensor Offline', 'Garage sensor has not reported data', 'CRITICAL', true, 60,
- now() - interval '3 hours', now(), now());
+ now() - interval '3 hours', now(), now())
+ON CONFLICT (id) DO NOTHING;
 
 -- =====================
 -- Alert Conditions
@@ -279,7 +287,8 @@ INSERT INTO alert_conditions (id, alert_rule_id, group_id, metric_name, operator
 ('f8b9c0d1-e2f3-4456-1234-567890123456', 'e7a8b9c0-d1e2-4345-0123-456789012345', 0, 'brightness', 'GTE', 1.0, now()),
 
 -- Garage Sensor Offline: temperature = -999 (sentinel value for offline)
-('f9c0d1e2-f3a4-4567-2345-678901234567', 'e8b9c0d1-e2f3-4456-1234-567890123456', 0, 'temperature', 'EQ', -999.0, now());
+('f9c0d1e2-f3a4-4567-2345-678901234567', 'e8b9c0d1-e2f3-4456-1234-567890123456', 0, 'temperature', 'EQ', -999.0, now())
+ON CONFLICT (id) DO NOTHING;
 
 -- =====================
 -- Alert Notifications
@@ -303,7 +312,8 @@ INSERT INTO alert_notifications (id, alert_rule_id, type, config, created_at) VA
 ('06f7a8b9-c0d1-4234-f012-345678901234', 'e2b3c4d5-e6f7-4890-bcde-f01234567890', 'sms',
  '{"phone": "+1234567890"}', now()),
 ('07a8b9c0-d1e2-4345-0123-456789012345', 'e5e6f7a8-b9c0-4123-ef01-234567890123', 'sms',
- '{"phone": "+1234567890"}', now());
+ '{"phone": "+1234567890"}', now())
+ON CONFLICT (id) DO NOTHING;
 
 -- =====================
 -- Alert Events (Historical triggered alerts)
@@ -329,7 +339,8 @@ INSERT INTO alert_events (id, alert_rule_id, device_id, tenant_id, triggered_val
 
 -- Garage sensor offline event (still active)
 ('17a8b9c0-d1e2-4345-0123-456789012345', 'e8b9c0d1-e2f3-4456-1234-567890123456', '5b698082-c396-4cc3-f3d0-4bed1693e6b3', 'f7e39a3d-2229-49e0-86aa-b359730f45ec',
- '{"temperature": -999}', 'TRIGGERED', now() - interval '3 hours', NULL, now());
+ '{"temperature": -999}', 'TRIGGERED', now() - interval '3 hours', NULL, now())
+ON CONFLICT (id) DO NOTHING;
 
 -- =====================
 -- Dashboard Layouts
@@ -343,7 +354,8 @@ INSERT INTO dashboard_layouts (id, tenant_id, name, description, is_default, ref
  'Energy Dashboard', 'Power consumption and solar production monitoring', false, 60, now(), now()),
 -- Climate control dashboard
 ('da5b0a01-3333-4003-a003-000000000003', 'f7e39a3d-2229-49e0-86aa-b359730f45ec',
- 'Climate Control', 'Temperature and humidity across all rooms', false, 30, now(), now());
+ 'Climate Control', 'Temperature and humidity across all rooms', false, 30, now(), now())
+ON CONFLICT (id) DO NOTHING;
 
 -- =====================
 -- Dashboard Widgets
@@ -501,6 +513,7 @@ INSERT INTO dashboard_widgets (id, dashboard_layout_id, tenant_id, widget_type, 
 ('db5b0a01-0210-4003-a003-000000000010', 'da5b0a01-3333-4003-a003-000000000003', 'f7e39a3d-2229-49e0-86aa-b359730f45ec',
  'TABLE', 'Recent Climate Data', 2, 5, 5, 3, '1d254c4e-8f52-4889-b9fc-0ea97259a2df', NULL,
  '{"deviceId": "1d254c4e-8f52-4889-b9fc-0ea97259a2df", "timeRange": "hour", "limit": 15}',
- now(), now());
+ now(), now())
+ON CONFLICT (id) DO NOTHING;
 
 COMMIT;
