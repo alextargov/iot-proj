@@ -72,6 +72,11 @@ export class AppComponent {
         return this.authService.hasRole('OPERATOR');
     }
 
+    /** Whether the current user is an ADMIN (gates the Admin nav entry). */
+    public get isAdmin(): boolean {
+        return this.authService.hasRole('ADMIN');
+    }
+
     private loadDashboardLayouts(): void {
         this.dashboardLayoutService.getLayouts().subscribe({
             next: (layouts) => {

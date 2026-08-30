@@ -21,6 +21,7 @@ type WidgetSvc interface {
 	ListAll(ctx context.Context) ([]*model.Widget, error)
 	ListPage(ctx context.Context, pageSize int, cursor string) ([]*model.Widget, *pagination.Page, int, error)
 	Create(ctx context.Context, widget model.WidgetInput) (string, error)
+	Clone(ctx context.Context, id string) (string, error)
 	Delete(ctx context.Context, id string) error
 	GetByID(ctx context.Context, id string) (*model.Widget, error)
 }
@@ -183,6 +184,49 @@ func (r *Resolver) CreateWidget(ctx context.Context, input graphql.WidgetInput) 
 		if err := r.cronScheduler.AddJob(ctx, widget); err != nil {
 			logger.C(ctx).Errorf("error while adding a cron scheduler job: %v", err)
 			// The widget was created successfully, cron job can be added later
+		}
+	}
+
+	return r.widgetConverter.ToGraphQL(widget), nil
+}
+
+func (r *Resolver) CloneWidget(ctx context.Context, id string) (*graphql.Widget, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	newID, err := r.widgetSvc.Clone(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	widget, err := r.widgetSvc.GetByID(ctx, newID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	application := &k8s.Application{
+		WidgetID:   newID,
+		SourceCode: widget.Code,
+		Workspace:  widget.Workspace,
+	}
+
+	if _, err = r.scheduler.Schedule(ctx, application); err != nil {
+		return nil, err
+	}
+
+	if r.cronScheduler != nil && widget.Schedule != nil && widget.Status == model.DeviceStatusActive {
+		if err := r.cronScheduler.AddJob(ctx, widget); err != nil {
+			logger.C(ctx).Errorf("error while adding a cron scheduler job: %v", err)
 		}
 	}
 

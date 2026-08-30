@@ -271,6 +271,68 @@ func (r *repository) DeleteByDeviceID(ctx context.Context, deviceID string) erro
 	return err
 }
 
+// DeleteOlderThan deletes metrics recorded before the given cutoff time across
+// all tenants. Used by the retention cleanup job. Returns the number of rows
+// deleted.
+func (r *repository) DeleteOlderThan(ctx context.Context, cutoff time.Time) (int64, error) {
+	persist, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	stmt := fmt.Sprintf("DELETE FROM %s WHERE recorded_at < $1", tableName)
+	res, err := persist.ExecContext(ctx, stmt, cutoff)
+	if err != nil {
+		return 0, err
+	}
+	return res.RowsAffected()
+}
+
+// RollupHourly computes hourly aggregates from raw device_metrics recorded at or
+// after `since` and upserts them into device_metrics_hourly. It is idempotent:
+// re-running for an overlapping window recomputes and overwrites the affected
+// buckets. Returns the number of rollup rows written.
+func (r *repository) RollupHourly(ctx context.Context, since time.Time) (int64, error) {
+	persist, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	stmt := fmt.Sprintf(`
+INSERT INTO device_metrics_hourly
+    (device_id, tenant_id, metric_name, bucket, sum_value, count_value, min_value, max_value, avg_value, unit, updated_at)
+SELECT
+    device_id,
+    tenant_id,
+    metric_name,
+    date_trunc('hour', recorded_at) AS bucket,
+    SUM(metric_value)   AS sum_value,
+    COUNT(*)            AS count_value,
+    MIN(metric_value)   AS min_value,
+    MAX(metric_value)   AS max_value,
+    AVG(metric_value)   AS avg_value,
+    MAX(unit)           AS unit,
+    CURRENT_TIMESTAMP
+FROM %s
+WHERE recorded_at >= $1
+GROUP BY device_id, tenant_id, metric_name, date_trunc('hour', recorded_at)
+ON CONFLICT (device_id, metric_name, bucket) DO UPDATE SET
+    sum_value   = EXCLUDED.sum_value,
+    count_value = EXCLUDED.count_value,
+    min_value   = EXCLUDED.min_value,
+    max_value   = EXCLUDED.max_value,
+    avg_value   = EXCLUDED.avg_value,
+    unit        = EXCLUDED.unit,
+    tenant_id   = EXCLUDED.tenant_id,
+    updated_at  = CURRENT_TIMESTAMP`, tableName)
+
+	res, err := persist.ExecContext(ctx, stmt, since)
+	if err != nil {
+		return 0, err
+	}
+	return res.RowsAffected()
+}
+
 // GetMetricNames retrieves unique metric names for a device
 func (r *repository) GetMetricNames(ctx context.Context, deviceID string) ([]string, error) {
 	persist, err := persistence.FromCtx(ctx)

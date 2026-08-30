@@ -93,6 +93,79 @@ export class LineChartWidgetComponent implements OnInit, OnDestroy, OnChanges {
                 .pipe(takeUntil(this.destroy$))
                 .subscribe(() => this.loadData());
         }
+
+        this.subscribeToLiveMetrics();
+    }
+
+    /**
+     * Append live metric points as they arrive via WebSocket. The subscription
+     * stream carries all metric names for the device, so we only append points
+     * whose name matches one of this widget's configured metrics (or any, when
+     * unconfigured). Polling remains as a fallback / for backfilling gaps.
+     */
+    private subscribeToLiveMetrics(): void {
+        if (!this.deviceId) {
+            return;
+        }
+
+        this.metricsService
+            .subscribeToMetrics(this.deviceId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: (metric) => {
+                    if (
+                        this.metricNames &&
+                        this.metricNames.length > 0 &&
+                        !this.metricNames.includes(metric.metricName)
+                    ) {
+                        return;
+                    }
+                    this.appendLivePoint(metric);
+                },
+                error: () => {
+                    /* subscription errors are non-fatal; polling still runs */
+                },
+            });
+    }
+
+    private appendLivePoint(metric: {
+        metricName: string;
+        metricValue: number;
+        unit?: string | null;
+        recordedAt: string | Date;
+    }): void {
+        const label = new Date(metric.recordedAt).toLocaleTimeString();
+
+        let dataset = this.chartData.datasets.find(
+            (d) => (d.label || '').startsWith(metric.metricName)
+        );
+
+        if (!dataset) {
+            const index = this.chartData.datasets.length;
+            dataset = {
+                label: `${metric.metricName}${metric.unit ? ` (${metric.unit})` : ''}`,
+                data: [],
+                borderColor: this.colors[index % this.colors.length],
+                backgroundColor: this.colors[index % this.colors.length]
+                    .replace('rgb', 'rgba')
+                    .replace(')', ', 0.1)'),
+                fill: true,
+            };
+            this.chartData.datasets.push(dataset);
+        }
+
+        (this.chartData.labels as string[]).push(label);
+        (dataset.data as number[]).push(metric.metricValue);
+
+        // Cap the live buffer so the chart doesn't grow unbounded.
+        const MAX_POINTS = 500;
+        if ((this.chartData.labels as string[]).length > MAX_POINTS) {
+            (this.chartData.labels as string[]).shift();
+            this.chartData.datasets.forEach((d) => (d.data as number[]).shift());
+        }
+
+        this.chart?.update();
+        this.cdr.detectChanges();
     }
 
     ngOnChanges(changes: SimpleChanges): void {

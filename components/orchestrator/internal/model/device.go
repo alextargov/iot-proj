@@ -11,6 +11,14 @@ const (
 	DeviceStatusError       DeviceStatus = "ERROR"
 )
 
+// OperationType represents a command that can be sent to a device.
+type OperationType string
+
+const (
+	OperationTypeTurnOn  OperationType = "TURN_ON"
+	OperationTypeTurnOff OperationType = "TURN_OFF"
+)
+
 type DeviceInput struct {
 	Name               string
 	Description        *string

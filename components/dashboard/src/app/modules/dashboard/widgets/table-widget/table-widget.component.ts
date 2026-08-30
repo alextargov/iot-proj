@@ -37,6 +37,28 @@ export class TableWidgetComponent implements OnInit, OnDestroy, OnChanges {
                 .pipe(takeUntil(this.destroy$))
                 .subscribe(() => this.loadData());
         }
+
+        // Live updates: prepend newly recorded metrics to the top of the table.
+        if (this.deviceId) {
+            this.metricsService
+                .subscribeToMetrics(this.deviceId)
+                .pipe(takeUntil(this.destroy$))
+                .subscribe({
+                    next: (metric) => {
+                        if (this.metricName && metric.metricName !== this.metricName) {
+                            return;
+                        }
+                        this.dataSource = [metric, ...this.dataSource].slice(
+                            0,
+                            this.limit || 10
+                        );
+                        this.cdr.detectChanges();
+                    },
+                    error: () => {
+                        /* non-fatal; polling still runs */
+                    },
+                });
+        }
     }
 
     ngOnChanges(changes: SimpleChanges): void {

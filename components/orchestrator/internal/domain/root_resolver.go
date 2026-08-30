@@ -15,7 +15,10 @@ import (
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/datamodel"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/device"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/host"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/integration"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/metric"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/organization"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/rule"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/user"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/widget"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/k8s"
@@ -41,6 +44,7 @@ type MetricServiceWithPublisher interface {
 	metric.MetricSvc
 	SetMetricPublisher(publisher metric.MetricPublisher)
 	SetAlertEvaluator(evaluator metric.AlertEvaluator)
+	SetRuleEvaluator(evaluator metric.RuleEvaluator)
 }
 
 // DeviceServiceWithToken defines the interface for device service that supports communication tokens
@@ -50,19 +54,23 @@ type DeviceServiceWithToken interface {
 }
 
 type RootResolver struct {
-	persistence     persistence.Transactioner
-	device          *device.Resolver
-	widget          *widget.Resolver
-	dataModel       *datamodel.Resolver
-	metric          *metric.Resolver
-	alert           *alert.Resolver
-	dashboardLayout *dashboard_layout.Resolver
-	dashboardWidget *dashboard_widget.Resolver
-	user            *user.Resolver
-	auth            *auth.Resolver
-	audit           *audit.Resolver
-	metricPubSub    *pubsub.MetricPubSub
-	deviceSvc       DeviceServiceWithToken
+	persistence        persistence.Transactioner
+	device             *device.Resolver
+	widget             *widget.Resolver
+	dataModel          *datamodel.Resolver
+	metric             *metric.Resolver
+	alert              *alert.Resolver
+	rule               *rule.Resolver
+	integration        *integration.Resolver
+	organization       *organization.Resolver
+	dashboardLayout    *dashboard_layout.Resolver
+	dashboardWidget    *dashboard_widget.Resolver
+	user               *user.Resolver
+	auth               *auth.Resolver
+	audit              *audit.Resolver
+	metricPubSub       *pubsub.MetricPubSub
+	deviceStatusPubSub *pubsub.DeviceStatusPubSub
+	deviceSvc          DeviceServiceWithToken
 }
 
 func NewRootResolver(persistence persistence.Transactioner, notificationSMTPConfig notification.SMTPConfig, scheduler k8s.Scheduler, cronScheduler CronScheduler, log *logrus.Logger, sharedMetricSvc MetricServiceWithPublisher, certIssuer device.CertificateIssuer) *RootResolver {
@@ -70,6 +78,7 @@ func NewRootResolver(persistence persistence.Transactioner, notificationSMTPConf
 	authConv := auth.NewConverter()
 
 	metricPubSub := pubsub.NewMetricPubSub(log)
+	deviceStatusPubSub := pubsub.NewDeviceStatusPubSub(log)
 
 	// Wire the PubSub into the shared metric service (used by both REST and GraphQL)
 	sharedMetricSvc.SetMetricPublisher(metricPubSub)
@@ -102,6 +111,19 @@ func NewRootResolver(persistence persistence.Transactioner, notificationSMTPConf
 	alertSvc := alert.NewService(alertRepo, metricRepo, deviceSvc, notificationSvc, uuidService)
 	alertRes := alert.NewResolver(persistence, alertSvc, alertConv, deviceSvc, deviceConv)
 
+	// Integration domain (external-service connectors). Constructed before the
+	// rule domain so rules can invoke integrations as an action.
+	integrationConv := integration.NewConverter()
+	integrationRepo := integration.NewRepository(integrationConv)
+	integrationSvc := integration.NewService(integrationRepo, uuidService)
+	integrationRes := integration.NewResolver(persistence, integrationSvc, integrationConv)
+
+	// Automation rule domain (visual IF-THEN automations with actions).
+	ruleConv := rule.NewConverter()
+	ruleRepo := rule.NewRepository(ruleConv)
+	ruleSvc := rule.NewService(ruleRepo, metricRepo, deviceSvc, integrationSvc, notificationSvc, persistence, uuidService)
+	ruleRes := rule.NewResolver(persistence, ruleSvc, ruleConv, deviceSvc, deviceConv)
+
 	// Dashboard layout domain
 	layoutConv := dashboard_layout.NewConverter()
 	layoutRepo := dashboard_layout.NewRepository(layoutConv)
@@ -118,20 +140,31 @@ func NewRootResolver(persistence persistence.Transactioner, notificationSMTPConf
 
 	// Wire the alert evaluator into the shared metric service for real-time alert evaluation
 	sharedMetricSvc.SetAlertEvaluator(alertSvc)
+	// Wire the automation-rule evaluator into the shared metric service
+	sharedMetricSvc.SetRuleEvaluator(ruleSvc)
 
 	deviceRes := device.NewResolver(persistence, deviceSvc, hostSvc, dataModelSvc, deviceConv, hostConv, dataModelConv)
+	deviceRes.SetStatusPublisher(deviceStatusPubSub)
 	widgetRes := widget.NewResolver(persistence, widgetSvc, widgetConv, scheduler, cronScheduler)
-	userRes := user.NewResolver()
+
+	// User domain (Me + admin Users listing).
+	userConv := user.NewConverter()
+	userRepo := user.NewRepository(userConv)
+	userSvc := user.NewService(userRepo, uuidService)
+	userRes := user.NewResolver(persistence, userSvc)
 
 	// Auth domain (user-management surface, e.g. updateUserRole). Composes over
 	// the user service to avoid duplicating persistence logic. The JWT token
 	// service is only needed for REST login/register (handled in handlers), so
 	// nil is passed here — GraphQL auth mutations do not mint tokens.
-	userConv := user.NewConverter()
-	userRepo := user.NewRepository(userConv)
-	userSvc := user.NewService(userRepo, uuidService)
 	authSvc := auth.NewService(userSvc, nil)
 	authRes := auth.NewResolver(persistence, authSvc)
+
+	// Organization domain (teams/workspaces overlay + membership).
+	orgConv := organization.NewConverter()
+	orgRepo := organization.NewRepository(orgConv)
+	orgSvc := organization.NewService(orgRepo, uuidService)
+	orgRes := organization.NewResolver(persistence, orgSvc, orgConv)
 
 	// Audit domain
 	auditConv := audit.NewConverter()
@@ -140,19 +173,23 @@ func NewRootResolver(persistence persistence.Transactioner, notificationSMTPConf
 	auditRes := audit.NewResolver(persistence, auditSvc, auditConv)
 
 	return &RootResolver{
-		persistence:     persistence,
-		device:          deviceRes,
-		widget:          widgetRes,
-		dataModel:       dataModelRes,
-		metric:          metricRes,
-		alert:           alertRes,
-		dashboardLayout: dashboardLayoutRes,
-		dashboardWidget: dashboardWidgetRes,
-		user:            userRes,
-		auth:            authRes,
-		audit:           auditRes,
-		metricPubSub:    metricPubSub,
-		deviceSvc:       deviceSvc,
+		persistence:        persistence,
+		device:             deviceRes,
+		widget:             widgetRes,
+		dataModel:          dataModelRes,
+		metric:             metricRes,
+		alert:              alertRes,
+		rule:               ruleRes,
+		integration:        integrationRes,
+		organization:       orgRes,
+		dashboardLayout:    dashboardLayoutRes,
+		dashboardWidget:    dashboardWidgetRes,
+		user:               userRes,
+		auth:               authRes,
+		audit:              auditRes,
+		metricPubSub:       metricPubSub,
+		deviceStatusPubSub: deviceStatusPubSub,
+		deviceSvc:          deviceSvc,
 	}
 }
 
@@ -214,12 +251,51 @@ func (r *subscriptionResolver) MetricRecorded(ctx context.Context, deviceID stri
 	return out, nil
 }
 
+func (r *subscriptionResolver) DeviceStatusChanged(ctx context.Context, deviceID *string) (<-chan *graphql.DeviceStatusEvent, error) {
+	id := ""
+	if deviceID != nil {
+		id = *deviceID
+	}
+	ch := r.deviceStatusPubSub.Subscribe(id)
+
+	out := make(chan *graphql.DeviceStatusEvent, 10)
+
+	go func() {
+		defer close(out)
+		for {
+			select {
+			case <-ctx.Done():
+				r.deviceStatusPubSub.Unsubscribe(id, ch)
+				return
+			case event, ok := <-ch:
+				if !ok {
+					return
+				}
+				out <- &graphql.DeviceStatusEvent{
+					DeviceID: event.DeviceID,
+					Status:   graphql.DeviceStatus(event.Status),
+				}
+			}
+		}
+	}()
+
+	return out, nil
+}
+
 func (r *RootResolver) Device() graphql.DeviceResolver {
 	return &deviceResolver{r}
 }
 
 func (r *queryResolver) Devices(ctx context.Context) ([]*graphql.Device, error) {
 	return r.device.Devices(ctx)
+}
+
+func (r *queryResolver) DevicesByTags(ctx context.Context, tags []string) ([]*graphql.Device, error) {
+	return r.device.DevicesByTags(ctx, tags)
+}
+
+func (r *queryResolver) DeviceTags(ctx context.Context) ([]string, error) {
+	return r.device.DeviceTags(ctx)
 }
 
 func (r *queryResolver) DevicesPage(ctx context.Context, first *int, after *string) (*graphql.DevicePage, error) {
@@ -302,6 +378,34 @@ func (r *queryResolver) AuditLogsForResource(ctx context.Context, resourceType s
 	return r.audit.AuditLogsForResource(ctx, resourceType, resourceID, first)
 }
 
+func (r *queryResolver) AutomationRules(ctx context.Context, first *int, after *string) (*graphql.AutomationRulePage, error) {
+	return r.rule.AutomationRules(ctx, first, after)
+}
+
+func (r *queryResolver) AutomationRule(ctx context.Context, id string) (*graphql.AutomationRule, error) {
+	return r.rule.AutomationRule(ctx, id)
+}
+
+func (r *queryResolver) Integrations(ctx context.Context) ([]*graphql.Integration, error) {
+	return r.integration.Integrations(ctx)
+}
+
+func (r *queryResolver) Integration(ctx context.Context, id string) (*graphql.Integration, error) {
+	return r.integration.Integration(ctx, id)
+}
+
+func (r *queryResolver) Users(ctx context.Context) ([]*graphql.User, error) {
+	return r.user.Users(ctx)
+}
+
+func (r *queryResolver) Organizations(ctx context.Context) ([]*graphql.Organization, error) {
+	return r.organization.Organizations(ctx)
+}
+
+func (r *queryResolver) Organization(ctx context.Context, id string) (*graphql.Organization, error) {
+	return r.organization.Organization(ctx, id)
+}
+
 func (r *queryResolver) TestDeviceConnection(ctx context.Context, url string) (bool, error) {
 	client := &http.Client{
 		Timeout: 5 * time.Second,
@@ -324,6 +428,10 @@ func (r *mutationResolver) CreateDevice(ctx context.Context, in graphql.DeviceIn
 	return r.device.CreateDevice(ctx, in)
 }
 
+func (r *mutationResolver) CloneDevice(ctx context.Context, id string) (*graphql.Device, error) {
+	return r.device.CloneDevice(ctx, id)
+}
+
 func (r *mutationResolver) UpdateDevice(ctx context.Context, id string, in graphql.UpdateDeviceInput) (*graphql.Device, error) {
 	return r.device.UpdateDevice(ctx, id, in)
 }
@@ -342,6 +450,10 @@ func (r *mutationResolver) DeleteDevice(ctx context.Context, id string) (string,
 
 func (r *mutationResolver) CreateWidget(ctx context.Context, in graphql.WidgetInput) (*graphql.Widget, error) {
 	return r.widget.CreateWidget(ctx, in)
+}
+
+func (r *mutationResolver) CloneWidget(ctx context.Context, id string) (*graphql.Widget, error) {
+	return r.widget.CloneWidget(ctx, id)
 }
 
 func (r *mutationResolver) DeleteWidget(ctx context.Context, id string) (string, error) {
@@ -454,6 +566,62 @@ func (r *mutationResolver) UpdateUserRole(ctx context.Context, userID string, ro
 	return r.auth.UpdateUserRole(ctx, userID, role)
 }
 
+func (r *mutationResolver) CreateAutomationRule(ctx context.Context, input graphql.CreateAutomationRuleInput) (*graphql.AutomationRule, error) {
+	return r.rule.CreateAutomationRule(ctx, input)
+}
+
+func (r *mutationResolver) UpdateAutomationRule(ctx context.Context, id string, input graphql.UpdateAutomationRuleInput) (*graphql.AutomationRule, error) {
+	return r.rule.UpdateAutomationRule(ctx, id, input)
+}
+
+func (r *mutationResolver) SetAutomationRuleEnabled(ctx context.Context, id string, enabled bool) (*graphql.AutomationRule, error) {
+	return r.rule.SetAutomationRuleEnabled(ctx, id, enabled)
+}
+
+func (r *mutationResolver) DeleteAutomationRule(ctx context.Context, id string) (string, error) {
+	return r.rule.DeleteAutomationRule(ctx, id)
+}
+
+func (r *mutationResolver) CreateIntegration(ctx context.Context, input graphql.CreateIntegrationInput) (*graphql.Integration, error) {
+	return r.integration.CreateIntegration(ctx, input)
+}
+
+func (r *mutationResolver) UpdateIntegration(ctx context.Context, id string, input graphql.UpdateIntegrationInput) (*graphql.Integration, error) {
+	return r.integration.UpdateIntegration(ctx, id, input)
+}
+
+func (r *mutationResolver) DeleteIntegration(ctx context.Context, id string) (string, error) {
+	return r.integration.DeleteIntegration(ctx, id)
+}
+
+func (r *mutationResolver) TestIntegration(ctx context.Context, id string) (bool, error) {
+	return r.integration.TestIntegration(ctx, id)
+}
+
+func (r *mutationResolver) CreateOrganization(ctx context.Context, input graphql.CreateOrganizationInput) (*graphql.Organization, error) {
+	return r.organization.CreateOrganization(ctx, input)
+}
+
+func (r *mutationResolver) RenameOrganization(ctx context.Context, id string, name string) (*graphql.Organization, error) {
+	return r.organization.RenameOrganization(ctx, id, name)
+}
+
+func (r *mutationResolver) DeleteOrganization(ctx context.Context, id string) (string, error) {
+	return r.organization.DeleteOrganization(ctx, id)
+}
+
+func (r *mutationResolver) AddOrganizationMember(ctx context.Context, organizationID string, userID string, role graphql.Role) (*graphql.Organization, error) {
+	return r.organization.AddOrganizationMember(ctx, organizationID, userID, role)
+}
+
+func (r *mutationResolver) UpdateOrganizationMemberRole(ctx context.Context, organizationID string, userID string, role graphql.Role) (*graphql.Organization, error) {
+	return r.organization.UpdateOrganizationMemberRole(ctx, organizationID, userID, role)
+}
+
+func (r *mutationResolver) RemoveOrganizationMember(ctx context.Context, organizationID string, userID string) (*graphql.Organization, error) {
+	return r.organization.RemoveOrganizationMember(ctx, organizationID, userID)
+}
+
 type deviceResolver struct {
 	*RootResolver
 }
@@ -477,6 +645,19 @@ type alertRuleResolver struct {
 
 func (r alertRuleResolver) Device(ctx context.Context, obj *graphql.AlertRule) (*graphql.Device, error) {
 	return r.alert.AlertRuleDevice(ctx, obj)
+}
+
+// AutomationRule resolver
+func (r *RootResolver) AutomationRule() graphql.AutomationRuleResolver {
+	return &automationRuleResolver{r}
+}
+
+type automationRuleResolver struct {
+	*RootResolver
+}
+
+func (r automationRuleResolver) Device(ctx context.Context, obj *graphql.AutomationRule) (*graphql.Device, error) {
+	return r.rule.RuleDevice(ctx, obj)
 }
 
 type alertEventResolver struct {

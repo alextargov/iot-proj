@@ -1,0 +1,258 @@
+<div class="rule-form-container">
+    <h1>{{ editingId ? 'Edit' : 'Create' }} Automation Rule</h1>
+
+    <form [formGroup]="form" (ngSubmit)="save()">
+        <mat-card class="section">
+            <mat-card-content>
+                <mat-form-field appearance="outline" class="full">
+                    <mat-label>Name</mat-label>
+                    <input matInput formControlName="name" />
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="full">
+                    <mat-label>Description</mat-label>
+                    <input matInput formControlName="description" />
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="full">
+                    <mat-label>Device</mat-label>
+                    <mat-select formControlName="deviceId" [disabled]="!!editingId">
+                        <mat-option *ngFor="let d of devices" [value]="d.id">
+                            {{ d.name }}
+                        </mat-option>
+                    </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                    <mat-label>Cooldown (seconds)</mat-label>
+                    <input matInput type="number" formControlName="cooldownSeconds" />
+                </mat-form-field>
+            </mat-card-content>
+        </mat-card>
+
+        <!-- Conditions (WHEN) -->
+        <mat-card class="section">
+            <mat-card-header>
+                <mat-card-title>When</mat-card-title>
+                <span class="hint">Groups are OR'd; conditions in a group are AND'd.</span>
+            </mat-card-header>
+            <mat-card-content>
+                <div formArrayName="groups">
+                    <div
+                        class="group"
+                        *ngFor="let group of groups.controls; let gi = index"
+                        [formGroupName]="gi"
+                    >
+                        <div class="group-header">
+                            <span class="or-label" *ngIf="gi > 0">OR</span>
+                            <span class="group-title">Group {{ gi + 1 }}</span>
+                            <button
+                                mat-icon-button
+                                type="button"
+                                color="warn"
+                                (click)="removeGroup(gi)"
+                                [disabled]="groups.length === 1"
+                            >
+                                <mat-icon>close</mat-icon>
+                            </button>
+                        </div>
+
+                        <div formArrayName="conditions">
+                            <div
+                                class="condition"
+                                *ngFor="let cond of conditions(gi).controls; let ci = index"
+                                [formGroupName]="ci"
+                            >
+                                <span class="and-label" *ngIf="ci > 0">AND</span>
+                                <mat-form-field appearance="outline">
+                                    <mat-label>Metric</mat-label>
+                                    <input matInput formControlName="metricName" />
+                                </mat-form-field>
+                                <mat-form-field appearance="outline">
+                                    <mat-label>Operator</mat-label>
+                                    <mat-select formControlName="operator">
+                                        <mat-option
+                                            *ngFor="let op of operators"
+                                            [value]="op"
+                                            >{{ op }}</mat-option
+                                        >
+                                    </mat-select>
+                                </mat-form-field>
+                                <mat-form-field appearance="outline">
+                                    <mat-label>Threshold</mat-label>
+                                    <input
+                                        matInput
+                                        type="number"
+                                        formControlName="threshold"
+                                    />
+                                </mat-form-field>
+                                <button
+                                    mat-icon-button
+                                    type="button"
+                                    color="warn"
+                                    (click)="removeCondition(gi, ci)"
+                                    [disabled]="conditions(gi).length === 1"
+                                >
+                                    <mat-icon>remove_circle_outline</mat-icon>
+                                </button>
+                            </div>
+                        </div>
+
+                        <button
+                            mat-button
+                            type="button"
+                            (click)="addCondition(gi)"
+                        >
+                            <mat-icon>add</mat-icon> Add condition
+                        </button>
+                    </div>
+                </div>
+
+                <button mat-stroked-button type="button" (click)="addGroup()">
+                    <mat-icon>add</mat-icon> Add OR group
+                </button>
+            </mat-card-content>
+        </mat-card>
+
+        <!-- Actions (THEN) -->
+        <mat-card class="section">
+            <mat-card-header>
+                <mat-card-title>Then</mat-card-title>
+                <span class="hint">Actions run in order. Use Delay to wait between steps.</span>
+            </mat-card-header>
+            <mat-card-content>
+                <div formArrayName="actions">
+                    <div
+                        class="action"
+                        *ngFor="let action of actions.controls; let ai = index"
+                        [formGroupName]="ai"
+                    >
+                        <span class="seq">{{ ai + 1 }}</span>
+                        <mat-form-field appearance="outline">
+                            <mat-label>Type</mat-label>
+                            <mat-select formControlName="type">
+                                <mat-option
+                                    *ngFor="let t of actionTypes"
+                                    [value]="t"
+                                    >{{ t }}</mat-option
+                                >
+                            </mat-select>
+                        </mat-form-field>
+
+                        <ng-container
+                            *ngIf="action.get('type')?.value === RuleActionType.DeviceOperation"
+                        >
+                            <mat-form-field appearance="outline">
+                                <mat-label>Operation</mat-label>
+                                <mat-select formControlName="operation">
+                                    <mat-option
+                                        *ngFor="let o of operations"
+                                        [value]="o"
+                                        >{{ o }}</mat-option
+                                    >
+                                </mat-select>
+                            </mat-form-field>
+                            <mat-form-field appearance="outline">
+                                <mat-label>Target device (optional)</mat-label>
+                                <mat-select formControlName="targetDeviceId">
+                                    <mat-option [value]="''">Rule's device</mat-option>
+                                    <mat-option
+                                        *ngFor="let d of devices"
+                                        [value]="d.id"
+                                        >{{ d.name }}</mat-option
+                                    >
+                                </mat-select>
+                            </mat-form-field>
+                        </ng-container>
+
+                        <ng-container
+                            *ngIf="action.get('type')?.value === RuleActionType.Notification"
+                        >
+                            <mat-form-field appearance="outline">
+                                <mat-label>Channel</mat-label>
+                                <mat-select formControlName="notificationType">
+                                    <mat-option value="email">email</mat-option>
+                                    <mat-option value="webhook">webhook</mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                            <mat-form-field appearance="outline" class="grow">
+                                <mat-label>Config (JSON)</mat-label>
+                                <input matInput formControlName="notificationConfig" />
+                            </mat-form-field>
+                        </ng-container>
+
+                        <ng-container
+                            *ngIf="action.get('type')?.value === RuleActionType.Delay"
+                        >
+                            <mat-form-field appearance="outline">
+                                <mat-label>Delay (seconds)</mat-label>
+                                <input
+                                    matInput
+                                    type="number"
+                                    formControlName="delaySeconds"
+                                />
+                            </mat-form-field>
+                        </ng-container>
+
+                        <ng-container
+                            *ngIf="action.get('type')?.value === RuleActionType.Integration"
+                        >
+                            <mat-form-field appearance="outline" class="grow">
+                                <mat-label>Integration</mat-label>
+                                <mat-select formControlName="integrationId">
+                                    <mat-option
+                                        *ngFor="let i of integrations"
+                                        [value]="i.id"
+                                        >{{ i.name }} ({{ i.type }})</mat-option
+                                    >
+                                </mat-select>
+                            </mat-form-field>
+                        </ng-container>
+
+                        <span class="spacer"></span>
+                        <button
+                            mat-icon-button
+                            type="button"
+                            (click)="moveAction(ai, -1)"
+                            [disabled]="ai === 0"
+                        >
+                            <mat-icon>arrow_upward</mat-icon>
+                        </button>
+                        <button
+                            mat-icon-button
+                            type="button"
+                            (click)="moveAction(ai, 1)"
+                            [disabled]="ai === actions.length - 1"
+                        >
+                            <mat-icon>arrow_downward</mat-icon>
+                        </button>
+                        <button
+                            mat-icon-button
+                            type="button"
+                            color="warn"
+                            (click)="removeAction(ai)"
+                        >
+                            <mat-icon>delete</mat-icon>
+                        </button>
+                    </div>
+                </div>
+
+                <button mat-stroked-button type="button" (click)="addAction()">
+                    <mat-icon>add</mat-icon> Add action
+                </button>
+            </mat-card-content>
+        </mat-card>
+
+        <div class="form-actions">
+            <button mat-button type="button" (click)="cancel()">Cancel</button>
+            <button
+                mat-raised-button
+                color="primary"
+                type="submit"
+                [disabled]="saving"
+            >
+                {{ editingId ? 'Save' : 'Create' }}
+            </button>
+        </div>
+    </form>
+</div>

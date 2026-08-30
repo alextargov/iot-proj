@@ -29,6 +29,7 @@ import (
 	authmiddleware "github.com/alextargov/iot-proj/components/orchestrator/internal/middlewares/auth"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/middlewares/correlation"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/notification"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/retention"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/scheduler"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/uuid"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/graphql"
@@ -67,6 +68,9 @@ type config struct {
 
 	ApplicationsNamespace string `envconfig:"default=default,APP_APPLICATIONS_NAMESPACE"`
 
+	Retention retention.Config
+	Rollup    retention.RollupConfig
+
 	Log logger.Config
 }
 
@@ -97,6 +101,20 @@ func main() {
 		if err := widgetScheduler.Start(ctx, transact); err != nil {
 			logrus.Errorf("Widget scheduler error: %v", err)
 		}
+	}()
+
+	// Start the metric retention cleanup job in background.
+	go func() {
+		metricConv := metric.NewConverter()
+		metricRepo := metric.NewRepository(metricConv)
+		retention.New(cfg.Retention, metricRepo, transact).Start(ctx)
+	}()
+
+	// Start the metric hourly rollup (downsampling) job in background.
+	go func() {
+		metricConv := metric.NewConverter()
+		metricRepo := metric.NewRepository(metricConv)
+		retention.NewRollup(cfg.Rollup, metricRepo, transact).Start(ctx)
 	}()
 
 	runMainSrv, shutdownMainSrv := createServer(ctx, cfg, handler, "orchestrator")

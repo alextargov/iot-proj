@@ -1,6 +1,15 @@
 <app-content-header title="Widgets" [buttons]="buttons"></app-content-header>
 
 <div class="widget-list__container">
+    <!-- Import file input (hidden) -->
+    <input
+        type="file"
+        #fileInput
+        accept=".json"
+        style="display: none"
+        (change)="onFileSelected($event)"
+    />
+
     <mat-form-field class="widget-list__search" appearance="outline">
         <mat-label>Search widgets</mat-label>
         <input matInput (keyup)="applyFilter($event)" placeholder="Filter by name or description" #searchInput>
@@ -139,6 +148,12 @@
                         matTooltip="Duplicate"
                         (click)="onDuplicate(element)"
                         >content_copy</mat-icon
+                    >
+                    <mat-icon
+                        class="widget-list__table-definition-actions-export"
+                        matTooltip="Export"
+                        (click)="onExport(element)"
+                        >download</mat-icon
                     >
                     <mat-icon
                         class="widget-list__table-definition-actions-edit"

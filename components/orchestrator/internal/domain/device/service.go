@@ -2,6 +2,7 @@ package device
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/certmanager"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/model"
@@ -94,6 +95,63 @@ func (s *service) ListAllGlobal(ctx context.Context) ([]*model.Device, error) {
 	return s.deviceRepo.ListAllGlobal(ctx)
 }
 
+// ListByTags returns all devices for the current tenant that carry ALL of the
+// given tags. An empty tag list returns all devices. Filtering is done in
+// memory because tags are stored as a JSON array column.
+func (s *service) ListByTags(ctx context.Context, tags []string) ([]*model.Device, error) {
+	devices, err := s.ListAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(tags) == 0 {
+		return devices, nil
+	}
+
+	filtered := make([]*model.Device, 0, len(devices))
+	for _, d := range devices {
+		if hasAllTags(d.Tags, tags) {
+			filtered = append(filtered, d)
+		}
+	}
+	return filtered, nil
+}
+
+// ListAllTags returns the distinct set of tags used across the current
+// tenant's devices, in first-seen order.
+func (s *service) ListAllTags(ctx context.Context) ([]string, error) {
+	devices, err := s.ListAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	seen := make(map[string]struct{})
+	tags := make([]string, 0)
+	for _, d := range devices {
+		for _, t := range d.Tags {
+			if _, ok := seen[t]; ok {
+				continue
+			}
+			seen[t] = struct{}{}
+			tags = append(tags, t)
+		}
+	}
+	return tags, nil
+}
+
+func hasAllTags(deviceTags, required []string) bool {
+	set := make(map[string]struct{}, len(deviceTags))
+	for _, t := range deviceTags {
+		set[t] = struct{}{}
+	}
+	for _, r := range required {
+		if _, ok := set[r]; !ok {
+			return false
+		}
+	}
+	return true
+}
+
 func (s *service) Create(ctx context.Context, device model.DeviceInput) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -150,6 +208,98 @@ func (s *service) Update(ctx context.Context, id string, input model.UpdateDevic
 	return s.deviceRepo.Get(ctx, id, tnt)
 }
 
+// Clone creates a copy of an existing device (including its host and auth
+// configuration) under a new ID. Certificate material and communication tokens
+// are intentionally NOT copied — the clone starts without issued credentials.
+func (s *service) Clone(ctx context.Context, id string) (string, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return "", errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	source, err := s.deviceRepo.Get(ctx, id, tnt)
+	if err != nil {
+		return "", errors.Wrapf(err, "while getting source device %s", id)
+	}
+
+	input := deviceInputFromModel(source)
+
+	if source.Host != nil {
+		input.Host = hostInputFromModel(source.Host)
+	} else {
+		host, err := s.hostService.GetByDeviceID(ctx, id)
+		if err == nil && host != nil {
+			input.Host = hostInputFromModel(host)
+		}
+	}
+
+	return s.Create(ctx, input)
+}
+
+// deviceInputFromModel builds a DeviceInput from an existing device, appending
+// a "(copy)" suffix to the name so the clone is distinguishable.
+func deviceInputFromModel(d *model.Device) model.DeviceInput {
+	name := d.Name + " (copy)"
+	return model.DeviceInput{
+		Name:        name,
+		Description: d.Description,
+		Status:      model.DeviceStatusInitial,
+		Auth:        authInputFromModel(d.Auth),
+		DataModel:   d.DataModelID,
+		Tags:        append([]string(nil), d.Tags...),
+	}
+}
+
+func hostInputFromModel(h *model.Host) *model.HostInput {
+	if h == nil {
+		return nil
+	}
+	return &model.HostInput{
+		Url:             h.Url,
+		TurnOnEndpoint:  h.TurnOnEndpoint,
+		TurnOffEndpoint: h.TurnOffEndpoint,
+	}
+}
+
+func authInputFromModel(a *model.Auth) *model.AuthInput {
+	if a == nil {
+		return nil
+	}
+
+	cred := &model.CredentialDataInput{}
+	if a.CredentialForDevice.Basic != nil {
+		cred.Basic = &model.BasicCredentialDataInput{
+			Username: a.CredentialForDevice.Basic.Username,
+			Password: a.CredentialForDevice.Basic.Password,
+		}
+	}
+	if a.CredentialForDevice.Oauth != nil {
+		cred.Oauth = &model.OAuthCredentialDataInput{
+			ClientID:     a.CredentialForDevice.Oauth.ClientID,
+			ClientSecret: a.CredentialForDevice.Oauth.ClientSecret,
+			URL:          a.CredentialForDevice.Oauth.URL,
+		}
+	}
+	if a.CredentialForDevice.CertificateOAuth != nil {
+		cred.CertificateOAuth = &model.CertificateOAuthCredentialDataInput{
+			ClientID:    a.CredentialForDevice.CertificateOAuth.ClientID,
+			Certificate: a.CredentialForDevice.CertificateOAuth.Certificate,
+			URL:         a.CredentialForDevice.CertificateOAuth.URL,
+		}
+	}
+	if a.CredentialForDevice.BearerToken != nil {
+		cred.Token = &model.TokenCredentialDataInput{
+			Token: a.CredentialForDevice.BearerToken.Token,
+		}
+	}
+
+	return &model.AuthInput{
+		CredentialForDevice:  cred,
+		CredentialForService: a.CredentialForService,
+		AccessStrategy:       a.AccessStrategy,
+	}
+}
+
 func (s *service) Exists(ctx context.Context, id string) (bool, error) {
 	return s.deviceRepo.Exists(ctx, id)
 }
@@ -195,6 +345,59 @@ func (s *service) SetCommunicationToken(ctx context.Context, id, token string) e
 
 func (s *service) GetByToken(ctx context.Context, token string) (*model.Device, error) {
 	return s.deviceRepo.GetByToken(ctx, token)
+}
+
+// SendOperation sends a TURN_ON / TURN_OFF command to a device using its
+// configured host endpoints and authentication. It is used both by the
+// setDeviceOperation GraphQL mutation and by the rule engine when executing
+// DEVICE_OPERATION actions. Returns an error if the device has no host, the
+// requested endpoint is not configured, or the device responds with a non-2xx
+// status.
+func (s *service) SendOperation(ctx context.Context, deviceID string, op model.OperationType) error {
+	device, err := s.GetByID(ctx, deviceID)
+	if err != nil {
+		return errors.Wrapf(err, "while getting device %s", deviceID)
+	}
+
+	host, err := s.hostService.GetByDeviceID(ctx, deviceID)
+	if err != nil {
+		return errors.Wrapf(err, "device %s has no host configured", deviceID)
+	}
+
+	var endpoint string
+	switch op {
+	case model.OperationTypeTurnOn:
+		if host.TurnOnEndpoint == nil || *host.TurnOnEndpoint == "" {
+			return errors.Errorf("device %s has no turn-on endpoint configured", deviceID)
+		}
+		endpoint = host.Url + *host.TurnOnEndpoint
+	case model.OperationTypeTurnOff:
+		if host.TurnOffEndpoint == nil || *host.TurnOffEndpoint == "" {
+			return errors.Errorf("device %s has no turn-off endpoint configured", deviceID)
+		}
+		endpoint = host.Url + *host.TurnOffEndpoint
+	default:
+		return errors.Errorf("unsupported operation type: %s", op)
+	}
+
+	var httpClient *AuthenticatedHTTPClient
+	if device.ClientCert != nil && device.ClientCertKey != nil && *device.ClientCert != "" {
+		httpClient = NewAuthenticatedHTTPClientWithCert(*device.ClientCert, *device.ClientCertKey)
+	} else {
+		httpClient = NewAuthenticatedHTTPClient()
+	}
+
+	resp, err := httpClient.DoRequest(ctx, http.MethodPost, endpoint, nil, device.Auth)
+	if err != nil {
+		return errors.Wrapf(err, "while calling device %s endpoint", deviceID)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return errors.Errorf("device %s returned error status: %d", deviceID, resp.StatusCode)
+	}
+
+	return nil
 }
 
 // GenerateDeviceCertificate issues (or rotates) an mTLS client certificate for

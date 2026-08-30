@@ -3,9 +3,12 @@ import {
     Input,
     OnInit,
     OnChanges,
+    OnDestroy,
     SimpleChanges,
     ViewChild,
 } from '@angular/core';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { MetricsService } from '../../../services/metrics/metrics.service';
 import { DeviceMetricInfoFragment } from '../../../graphql/generated';
 import { ChartConfiguration, ChartData } from 'chart.js';
@@ -19,7 +22,7 @@ type TimeRange = 'hour' | 'day' | 'week';
     templateUrl: './device-metrics-chart.component.html',
     styleUrls: ['./device-metrics-chart.component.scss'],
 })
-export class DeviceMetricsChartComponent implements OnInit, OnChanges {
+export class DeviceMetricsChartComponent implements OnInit, OnChanges, OnDestroy {
     @Input() deviceId: string = '';
     @Input() metricName?: string;
     @Input() height: number = 300;
@@ -83,16 +86,58 @@ export class DeviceMetricsChartComponent implements OnInit, OnChanges {
 
     constructor(private metricsService: MetricsService) {}
 
+    private destroy$ = new Subject<void>();
+
     ngOnInit(): void {
         if (this.deviceId) {
             this.loadMetrics();
+            this.subscribeToLive();
         }
     }
 
     ngOnChanges(changes: SimpleChanges): void {
         if (changes['deviceId'] && !changes['deviceId'].firstChange) {
             this.loadMetrics();
+            this.subscribeToLive();
         }
+    }
+
+    ngOnDestroy(): void {
+        this.destroy$.next();
+        this.destroy$.complete();
+    }
+
+    /**
+     * Append live points for the currently selected metric as they arrive.
+     * Re-subscribing on device change is safe because takeUntil only completes
+     * on destroy; we filter by deviceId implicitly (the stream is per-device).
+     */
+    private subscribeToLive(): void {
+        if (!this.deviceId) return;
+
+        this.metricsService
+            .subscribeToMetrics(this.deviceId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: (metric) => {
+                    const active = this.selectedMetric || this.metricName;
+                    if (active && metric.metricName !== active) {
+                        return;
+                    }
+                    const label = new Date(metric.recordedAt).toLocaleTimeString();
+                    (this.lineChartData.labels as string[])?.push(label);
+                    if (this.lineChartData.datasets[0]) {
+                        (this.lineChartData.datasets[0].data as number[]).push(
+                            metric.metricValue
+                        );
+                    }
+                    this.hasData = true;
+                    this.chart?.update();
+                },
+                error: () => {
+                    /* non-fatal */
+                },
+            });
     }
 
     public onTimeRangeChange(range: TimeRange): void {

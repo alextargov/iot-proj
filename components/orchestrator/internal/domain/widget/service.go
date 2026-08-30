@@ -95,6 +95,33 @@ func (s *service) Create(ctx context.Context, widget model.WidgetInput) (string,
 	return id, nil
 }
 
+// Clone creates a copy of an existing widget (including its device
+// associations, code, workspace and schedule) under a new ID. The clone is
+// created INACTIVE so it does not execute until explicitly activated.
+func (s *service) Clone(ctx context.Context, id string) (string, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return "", errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	source, err := s.widgetRepo.Get(ctx, id, tnt)
+	if err != nil {
+		return "", errors.Wrapf(err, "while getting source widget %s", id)
+	}
+
+	input := model.WidgetInput{
+		Name:        source.Name + " (copy)",
+		Description: source.Description,
+		Status:      model.DeviceStatusInactive,
+		Code:        source.Code,
+		Workspace:   source.Workspace,
+		DeviceIDs:   append([]string(nil), source.DeviceIDs...),
+		Schedule:    source.Schedule,
+	}
+
+	return s.Create(ctx, input)
+}
+
 func (s *service) Delete(ctx context.Context, id string) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {

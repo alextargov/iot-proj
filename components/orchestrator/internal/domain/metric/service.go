@@ -30,6 +30,12 @@ type AlertEvaluator interface {
 	EvaluateMetric(ctx context.Context, metric model.DeviceMetric) error
 }
 
+// RuleEvaluator defines the interface for evaluating automation rules when
+// metrics are recorded. It mirrors AlertEvaluator and is wired the same way.
+type RuleEvaluator interface {
+	EvaluateMetric(ctx context.Context, metric model.DeviceMetric) error
+}
+
 // MetricPublisher defines the interface for publishing metrics to subscribers
 type MetricPublisher interface {
 	Publish(deviceID string, metric *model.DeviceMetric)
@@ -39,6 +45,7 @@ type service struct {
 	metricRepo      MetricRepository
 	uuidService     UUIDService
 	alertEvaluator  AlertEvaluator
+	ruleEvaluator   RuleEvaluator
 	metricPublisher MetricPublisher
 }
 
@@ -48,6 +55,7 @@ func NewService(repo MetricRepository, uuidService UUIDService) *service {
 		metricRepo:      repo,
 		uuidService:     uuidService,
 		alertEvaluator:  nil,
+		ruleEvaluator:   nil,
 		metricPublisher: nil,
 	}
 }
@@ -55,6 +63,11 @@ func NewService(repo MetricRepository, uuidService UUIDService) *service {
 // SetAlertEvaluator sets the alert evaluator for real-time alert evaluation
 func (s *service) SetAlertEvaluator(evaluator AlertEvaluator) {
 	s.alertEvaluator = evaluator
+}
+
+// SetRuleEvaluator sets the automation-rule evaluator for real-time evaluation
+func (s *service) SetRuleEvaluator(evaluator RuleEvaluator) {
+	s.ruleEvaluator = evaluator
 }
 
 // SetMetricPublisher sets the metric publisher for real-time subscriptions
@@ -94,6 +107,12 @@ func (s *service) RecordMetric(ctx context.Context, input model.DeviceMetricInpu
 	if s.alertEvaluator != nil {
 		if err = s.alertEvaluator.EvaluateMetric(ctx, metric); err != nil {
 			logger.C(ctx).Warnf("Alert evaluation failed for metric %s: %v", metric.ID, err)
+		}
+	}
+
+	if s.ruleEvaluator != nil {
+		if err = s.ruleEvaluator.EvaluateMetric(ctx, metric); err != nil {
+			logger.C(ctx).Warnf("Rule evaluation failed for metric %s: %v", metric.ID, err)
 		}
 	}
 

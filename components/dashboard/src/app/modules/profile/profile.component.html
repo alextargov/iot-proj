@@ -1,5 +1,26 @@
-<mat-tab-group mat-align-tabs="center">
-    <mat-tab label="My profile">Content 1</mat-tab>
-    <mat-tab label="Change Password">Content 2</mat-tab>
-    <mat-tab label="Deactivete Account">Content 2</mat-tab>
-</mat-tab-group>
+<div class="profile-container">
+    <h1>My Profile</h1>
+
+    <mat-card *ngIf="!loading && me">
+        <mat-card-content>
+            <div class="row">
+                <span class="label">Username</span>
+                <span class="value">{{ me.username }}</span>
+            </div>
+            <div class="row">
+                <span class="label">Role</span>
+                <span class="value role-badge">{{ me.role }}</span>
+            </div>
+            <div class="row">
+                <span class="label">User ID</span>
+                <span class="value mono">{{ me.id }}</span>
+            </div>
+            <div class="row" *ngIf="me.createdAt">
+                <span class="label">Member since</span>
+                <span class="value">{{ me.createdAt | date: 'medium' }}</span>
+            </div>
+        </mat-card-content>
+    </mat-card>
+
+    <p *ngIf="!loading && !me">Not signed in.</p>
+</div>

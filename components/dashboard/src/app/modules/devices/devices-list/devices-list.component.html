@@ -1,12 +1,36 @@
 <app-content-header title="Devices" [buttons]="buttons"></app-content-header>
 
 <div class="device-list__container">
+    <!-- Import file input (hidden) -->
+    <input
+        type="file"
+        #fileInput
+        accept=".json"
+        style="display: none"
+        (change)="onFileSelected($event)"
+    />
+
     <div class="device-list__filters">
         <mat-form-field class="device-list__search" appearance="outline">
             <mat-label>Search devices</mat-label>
             <input matInput (keyup)="applyFilter($event)" placeholder="Filter by name or description" #searchInput>
             <mat-icon matSuffix>search</mat-icon>
         </mat-form-field>
+
+        @if (availableTags.length) {
+            <mat-form-field class="device-list__tag-select" appearance="outline">
+                <mat-label>Filter by tag</mat-label>
+                <mat-select
+                    [value]="activeTagFilter"
+                    (selectionChange)="selectTagFilter($event.value)"
+                >
+                    <mat-option [value]="null">All tags</mat-option>
+                    @for (tag of availableTags; track tag) {
+                        <mat-option [value]="tag">{{ tag }}</mat-option>
+                    }
+                </mat-select>
+            </mat-form-field>
+        }
 
         @if (activeTagFilter) {
             <mat-chip-set class="device-list__active-filter">
@@ -137,6 +161,12 @@
                         matTooltip="Duplicate"
                         (click)="$event.stopPropagation(); onDuplicate(element)"
                         >content_copy</mat-icon
+                    >
+                    <mat-icon
+                        class="device-list__table-definition-actions-export"
+                        matTooltip="Export"
+                        (click)="$event.stopPropagation(); onExport(element)"
+                        >download</mat-icon
                     >
                     @if (canWrite) {
                         <mat-icon

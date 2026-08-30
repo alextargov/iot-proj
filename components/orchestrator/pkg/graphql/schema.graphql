@@ -292,6 +292,105 @@ type AlertEventPage implements Pageable {
     totalCount: Int!
 }
 
+enum RuleConditionOperator {
+    GT
+    LT
+    EQ
+    GTE
+    LTE
+    NE
+}
+
+enum RuleActionType {
+    DEVICE_OPERATION
+    NOTIFICATION
+    DELAY
+    INTEGRATION
+}
+
+type AutomationRule {
+    id: ID!
+    device: Device!
+    name: String!
+    description: String
+    enabled: Boolean!
+    cooldownSeconds: Int!
+    conditions: [RuleConditionGroup!]!
+    actions: [RuleAction!]!
+    lastTriggeredAt: Timestamp
+    createdAt: Timestamp
+    updatedAt: Timestamp
+}
+
+type RuleConditionGroup {
+    groupId: Int!
+    conditions: [RuleCondition!]!
+}
+
+type RuleCondition {
+    id: ID!
+    metricName: String!
+    operator: RuleConditionOperator!
+    threshold: Float!
+}
+
+type RuleAction {
+    id: ID!
+    seqOrder: Int!
+    type: RuleActionType!
+    targetDeviceId: ID
+    operation: OperationType
+    notificationType: String
+    notificationConfig: String
+    integrationId: ID
+    delaySeconds: Int!
+}
+
+type AutomationRulePage implements Pageable {
+    data: [AutomationRule!]!
+    pageInfo: PageInfo!
+    totalCount: Int!
+}
+
+enum IntegrationType {
+    WEBHOOK
+    IFTTT
+    HOME_ASSISTANT
+    GENERIC_HTTP
+}
+
+type Integration {
+    id: ID!
+    name: String!
+    type: IntegrationType!
+    endpoint: String!
+    hasAuthToken: Boolean!
+    config: String
+    enabled: Boolean!
+    createdAt: Timestamp
+    updatedAt: Timestamp
+}
+
+type Organization {
+    id: ID!
+    name: String!
+    ownerUserId: ID!
+    members: [OrganizationMember!]!
+    createdAt: Timestamp
+    updatedAt: Timestamp
+}
+
+type OrganizationMember {
+    id: ID!
+    userId: ID!
+    username: String!
+    role: Role!
+}
+
+input CreateOrganizationInput {
+    name: String!
+}
+
 type DashboardLayout {
     id: ID!
     tenantId: ID!
@@ -474,6 +573,58 @@ input UpdateAlertRuleInput {
     notifications: [AlertNotificationInput!]
 }
 
+input RuleConditionInput {
+    groupId: Int!
+    metricName: String!
+    operator: RuleConditionOperator!
+    threshold: Float!
+}
+
+input RuleActionInput {
+    seqOrder: Int!
+    type: RuleActionType!
+    targetDeviceId: ID
+    operation: OperationType
+    notificationType: String
+    notificationConfig: String
+    integrationId: ID
+    delaySeconds: Int
+}
+
+input CreateAutomationRuleInput {
+    deviceId: ID!
+    name: String!
+    description: String
+    cooldownSeconds: Int
+    conditions: [RuleConditionInput!]!
+    actions: [RuleActionInput!]!
+}
+
+input UpdateAutomationRuleInput {
+    name: String
+    description: String
+    enabled: Boolean
+    cooldownSeconds: Int
+    conditions: [RuleConditionInput!]
+    actions: [RuleActionInput!]
+}
+
+input CreateIntegrationInput {
+    name: String!
+    type: IntegrationType!
+    endpoint: String!
+    authToken: String
+    config: String
+}
+
+input UpdateIntegrationInput {
+    name: String
+    endpoint: String
+    authToken: String
+    config: String
+    enabled: Boolean
+}
+
 input DashboardLayoutInput {
     name: String!
     description: String
@@ -522,6 +673,8 @@ input WidgetPositionInput {
 type Query {
     me: User
     devices: [Device]!
+    devicesByTags(tags: [String!]!): [Device!]!
+    deviceTags: [String!]!
     devicesPage(first: Int = 20, after: PageCursor): DevicePage!
     device(id: ID!): Device
     deviceByIdAndAggregation(id: ID!, aggregation: AggregationType!): Device
@@ -543,15 +696,24 @@ type Query {
     defaultDashboardLayout: DashboardLayout
     auditLogs(first: Int = 50, after: PageCursor): AuditLogPage!
     auditLogsForResource(resourceType: String!, resourceId: ID!, first: Int = 20): [AuditLog!]!
+    automationRules(first: Int = 50, after: PageCursor): AutomationRulePage!
+    automationRule(id: ID!): AutomationRule
+    integrations: [Integration!]!
+    integration(id: ID!): Integration
+    users: [User!]! @hasRole(minimum: ADMIN)
+    organizations: [Organization!]!
+    organization(id: ID!): Organization
 }
 
 type Mutation {
     createDevice(input: DeviceInput!): Device! @hasRole(minimum: OPERATOR)
+    cloneDevice(id: ID!): Device! @hasRole(minimum: OPERATOR)
     updateDevice(id: ID!, input: UpdateDeviceInput!): Device! @hasRole(minimum: OPERATOR)
     setDeviceOperation(id: ID!, op: OperationType!): Device! @hasRole(minimum: OPERATOR)
     setOperation(op: OperationType!, data: Any): Boolean! @hasRole(minimum: OPERATOR)
     deleteDevice(id: String!): String! @hasRole(minimum: OPERATOR)
     createWidget(input: WidgetInput!): Widget! @hasRole(minimum: OPERATOR)
+    cloneWidget(id: ID!): Widget! @hasRole(minimum: OPERATOR)
     deleteWidget(id: ID!): String! @hasRole(minimum: OPERATOR)
     createDataModel(input: DataModelInput!): DataModel! @hasRole(minimum: OPERATOR)
     deleteDataModel(id: ID!): String! @hasRole(minimum: OPERATOR)
@@ -574,8 +736,28 @@ type Mutation {
     deleteDashboardWidget(id: ID!): ID! @hasRole(minimum: OPERATOR)
     updateWidgetPositions(layoutId: ID!, positions: [WidgetPositionInput!]!): Boolean! @hasRole(minimum: OPERATOR)
     updateUserRole(userId: ID!, role: Role!): User! @hasRole(minimum: ADMIN)
+    createAutomationRule(input: CreateAutomationRuleInput!): AutomationRule! @hasRole(minimum: OPERATOR)
+    updateAutomationRule(id: ID!, input: UpdateAutomationRuleInput!): AutomationRule! @hasRole(minimum: OPERATOR)
+    setAutomationRuleEnabled(id: ID!, enabled: Boolean!): AutomationRule! @hasRole(minimum: OPERATOR)
+    deleteAutomationRule(id: ID!): ID! @hasRole(minimum: OPERATOR)
+    createIntegration(input: CreateIntegrationInput!): Integration! @hasRole(minimum: OPERATOR)
+    updateIntegration(id: ID!, input: UpdateIntegrationInput!): Integration! @hasRole(minimum: OPERATOR)
+    deleteIntegration(id: ID!): ID! @hasRole(minimum: OPERATOR)
+    testIntegration(id: ID!): Boolean! @hasRole(minimum: OPERATOR)
+    createOrganization(input: CreateOrganizationInput!): Organization! @hasRole(minimum: OPERATOR)
+    renameOrganization(id: ID!, name: String!): Organization! @hasRole(minimum: OPERATOR)
+    deleteOrganization(id: ID!): ID! @hasRole(minimum: OPERATOR)
+    addOrganizationMember(organizationId: ID!, userId: ID!, role: Role!): Organization! @hasRole(minimum: ADMIN)
+    updateOrganizationMemberRole(organizationId: ID!, userId: ID!, role: Role!): Organization! @hasRole(minimum: ADMIN)
+    removeOrganizationMember(organizationId: ID!, userId: ID!): Organization! @hasRole(minimum: ADMIN)
+}
+
+type DeviceStatusEvent {
+    deviceId: ID!
+    status: DeviceStatus!
 }
 
 type Subscription {
     metricRecorded(deviceId: ID!): DeviceMetric!
+    deviceStatusChanged(deviceId: ID): DeviceStatusEvent!
 }

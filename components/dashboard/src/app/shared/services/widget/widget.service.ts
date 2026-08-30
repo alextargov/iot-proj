@@ -13,7 +13,22 @@ import {
     WidgetInput,
 } from '../../graphql/generated';
 import { FetchResult } from '@apollo/client/core';
-import { Apollo } from 'apollo-angular';
+import { Apollo, gql } from 'apollo-angular';
+
+const CloneWidgetDocument = gql`
+    mutation CloneWidget($id: ID!) {
+        cloneWidget(id: $id) {
+            id
+            name
+            description
+            status
+        }
+    }
+`;
+
+interface CloneWidgetMutation {
+    cloneWidget: WidgetInfoFragment;
+}
 
 @Injectable({
     providedIn: 'root',
@@ -41,6 +56,15 @@ export class WidgetService {
                 input: data,
             },
         });
+    }
+
+    public clone(id: string): Observable<WidgetInfoFragment | null> {
+        return this.apollo
+            .mutate<CloneWidgetMutation>({
+                mutation: CloneWidgetDocument,
+                variables: { id },
+            })
+            .pipe(map((res) => res.data?.cloneWidget ?? null));
     }
 
     public delete(id: string): Observable<FetchResult<DeleteWidgetMutation>> {

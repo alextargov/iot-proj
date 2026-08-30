@@ -1,0 +1,85 @@
+fragment RuleActionInfo on RuleAction {
+  id
+  seqOrder
+  type
+  targetDeviceId
+  operation
+  notificationType
+  notificationConfig
+  integrationId
+  delaySeconds
+}
+
+fragment RuleConditionGroupInfo on RuleConditionGroup {
+  groupId
+  conditions {
+    id
+    metricName
+    operator
+    threshold
+  }
+}
+
+fragment AutomationRuleInfo on AutomationRule {
+  id
+  name
+  description
+  enabled
+  cooldownSeconds
+  conditions {
+    ...RuleConditionGroupInfo
+  }
+  actions {
+    ...RuleActionInfo
+  }
+  lastTriggeredAt
+  createdAt
+  updatedAt
+  device {
+    id
+    name
+  }
+}
+
+query GetAutomationRules($first: Int, $after: PageCursor) {
+  automationRules(first: $first, after: $after) {
+    data {
+      ...AutomationRuleInfo
+    }
+    pageInfo {
+      startCursor
+      endCursor
+      hasNextPage
+    }
+    totalCount
+  }
+}
+
+query GetAutomationRule($id: ID!) {
+  automationRule(id: $id) {
+    ...AutomationRuleInfo
+  }
+}
+
+mutation CreateAutomationRule($input: CreateAutomationRuleInput!) {
+  createAutomationRule(input: $input) {
+    ...AutomationRuleInfo
+  }
+}
+
+mutation UpdateAutomationRule($id: ID!, $input: UpdateAutomationRuleInput!) {
+  updateAutomationRule(id: $id, input: $input) {
+    ...AutomationRuleInfo
+  }
+}
+
+mutation SetAutomationRuleEnabled($id: ID!, $enabled: Boolean!) {
+  setAutomationRuleEnabled(id: $id, enabled: $enabled) {
+    id
+    enabled
+  }
+}
+
+mutation DeleteAutomationRule($id: ID!) {
+  deleteAutomationRule(id: $id)
+}

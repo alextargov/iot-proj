@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { AuthGuard } from './shared/guards/auth.guard';
 import { LoginGuard } from './shared/guards/login.guard';
+import { RoleGuard } from './shared/guards/role.guard';
 
 const routes: Routes = [
     {
@@ -45,6 +46,27 @@ const routes: Routes = [
         loadChildren: () =>
             import('./modules/alerts/alerts.module').then((m) => m.AlertsModule),
         canActivate: [AuthGuard],
+    },
+    {
+        path: 'rules',
+        loadChildren: () =>
+            import('./modules/rules/rules.module').then((m) => m.RulesModule),
+        canActivate: [AuthGuard],
+    },
+    {
+        path: 'integrations',
+        loadChildren: () =>
+            import('./modules/integrations/integrations.module').then(
+                (m) => m.IntegrationsModule
+            ),
+        canActivate: [AuthGuard],
+    },
+    {
+        path: 'admin',
+        loadChildren: () =>
+            import('./modules/admin/admin.module').then((m) => m.AdminModule),
+        canActivate: [AuthGuard, RoleGuard],
+        data: { minimumRole: 'ADMIN' },
     },
     {
         path: 'login',

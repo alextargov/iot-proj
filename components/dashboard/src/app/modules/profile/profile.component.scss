@@ -1,0 +1,33 @@
+.profile-container {
+    padding: 24px;
+    max-width: 560px;
+}
+
+.row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.label {
+    color: rgba(0, 0, 0, 0.54);
+}
+
+.value {
+    font-weight: 500;
+}
+
+.value.mono {
+    font-family: monospace;
+    font-size: 12px;
+    font-weight: 400;
+}
+
+.role-badge {
+    background: #1976d2;
+    color: #fff;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+}

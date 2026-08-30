@@ -2,8 +2,6 @@ package device
 
 import (
 	"context"
-	"fmt"
-	"net/http"
 
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/apperrors"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/certmanager"
@@ -23,13 +21,17 @@ type DeviceConverter interface {
 
 type DeviceSvc interface {
 	ListAll(ctx context.Context) ([]*model.Device, error)
+	ListByTags(ctx context.Context, tags []string) ([]*model.Device, error)
+	ListAllTags(ctx context.Context) ([]string, error)
 	ListPage(ctx context.Context, pageSize int, cursor string) ([]*model.Device, *pagination.Page, int, error)
 	Create(ctx context.Context, device model.DeviceInput) (string, error)
+	Clone(ctx context.Context, id string) (string, error)
 	Update(ctx context.Context, id string, input model.UpdateDeviceInput) (*model.Device, error)
 	Exists(ctx context.Context, id string) (bool, error)
 	Delete(ctx context.Context, id string) error
 	GetByID(ctx context.Context, id string) (*model.Device, error)
 	SetCommunicationToken(ctx context.Context, id, token string) error
+	SendOperation(ctx context.Context, deviceID string, op model.OperationType) error
 	GetByToken(ctx context.Context, token string) (*model.Device, error)
 	GenerateDeviceCertificate(ctx context.Context, id string) (*certmanager.IssuedCertificate, error)
 	RevokeDeviceCertificate(ctx context.Context, id string) error
@@ -60,6 +62,13 @@ type Resolver struct {
 	deviceConverter DeviceConverter
 	hostConv        HostConv
 	dataModelConv   DataModelConv
+	statusPublisher StatusPublisher
+}
+
+// StatusPublisher publishes device status changes for real-time subscriptions.
+// It is optional; when nil, status changes are simply not broadcast.
+type StatusPublisher interface {
+	Publish(deviceID, status string)
 }
 
 func NewResolver(transact persistence.Transactioner, deviceSvc DeviceSvc, hostSvc HostSvc, dataModelSvc DataModelSvc, deviceConverter DeviceConverter, hostConv HostConv, dataModelConv DataModelConv) *Resolver {
@@ -74,6 +83,12 @@ func NewResolver(transact persistence.Transactioner, deviceSvc DeviceSvc, hostSv
 	}
 }
 
+// SetStatusPublisher wires an optional publisher for real-time device status
+// updates. Called during root resolver construction.
+func (r *Resolver) SetStatusPublisher(p StatusPublisher) {
+	r.statusPublisher = p
+}
+
 func (r *Resolver) Devices(ctx context.Context) ([]*graphql.Device, error) {
 	return transaction.WithReadOnlyTransaction(ctx, r.transact, func(ctx context.Context) ([]*graphql.Device, error) {
 		devices, err := r.deviceSvc.ListAll(ctx)
@@ -81,6 +96,22 @@ func (r *Resolver) Devices(ctx context.Context) ([]*graphql.Device, error) {
 			return nil, err
 		}
 		return r.deviceConverter.MultipleToGraphQL(devices), nil
+	})
+}
+
+func (r *Resolver) DevicesByTags(ctx context.Context, tags []string) ([]*graphql.Device, error) {
+	return transaction.WithReadOnlyTransaction(ctx, r.transact, func(ctx context.Context) ([]*graphql.Device, error) {
+		devices, err := r.deviceSvc.ListByTags(ctx, tags)
+		if err != nil {
+			return nil, err
+		}
+		return r.deviceConverter.MultipleToGraphQL(devices), nil
+	})
+}
+
+func (r *Resolver) DeviceTags(ctx context.Context) ([]string, error) {
+	return transaction.WithReadOnlyTransaction(ctx, r.transact, func(ctx context.Context) ([]string, error) {
+		return r.deviceSvc.ListAllTags(ctx)
 	})
 }
 
@@ -156,6 +187,22 @@ func (r *Resolver) CreateDevice(ctx context.Context, input graphql.DeviceInput) 
 	})
 }
 
+func (r *Resolver) CloneDevice(ctx context.Context, id string) (*graphql.Device, error) {
+	return transaction.WithTransactionResult(ctx, r.transact, func(ctx context.Context) (*graphql.Device, error) {
+		newID, err := r.deviceSvc.Clone(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+
+		device, err := r.deviceSvc.GetByID(ctx, newID)
+		if err != nil {
+			return nil, err
+		}
+
+		return r.deviceConverter.ToGraphQL(device), nil
+	})
+}
+
 func (r *Resolver) UpdateDevice(ctx context.Context, id string, input graphql.UpdateDeviceInput) (*graphql.Device, error) {
 	return transaction.WithTransactionResult(ctx, r.transact, func(ctx context.Context) (*graphql.Device, error) {
 		convertedIn := r.deviceConverter.UpdateInputFromGraphQL(input)
@@ -197,53 +244,25 @@ func (r *Resolver) SetDeviceOperation(ctx context.Context, id string, op graphql
 		return nil, err
 	}
 
-	host, err := r.hostSvc.GetByDeviceID(ctx, id)
-	if err != nil {
-		if apperrors.IsNotFoundError(err) {
-			return nil, fmt.Errorf("device has no host configured")
-		}
+	if err := r.deviceSvc.SendOperation(ctx, id, model.OperationType(op)); err != nil {
+		r.publishStatus(id, string(model.DeviceStatusUnreachable))
 		return nil, err
-	}
-
-	var endpoint string
-	switch op {
-	case graphql.OperationTypeTurnOn:
-		if host.TurnOnEndpoint == nil || *host.TurnOnEndpoint == "" {
-			return nil, fmt.Errorf("device has no turn-on endpoint configured")
-		}
-		endpoint = host.Url + *host.TurnOnEndpoint
-	case graphql.OperationTypeTurnOff:
-		if host.TurnOffEndpoint == nil || *host.TurnOffEndpoint == "" {
-			return nil, fmt.Errorf("device has no turn-off endpoint configured")
-		}
-		endpoint = host.Url + *host.TurnOffEndpoint
-	default:
-		return nil, fmt.Errorf("unsupported operation type: %s", op)
-	}
-
-	// Use authenticated HTTP client with device credentials. If the device has
-	// an issued mTLS client certificate, present it to the endpoint.
-	var httpClient *AuthenticatedHTTPClient
-	if device.ClientCert != nil && device.ClientCertKey != nil && *device.ClientCert != "" {
-		httpClient = NewAuthenticatedHTTPClientWithCert(*device.ClientCert, *device.ClientCertKey)
-	} else {
-		httpClient = NewAuthenticatedHTTPClient()
-	}
-	resp, err := httpClient.DoRequest(ctx, http.MethodPost, endpoint, nil, device.Auth)
-	if err != nil {
-		return nil, fmt.Errorf("failed to call device endpoint: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, fmt.Errorf("device returned error status: %d", resp.StatusCode)
 	}
 
 	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
 
+	r.publishStatus(id, string(model.DeviceStatusACTIVE))
+
 	return r.deviceConverter.ToGraphQL(device), nil
+}
+
+// publishStatus broadcasts a device status change if a publisher is wired.
+func (r *Resolver) publishStatus(deviceID, status string) {
+	if r.statusPublisher != nil {
+		r.statusPublisher.Publish(deviceID, status)
+	}
 }
 
 func (r *Resolver) SetOperation(ctx context.Context, op graphql.OperationType, data interface{}) (bool, error) {

@@ -14,6 +14,7 @@ type UserRepository interface {
 	Create(ctx context.Context, item model.User) error
 	Update(ctx context.Context, item model.User) error
 	DeleteByID(ctx context.Context, id string) error
+	List(ctx context.Context) ([]*model.User, error)
 }
 
 type EncryptionService interface {
@@ -41,6 +42,12 @@ func (s *service) GetByID(ctx context.Context, id string) (*model.User, error) {
 	logger.C(ctx).Infof("Getting user by id %s", id)
 
 	return s.userRepo.GetByID(ctx, id)
+}
+
+// List returns all users (admin-only surface).
+func (s *service) List(ctx context.Context) ([]*model.User, error) {
+	logger.C(ctx).Info("Listing all users")
+	return s.userRepo.List(ctx)
 }
 
 func (s *service) GetByUsername(ctx context.Context, username string) (*model.User, error) {

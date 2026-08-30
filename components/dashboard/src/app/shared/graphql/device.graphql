@@ -46,6 +46,16 @@ query GetAllDevices {
     }
 }
 
+query GetDevicesByTags($tags: [String!]!) {
+    devicesByTags(tags: $tags) {
+        ...DeviceInfo
+    }
+}
+
+query GetDeviceTags {
+    deviceTags
+}
+
 query GetDevice($id: ID!) {
     device(id: $id) {
         ...DeviceInfo
@@ -68,6 +78,12 @@ query GetDevicesPage($first: Int, $after: PageCursor) {
 
 mutation CreateDevice($input: DeviceInput!) {
     createDevice(input: $input) {
+        ...DeviceInfo
+    }
+}
+
+mutation CloneDevice($id: ID!) {
+    cloneDevice(id: $id) {
         ...DeviceInfo
     }
 }
@@ -102,4 +118,11 @@ mutation RevokeDeviceCertificate($deviceId: ID!) {
 
 query TestDeviceConnection($url: String!) {
     testDeviceConnection(url: $url)
+}
+
+subscription OnDeviceStatusChanged($deviceId: ID) {
+    deviceStatusChanged(deviceId: $deviceId) {
+        deviceId
+        status
+    }
 }

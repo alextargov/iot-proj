@@ -39,6 +39,12 @@ mutation CreateWidget($input: WidgetInput!) {
     }
 }
 
+mutation CloneWidget($id: ID!) {
+    cloneWidget(id: $id) {
+        ...WidgetInfo
+    }
+}
+
 mutation DeleteWidget($id: ID!) {
     deleteWidget(id: $id)
 }

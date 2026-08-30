@@ -1,0 +1,69 @@
+query GetUsers {
+  users {
+    id
+    username
+    role
+    createdAt
+  }
+}
+
+mutation UpdateUserRoleAdmin($userId: ID!, $role: Role!) {
+  updateUserRole(userId: $userId, role: $role) {
+    id
+    username
+    role
+  }
+}
+
+fragment OrganizationInfo on Organization {
+  id
+  name
+  ownerUserId
+  members {
+    id
+    userId
+    username
+    role
+  }
+  createdAt
+}
+
+query GetOrganizations {
+  organizations {
+    ...OrganizationInfo
+  }
+}
+
+mutation CreateOrganization($input: CreateOrganizationInput!) {
+  createOrganization(input: $input) {
+    ...OrganizationInfo
+  }
+}
+
+mutation RenameOrganization($id: ID!, $name: String!) {
+  renameOrganization(id: $id, name: $name) {
+    ...OrganizationInfo
+  }
+}
+
+mutation DeleteOrganization($id: ID!) {
+  deleteOrganization(id: $id)
+}
+
+mutation AddOrganizationMember($organizationId: ID!, $userId: ID!, $role: Role!) {
+  addOrganizationMember(organizationId: $organizationId, userId: $userId, role: $role) {
+    ...OrganizationInfo
+  }
+}
+
+mutation UpdateOrganizationMemberRole($organizationId: ID!, $userId: ID!, $role: Role!) {
+  updateOrganizationMemberRole(organizationId: $organizationId, userId: $userId, role: $role) {
+    ...OrganizationInfo
+  }
+}
+
+mutation RemoveOrganizationMember($organizationId: ID!, $userId: ID!) {
+  removeOrganizationMember(organizationId: $organizationId, userId: $userId) {
+    ...OrganizationInfo
+  }
+}

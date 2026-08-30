@@ -1,0 +1,43 @@
+fragment IntegrationInfo on Integration {
+  id
+  name
+  type
+  endpoint
+  hasAuthToken
+  config
+  enabled
+  createdAt
+  updatedAt
+}
+
+query GetIntegrations {
+  integrations {
+    ...IntegrationInfo
+  }
+}
+
+query GetIntegration($id: ID!) {
+  integration(id: $id) {
+    ...IntegrationInfo
+  }
+}
+
+mutation CreateIntegration($input: CreateIntegrationInput!) {
+  createIntegration(input: $input) {
+    ...IntegrationInfo
+  }
+}
+
+mutation UpdateIntegration($id: ID!, $input: UpdateIntegrationInput!) {
+  updateIntegration(id: $id, input: $input) {
+    ...IntegrationInfo
+  }
+}
+
+mutation DeleteIntegration($id: ID!) {
+  deleteIntegration(id: $id)
+}
+
+mutation TestIntegration($id: ID!) {
+  testIntegration(id: $id)
+}

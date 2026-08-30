@@ -184,6 +184,28 @@ export type AuthInput = {
   credentialForService?: InputMaybe<Scalars['String']['input']>;
 };
 
+export type AutomationRule = {
+  __typename?: 'AutomationRule';
+  actions: Array<RuleAction>;
+  conditions: Array<RuleConditionGroup>;
+  cooldownSeconds: Scalars['Int']['output'];
+  createdAt?: Maybe<Scalars['Timestamp']['output']>;
+  description?: Maybe<Scalars['String']['output']>;
+  device: Device;
+  enabled: Scalars['Boolean']['output'];
+  id: Scalars['ID']['output'];
+  lastTriggeredAt?: Maybe<Scalars['Timestamp']['output']>;
+  name: Scalars['String']['output'];
+  updatedAt?: Maybe<Scalars['Timestamp']['output']>;
+};
+
+export type AutomationRulePage = Pageable & {
+  __typename?: 'AutomationRulePage';
+  data: Array<AutomationRule>;
+  pageInfo: PageInfo;
+  totalCount: Scalars['Int']['output'];
+};
+
 export type BasicCredentialData = {
   __typename?: 'BasicCredentialData';
   password: Scalars['String']['output'];
@@ -221,6 +243,27 @@ export type CreateAlertRuleInput = {
   name: Scalars['String']['input'];
   notifications: Array<AlertNotificationInput>;
   severity?: InputMaybe<AlertSeverity>;
+};
+
+export type CreateAutomationRuleInput = {
+  actions: Array<RuleActionInput>;
+  conditions: Array<RuleConditionInput>;
+  cooldownSeconds?: InputMaybe<Scalars['Int']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  deviceId: Scalars['ID']['input'];
+  name: Scalars['String']['input'];
+};
+
+export type CreateIntegrationInput = {
+  authToken?: InputMaybe<Scalars['String']['input']>;
+  config?: InputMaybe<Scalars['String']['input']>;
+  endpoint: Scalars['String']['input'];
+  name: Scalars['String']['input'];
+  type: IntegrationType;
+};
+
+export type CreateOrganizationInput = {
+  name: Scalars['String']['input'];
 };
 
 export type CredentialData = BasicCredentialData | BearerTokenCredentialData | CertificateOAuthCredentialData | OAuthCredentialData;
@@ -387,6 +430,12 @@ export enum DeviceStatus {
   Unreachable = 'UNREACHABLE'
 }
 
+export type DeviceStatusEvent = {
+  __typename?: 'DeviceStatusEvent';
+  deviceId: Scalars['ID']['output'];
+  status: DeviceStatus;
+};
+
 export type Host = {
   __typename?: 'Host';
   id: Scalars['ID']['output'];
@@ -400,6 +449,26 @@ export type HostInput = {
   turnOnEndpoint?: InputMaybe<Scalars['String']['input']>;
   url: Scalars['String']['input'];
 };
+
+export type Integration = {
+  __typename?: 'Integration';
+  config?: Maybe<Scalars['String']['output']>;
+  createdAt?: Maybe<Scalars['Timestamp']['output']>;
+  enabled: Scalars['Boolean']['output'];
+  endpoint: Scalars['String']['output'];
+  hasAuthToken: Scalars['Boolean']['output'];
+  id: Scalars['ID']['output'];
+  name: Scalars['String']['output'];
+  type: IntegrationType;
+  updatedAt?: Maybe<Scalars['Timestamp']['output']>;
+};
+
+export enum IntegrationType {
+  GenericHttp = 'GENERIC_HTTP',
+  HomeAssistant = 'HOME_ASSISTANT',
+  Ifttt = 'IFTTT',
+  Webhook = 'WEBHOOK'
+}
 
 export type MetricFilterInput = {
   endTime?: InputMaybe<Scalars['Timestamp']['input']>;
@@ -419,30 +488,46 @@ export type Mutation = {
   __typename?: 'Mutation';
   acknowledgeAlertEvent: AlertEvent;
   addDashboardWidget: DashboardWidget;
+  addOrganizationMember: Organization;
+  cloneDevice: Device;
+  cloneWidget: Widget;
   createAlertRule: AlertRule;
+  createAutomationRule: AutomationRule;
   createDashboardLayout: DashboardLayout;
   createDataModel: DataModel;
   createDevice: Device;
+  createIntegration: Integration;
+  createOrganization: Organization;
   createWidget: Widget;
   deleteAlertRule: Scalars['ID']['output'];
+  deleteAutomationRule: Scalars['ID']['output'];
   deleteDashboardLayout: Scalars['ID']['output'];
   deleteDashboardWidget: Scalars['ID']['output'];
   deleteDataModel: Scalars['String']['output'];
   deleteDevice: Scalars['String']['output'];
+  deleteIntegration: Scalars['ID']['output'];
+  deleteOrganization: Scalars['ID']['output'];
   deleteWidget: Scalars['String']['output'];
   generateDeviceCertificate: DeviceCertificate;
   generateDeviceToken: Scalars['String']['output'];
   recordDeviceMetric: DeviceMetric;
   recordDeviceMetrics: Scalars['Boolean']['output'];
+  removeOrganizationMember: Organization;
+  renameOrganization: Organization;
   revokeDeviceCertificate: Scalars['Boolean']['output'];
   rollbackDataModel: DataModel;
+  setAutomationRuleEnabled: AutomationRule;
   setDeviceOperation: Device;
   setOperation: Scalars['Boolean']['output'];
+  testIntegration: Scalars['Boolean']['output'];
   updateAlertRule: AlertRule;
+  updateAutomationRule: AutomationRule;
   updateDashboardLayout: DashboardLayout;
   updateDashboardWidget: DashboardWidget;
   updateDataModel: DataModel;
   updateDevice: Device;
+  updateIntegration: Integration;
+  updateOrganizationMemberRole: Organization;
   updateUserRole: User;
   updateWidgetPositions: Scalars['Boolean']['output'];
 };
@@ -459,8 +544,30 @@ export type MutationAddDashboardWidgetArgs = {
 };
 
 
+export type MutationAddOrganizationMemberArgs = {
+  organizationId: Scalars['ID']['input'];
+  role: Role;
+  userId: Scalars['ID']['input'];
+};
+
+
+export type MutationCloneDeviceArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationCloneWidgetArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
 export type MutationCreateAlertRuleArgs = {
   input: CreateAlertRuleInput;
+};
+
+
+export type MutationCreateAutomationRuleArgs = {
+  input: CreateAutomationRuleInput;
 };
 
 
@@ -479,12 +586,27 @@ export type MutationCreateDeviceArgs = {
 };
 
 
+export type MutationCreateIntegrationArgs = {
+  input: CreateIntegrationInput;
+};
+
+
+export type MutationCreateOrganizationArgs = {
+  input: CreateOrganizationInput;
+};
+
+
 export type MutationCreateWidgetArgs = {
   input: WidgetInput;
 };
 
 
 export type MutationDeleteAlertRuleArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationDeleteAutomationRuleArgs = {
   id: Scalars['ID']['input'];
 };
 
@@ -506,6 +628,16 @@ export type MutationDeleteDataModelArgs = {
 
 export type MutationDeleteDeviceArgs = {
   id: Scalars['String']['input'];
+};
+
+
+export type MutationDeleteIntegrationArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationDeleteOrganizationArgs = {
+  id: Scalars['ID']['input'];
 };
 
 
@@ -534,6 +666,18 @@ export type MutationRecordDeviceMetricsArgs = {
 };
 
 
+export type MutationRemoveOrganizationMemberArgs = {
+  organizationId: Scalars['ID']['input'];
+  userId: Scalars['ID']['input'];
+};
+
+
+export type MutationRenameOrganizationArgs = {
+  id: Scalars['ID']['input'];
+  name: Scalars['String']['input'];
+};
+
+
 export type MutationRevokeDeviceCertificateArgs = {
   deviceId: Scalars['ID']['input'];
 };
@@ -542,6 +686,12 @@ export type MutationRevokeDeviceCertificateArgs = {
 export type MutationRollbackDataModelArgs = {
   dataModelId: Scalars['ID']['input'];
   toVersion: Scalars['Int']['input'];
+};
+
+
+export type MutationSetAutomationRuleEnabledArgs = {
+  enabled: Scalars['Boolean']['input'];
+  id: Scalars['ID']['input'];
 };
 
 
@@ -557,9 +707,20 @@ export type MutationSetOperationArgs = {
 };
 
 
+export type MutationTestIntegrationArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
 export type MutationUpdateAlertRuleArgs = {
   id: Scalars['ID']['input'];
   input: UpdateAlertRuleInput;
+};
+
+
+export type MutationUpdateAutomationRuleArgs = {
+  id: Scalars['ID']['input'];
+  input: UpdateAutomationRuleInput;
 };
 
 
@@ -584,6 +745,19 @@ export type MutationUpdateDataModelArgs = {
 export type MutationUpdateDeviceArgs = {
   id: Scalars['ID']['input'];
   input: UpdateDeviceInput;
+};
+
+
+export type MutationUpdateIntegrationArgs = {
+  id: Scalars['ID']['input'];
+  input: UpdateIntegrationInput;
+};
+
+
+export type MutationUpdateOrganizationMemberRoleArgs = {
+  organizationId: Scalars['ID']['input'];
+  role: Role;
+  userId: Scalars['ID']['input'];
 };
 
 
@@ -618,6 +792,24 @@ export enum OperationType {
   TurnOn = 'TURN_ON'
 }
 
+export type Organization = {
+  __typename?: 'Organization';
+  createdAt?: Maybe<Scalars['Timestamp']['output']>;
+  id: Scalars['ID']['output'];
+  members: Array<OrganizationMember>;
+  name: Scalars['String']['output'];
+  ownerUserId: Scalars['ID']['output'];
+  updatedAt?: Maybe<Scalars['Timestamp']['output']>;
+};
+
+export type OrganizationMember = {
+  __typename?: 'OrganizationMember';
+  id: Scalars['ID']['output'];
+  role: Role;
+  userId: Scalars['ID']['output'];
+  username: Scalars['String']['output'];
+};
+
 export type PageInfo = {
   __typename?: 'PageInfo';
   endCursor: Scalars['PageCursor']['output'];
@@ -637,6 +829,8 @@ export type Query = {
   alertRules: AlertRulePage;
   auditLogs: AuditLogPage;
   auditLogsForResource: Array<AuditLog>;
+  automationRule?: Maybe<AutomationRule>;
+  automationRules: AutomationRulePage;
   dashboardLayout?: Maybe<DashboardLayout>;
   dashboardLayouts: Array<DashboardLayout>;
   dataModelVersion?: Maybe<DataModelVersion>;
@@ -648,10 +842,17 @@ export type Query = {
   deviceByIdAndAggregation?: Maybe<Device>;
   deviceMetrics: Array<DeviceMetric>;
   deviceMetricsSeries: Array<MetricSeries>;
+  deviceTags: Array<Scalars['String']['output']>;
   devices: Array<Maybe<Device>>;
+  devicesByTags: Array<Device>;
   devicesPage: DevicePage;
+  integration?: Maybe<Integration>;
+  integrations: Array<Integration>;
   me?: Maybe<User>;
+  organization?: Maybe<Organization>;
+  organizations: Array<Organization>;
   testDeviceConnection: Scalars['Boolean']['output'];
+  users: Array<User>;
   widget?: Maybe<Widget>;
   widgets: Array<Maybe<Widget>>;
   widgetsPage: WidgetPage;
@@ -688,6 +889,17 @@ export type QueryAuditLogsForResourceArgs = {
   first?: InputMaybe<Scalars['Int']['input']>;
   resourceId: Scalars['ID']['input'];
   resourceType: Scalars['String']['input'];
+};
+
+
+export type QueryAutomationRuleArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryAutomationRulesArgs = {
+  after?: InputMaybe<Scalars['PageCursor']['input']>;
+  first?: InputMaybe<Scalars['Int']['input']>;
 };
 
 
@@ -738,9 +950,24 @@ export type QueryDeviceMetricsSeriesArgs = {
 };
 
 
+export type QueryDevicesByTagsArgs = {
+  tags: Array<Scalars['String']['input']>;
+};
+
+
 export type QueryDevicesPageArgs = {
   after?: InputMaybe<Scalars['PageCursor']['input']>;
   first?: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+export type QueryIntegrationArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryOrganizationArgs = {
+  id: Scalars['ID']['input'];
 };
 
 
@@ -765,9 +992,76 @@ export enum Role {
   Viewer = 'VIEWER'
 }
 
+export type RuleAction = {
+  __typename?: 'RuleAction';
+  delaySeconds: Scalars['Int']['output'];
+  id: Scalars['ID']['output'];
+  integrationId?: Maybe<Scalars['ID']['output']>;
+  notificationConfig?: Maybe<Scalars['String']['output']>;
+  notificationType?: Maybe<Scalars['String']['output']>;
+  operation?: Maybe<OperationType>;
+  seqOrder: Scalars['Int']['output'];
+  targetDeviceId?: Maybe<Scalars['ID']['output']>;
+  type: RuleActionType;
+};
+
+export type RuleActionInput = {
+  delaySeconds?: InputMaybe<Scalars['Int']['input']>;
+  integrationId?: InputMaybe<Scalars['ID']['input']>;
+  notificationConfig?: InputMaybe<Scalars['String']['input']>;
+  notificationType?: InputMaybe<Scalars['String']['input']>;
+  operation?: InputMaybe<OperationType>;
+  seqOrder: Scalars['Int']['input'];
+  targetDeviceId?: InputMaybe<Scalars['ID']['input']>;
+  type: RuleActionType;
+};
+
+export enum RuleActionType {
+  Delay = 'DELAY',
+  DeviceOperation = 'DEVICE_OPERATION',
+  Integration = 'INTEGRATION',
+  Notification = 'NOTIFICATION'
+}
+
+export type RuleCondition = {
+  __typename?: 'RuleCondition';
+  id: Scalars['ID']['output'];
+  metricName: Scalars['String']['output'];
+  operator: RuleConditionOperator;
+  threshold: Scalars['Float']['output'];
+};
+
+export type RuleConditionGroup = {
+  __typename?: 'RuleConditionGroup';
+  conditions: Array<RuleCondition>;
+  groupId: Scalars['Int']['output'];
+};
+
+export type RuleConditionInput = {
+  groupId: Scalars['Int']['input'];
+  metricName: Scalars['String']['input'];
+  operator: RuleConditionOperator;
+  threshold: Scalars['Float']['input'];
+};
+
+export enum RuleConditionOperator {
+  Eq = 'EQ',
+  Gt = 'GT',
+  Gte = 'GTE',
+  Lt = 'LT',
+  Lte = 'LTE',
+  Ne = 'NE'
+}
+
 export type Subscription = {
   __typename?: 'Subscription';
+  deviceStatusChanged: DeviceStatusEvent;
   metricRecorded: DeviceMetric;
+};
+
+
+export type SubscriptionDeviceStatusChangedArgs = {
+  deviceId?: InputMaybe<Scalars['ID']['input']>;
 };
 
 
@@ -787,6 +1081,15 @@ export type UpdateAlertRuleInput = {
   name?: InputMaybe<Scalars['String']['input']>;
   notifications?: InputMaybe<Array<AlertNotificationInput>>;
   severity?: InputMaybe<AlertSeverity>;
+};
+
+export type UpdateAutomationRuleInput = {
+  actions?: InputMaybe<Array<RuleActionInput>>;
+  conditions?: InputMaybe<Array<RuleConditionInput>>;
+  cooldownSeconds?: InputMaybe<Scalars['Int']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  enabled?: InputMaybe<Scalars['Boolean']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type UpdateDashboardLayoutInput = {
@@ -822,6 +1125,14 @@ export type UpdateDeviceInput = {
   name?: InputMaybe<Scalars['String']['input']>;
   status?: InputMaybe<DeviceStatus>;
   tags?: InputMaybe<Array<Scalars['String']['input']>>;
+};
+
+export type UpdateIntegrationInput = {
+  authToken?: InputMaybe<Scalars['String']['input']>;
+  config?: InputMaybe<Scalars['String']['input']>;
+  enabled?: InputMaybe<Scalars['Boolean']['input']>;
+  endpoint?: InputMaybe<Scalars['String']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type User = {
@@ -878,6 +1189,74 @@ export enum WidgetStatus {
   Active = 'ACTIVE',
   Inactive = 'INACTIVE'
 }
+
+export type GetUsersQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetUsersQuery = { __typename?: 'Query', users: Array<{ __typename?: 'User', id: string, username: string, role: Role, createdAt?: any | null }> };
+
+export type UpdateUserRoleAdminMutationVariables = Exact<{
+  userId: Scalars['ID']['input'];
+  role: Role;
+}>;
+
+
+export type UpdateUserRoleAdminMutation = { __typename?: 'Mutation', updateUserRole: { __typename?: 'User', id: string, username: string, role: Role } };
+
+export type OrganizationInfoFragment = { __typename?: 'Organization', id: string, name: string, ownerUserId: string, createdAt?: any | null, members: Array<{ __typename?: 'OrganizationMember', id: string, userId: string, username: string, role: Role }> };
+
+export type GetOrganizationsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetOrganizationsQuery = { __typename?: 'Query', organizations: Array<{ __typename?: 'Organization', id: string, name: string, ownerUserId: string, createdAt?: any | null, members: Array<{ __typename?: 'OrganizationMember', id: string, userId: string, username: string, role: Role }> }> };
+
+export type CreateOrganizationMutationVariables = Exact<{
+  input: CreateOrganizationInput;
+}>;
+
+
+export type CreateOrganizationMutation = { __typename?: 'Mutation', createOrganization: { __typename?: 'Organization', id: string, name: string, ownerUserId: string, createdAt?: any | null, members: Array<{ __typename?: 'OrganizationMember', id: string, userId: string, username: string, role: Role }> } };
+
+export type RenameOrganizationMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  name: Scalars['String']['input'];
+}>;
+
+
+export type RenameOrganizationMutation = { __typename?: 'Mutation', renameOrganization: { __typename?: 'Organization', id: string, name: string, ownerUserId: string, createdAt?: any | null, members: Array<{ __typename?: 'OrganizationMember', id: string, userId: string, username: string, role: Role }> } };
+
+export type DeleteOrganizationMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type DeleteOrganizationMutation = { __typename?: 'Mutation', deleteOrganization: string };
+
+export type AddOrganizationMemberMutationVariables = Exact<{
+  organizationId: Scalars['ID']['input'];
+  userId: Scalars['ID']['input'];
+  role: Role;
+}>;
+
+
+export type AddOrganizationMemberMutation = { __typename?: 'Mutation', addOrganizationMember: { __typename?: 'Organization', id: string, name: string, ownerUserId: string, createdAt?: any | null, members: Array<{ __typename?: 'OrganizationMember', id: string, userId: string, username: string, role: Role }> } };
+
+export type UpdateOrganizationMemberRoleMutationVariables = Exact<{
+  organizationId: Scalars['ID']['input'];
+  userId: Scalars['ID']['input'];
+  role: Role;
+}>;
+
+
+export type UpdateOrganizationMemberRoleMutation = { __typename?: 'Mutation', updateOrganizationMemberRole: { __typename?: 'Organization', id: string, name: string, ownerUserId: string, createdAt?: any | null, members: Array<{ __typename?: 'OrganizationMember', id: string, userId: string, username: string, role: Role }> } };
+
+export type RemoveOrganizationMemberMutationVariables = Exact<{
+  organizationId: Scalars['ID']['input'];
+  userId: Scalars['ID']['input'];
+}>;
+
+
+export type RemoveOrganizationMemberMutation = { __typename?: 'Mutation', removeOrganizationMember: { __typename?: 'Organization', id: string, name: string, ownerUserId: string, createdAt?: any | null, members: Array<{ __typename?: 'OrganizationMember', id: string, userId: string, username: string, role: Role }> } };
 
 export type GetAlertRulesQueryVariables = Exact<{
   deviceId?: InputMaybe<Scalars['ID']['input']>;
@@ -1092,6 +1471,23 @@ export type GetAllDevicesQuery = { __typename?: 'Query', devices: Array<{ __type
         | { __typename?: 'OAuthCredentialData', clientId: string, clientSecret: string, url: string }
        | null } | null, host?: { __typename?: 'Host', id: string, url: string, turnOnEndpoint?: string | null, turnOffEndpoint?: string | null } | null } | null> };
 
+export type GetDevicesByTagsQueryVariables = Exact<{
+  tags: Array<Scalars['String']['input']> | Scalars['String']['input'];
+}>;
+
+
+export type GetDevicesByTagsQuery = { __typename?: 'Query', devicesByTags: Array<{ __typename?: 'Device', id: string, name: string, description?: string | null, status: DeviceStatus, tenantId: string, tags?: Array<string> | null, hasCertificate: boolean, certificateSerial?: string | null, certificateExpiresAt?: any | null, createdAt?: any | null, updatedAt?: any | null, auth?: { __typename?: 'Auth', credentialForService?: string | null, credentialForDevice?:
+        | { __typename?: 'BasicCredentialData', username: string, password: string }
+        | { __typename?: 'BearerTokenCredentialData', token: string }
+        | { __typename?: 'CertificateOAuthCredentialData', clientId: string, certificate: string, url: string }
+        | { __typename?: 'OAuthCredentialData', clientId: string, clientSecret: string, url: string }
+       | null } | null, host?: { __typename?: 'Host', id: string, url: string, turnOnEndpoint?: string | null, turnOffEndpoint?: string | null } | null }> };
+
+export type GetDeviceTagsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetDeviceTagsQuery = { __typename?: 'Query', deviceTags: Array<string> };
+
 export type GetDeviceQueryVariables = Exact<{
   id: Scalars['ID']['input'];
 }>;
@@ -1123,6 +1519,18 @@ export type CreateDeviceMutationVariables = Exact<{
 
 
 export type CreateDeviceMutation = { __typename?: 'Mutation', createDevice: { __typename?: 'Device', id: string, name: string, description?: string | null, status: DeviceStatus, tenantId: string, tags?: Array<string> | null, hasCertificate: boolean, certificateSerial?: string | null, certificateExpiresAt?: any | null, createdAt?: any | null, updatedAt?: any | null, auth?: { __typename?: 'Auth', credentialForService?: string | null, credentialForDevice?:
+        | { __typename?: 'BasicCredentialData', username: string, password: string }
+        | { __typename?: 'BearerTokenCredentialData', token: string }
+        | { __typename?: 'CertificateOAuthCredentialData', clientId: string, certificate: string, url: string }
+        | { __typename?: 'OAuthCredentialData', clientId: string, clientSecret: string, url: string }
+       | null } | null, host?: { __typename?: 'Host', id: string, url: string, turnOnEndpoint?: string | null, turnOffEndpoint?: string | null } | null } };
+
+export type CloneDeviceMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type CloneDeviceMutation = { __typename?: 'Mutation', cloneDevice: { __typename?: 'Device', id: string, name: string, description?: string | null, status: DeviceStatus, tenantId: string, tags?: Array<string> | null, hasCertificate: boolean, certificateSerial?: string | null, certificateExpiresAt?: any | null, createdAt?: any | null, updatedAt?: any | null, auth?: { __typename?: 'Auth', credentialForService?: string | null, credentialForDevice?:
         | { __typename?: 'BasicCredentialData', username: string, password: string }
         | { __typename?: 'BearerTokenCredentialData', token: string }
         | { __typename?: 'CertificateOAuthCredentialData', clientId: string, certificate: string, url: string }
@@ -1177,6 +1585,56 @@ export type TestDeviceConnectionQueryVariables = Exact<{
 
 export type TestDeviceConnectionQuery = { __typename?: 'Query', testDeviceConnection: boolean };
 
+export type OnDeviceStatusChangedSubscriptionVariables = Exact<{
+  deviceId?: InputMaybe<Scalars['ID']['input']>;
+}>;
+
+
+export type OnDeviceStatusChangedSubscription = { __typename?: 'Subscription', deviceStatusChanged: { __typename?: 'DeviceStatusEvent', deviceId: string, status: DeviceStatus } };
+
+export type IntegrationInfoFragment = { __typename?: 'Integration', id: string, name: string, type: IntegrationType, endpoint: string, hasAuthToken: boolean, config?: string | null, enabled: boolean, createdAt?: any | null, updatedAt?: any | null };
+
+export type GetIntegrationsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetIntegrationsQuery = { __typename?: 'Query', integrations: Array<{ __typename?: 'Integration', id: string, name: string, type: IntegrationType, endpoint: string, hasAuthToken: boolean, config?: string | null, enabled: boolean, createdAt?: any | null, updatedAt?: any | null }> };
+
+export type GetIntegrationQueryVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type GetIntegrationQuery = { __typename?: 'Query', integration?: { __typename?: 'Integration', id: string, name: string, type: IntegrationType, endpoint: string, hasAuthToken: boolean, config?: string | null, enabled: boolean, createdAt?: any | null, updatedAt?: any | null } | null };
+
+export type CreateIntegrationMutationVariables = Exact<{
+  input: CreateIntegrationInput;
+}>;
+
+
+export type CreateIntegrationMutation = { __typename?: 'Mutation', createIntegration: { __typename?: 'Integration', id: string, name: string, type: IntegrationType, endpoint: string, hasAuthToken: boolean, config?: string | null, enabled: boolean, createdAt?: any | null, updatedAt?: any | null } };
+
+export type UpdateIntegrationMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  input: UpdateIntegrationInput;
+}>;
+
+
+export type UpdateIntegrationMutation = { __typename?: 'Mutation', updateIntegration: { __typename?: 'Integration', id: string, name: string, type: IntegrationType, endpoint: string, hasAuthToken: boolean, config?: string | null, enabled: boolean, createdAt?: any | null, updatedAt?: any | null } };
+
+export type DeleteIntegrationMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type DeleteIntegrationMutation = { __typename?: 'Mutation', deleteIntegration: string };
+
+export type TestIntegrationMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type TestIntegrationMutation = { __typename?: 'Mutation', testIntegration: boolean };
+
 export type DeviceMetricInfoFragment = { __typename?: 'DeviceMetric', id: string, deviceId: string, metricName: string, metricValue: number, unit?: string | null, recordedAt: any };
 
 export type MetricSeriesInfoFragment = { __typename?: 'MetricSeries', metricName: string, unit?: string | null, dataPoints: Array<{ __typename?: 'DeviceMetric', id: string, deviceId: string, metricName: string, metricValue: number, unit?: string | null, recordedAt: any }> };
@@ -1230,6 +1688,57 @@ export type OnMetricRecordedSubscriptionVariables = Exact<{
 
 export type OnMetricRecordedSubscription = { __typename?: 'Subscription', metricRecorded: { __typename?: 'DeviceMetric', id: string, deviceId: string, metricName: string, metricValue: number, unit?: string | null, recordedAt: any } };
 
+export type RuleActionInfoFragment = { __typename?: 'RuleAction', id: string, seqOrder: number, type: RuleActionType, targetDeviceId?: string | null, operation?: OperationType | null, notificationType?: string | null, notificationConfig?: string | null, integrationId?: string | null, delaySeconds: number };
+
+export type RuleConditionGroupInfoFragment = { __typename?: 'RuleConditionGroup', groupId: number, conditions: Array<{ __typename?: 'RuleCondition', id: string, metricName: string, operator: RuleConditionOperator, threshold: number }> };
+
+export type AutomationRuleInfoFragment = { __typename?: 'AutomationRule', id: string, name: string, description?: string | null, enabled: boolean, cooldownSeconds: number, lastTriggeredAt?: any | null, createdAt?: any | null, updatedAt?: any | null, conditions: Array<{ __typename?: 'RuleConditionGroup', groupId: number, conditions: Array<{ __typename?: 'RuleCondition', id: string, metricName: string, operator: RuleConditionOperator, threshold: number }> }>, actions: Array<{ __typename?: 'RuleAction', id: string, seqOrder: number, type: RuleActionType, targetDeviceId?: string | null, operation?: OperationType | null, notificationType?: string | null, notificationConfig?: string | null, integrationId?: string | null, delaySeconds: number }>, device: { __typename?: 'Device', id: string, name: string } };
+
+export type GetAutomationRulesQueryVariables = Exact<{
+  first?: InputMaybe<Scalars['Int']['input']>;
+  after?: InputMaybe<Scalars['PageCursor']['input']>;
+}>;
+
+
+export type GetAutomationRulesQuery = { __typename?: 'Query', automationRules: { __typename?: 'AutomationRulePage', totalCount: number, data: Array<{ __typename?: 'AutomationRule', id: string, name: string, description?: string | null, enabled: boolean, cooldownSeconds: number, lastTriggeredAt?: any | null, createdAt?: any | null, updatedAt?: any | null, conditions: Array<{ __typename?: 'RuleConditionGroup', groupId: number, conditions: Array<{ __typename?: 'RuleCondition', id: string, metricName: string, operator: RuleConditionOperator, threshold: number }> }>, actions: Array<{ __typename?: 'RuleAction', id: string, seqOrder: number, type: RuleActionType, targetDeviceId?: string | null, operation?: OperationType | null, notificationType?: string | null, notificationConfig?: string | null, integrationId?: string | null, delaySeconds: number }>, device: { __typename?: 'Device', id: string, name: string } }>, pageInfo: { __typename?: 'PageInfo', startCursor: any, endCursor: any, hasNextPage: boolean } } };
+
+export type GetAutomationRuleQueryVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type GetAutomationRuleQuery = { __typename?: 'Query', automationRule?: { __typename?: 'AutomationRule', id: string, name: string, description?: string | null, enabled: boolean, cooldownSeconds: number, lastTriggeredAt?: any | null, createdAt?: any | null, updatedAt?: any | null, conditions: Array<{ __typename?: 'RuleConditionGroup', groupId: number, conditions: Array<{ __typename?: 'RuleCondition', id: string, metricName: string, operator: RuleConditionOperator, threshold: number }> }>, actions: Array<{ __typename?: 'RuleAction', id: string, seqOrder: number, type: RuleActionType, targetDeviceId?: string | null, operation?: OperationType | null, notificationType?: string | null, notificationConfig?: string | null, integrationId?: string | null, delaySeconds: number }>, device: { __typename?: 'Device', id: string, name: string } } | null };
+
+export type CreateAutomationRuleMutationVariables = Exact<{
+  input: CreateAutomationRuleInput;
+}>;
+
+
+export type CreateAutomationRuleMutation = { __typename?: 'Mutation', createAutomationRule: { __typename?: 'AutomationRule', id: string, name: string, description?: string | null, enabled: boolean, cooldownSeconds: number, lastTriggeredAt?: any | null, createdAt?: any | null, updatedAt?: any | null, conditions: Array<{ __typename?: 'RuleConditionGroup', groupId: number, conditions: Array<{ __typename?: 'RuleCondition', id: string, metricName: string, operator: RuleConditionOperator, threshold: number }> }>, actions: Array<{ __typename?: 'RuleAction', id: string, seqOrder: number, type: RuleActionType, targetDeviceId?: string | null, operation?: OperationType | null, notificationType?: string | null, notificationConfig?: string | null, integrationId?: string | null, delaySeconds: number }>, device: { __typename?: 'Device', id: string, name: string } } };
+
+export type UpdateAutomationRuleMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  input: UpdateAutomationRuleInput;
+}>;
+
+
+export type UpdateAutomationRuleMutation = { __typename?: 'Mutation', updateAutomationRule: { __typename?: 'AutomationRule', id: string, name: string, description?: string | null, enabled: boolean, cooldownSeconds: number, lastTriggeredAt?: any | null, createdAt?: any | null, updatedAt?: any | null, conditions: Array<{ __typename?: 'RuleConditionGroup', groupId: number, conditions: Array<{ __typename?: 'RuleCondition', id: string, metricName: string, operator: RuleConditionOperator, threshold: number }> }>, actions: Array<{ __typename?: 'RuleAction', id: string, seqOrder: number, type: RuleActionType, targetDeviceId?: string | null, operation?: OperationType | null, notificationType?: string | null, notificationConfig?: string | null, integrationId?: string | null, delaySeconds: number }>, device: { __typename?: 'Device', id: string, name: string } } };
+
+export type SetAutomationRuleEnabledMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  enabled: Scalars['Boolean']['input'];
+}>;
+
+
+export type SetAutomationRuleEnabledMutation = { __typename?: 'Mutation', setAutomationRuleEnabled: { __typename?: 'AutomationRule', id: string, enabled: boolean } };
+
+export type DeleteAutomationRuleMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type DeleteAutomationRuleMutation = { __typename?: 'Mutation', deleteAutomationRule: string };
+
 export type WidgetInfoFragment = { __typename?: 'Widget', id: string, name: string, description?: string | null, status: WidgetStatus, tenantId: string, code: string, workspace: string, deviceIds?: Array<string> | null, schedule?: string | null, lastExecutedAt?: any | null, createdAt?: any | null, updatedAt?: any | null };
 
 export type GetAllWidgetsQueryVariables = Exact<{ [key: string]: never; }>;
@@ -1252,6 +1761,13 @@ export type CreateWidgetMutationVariables = Exact<{
 
 export type CreateWidgetMutation = { __typename?: 'Mutation', createWidget: { __typename?: 'Widget', id: string, name: string, description?: string | null, status: WidgetStatus, tenantId: string, code: string, workspace: string, deviceIds?: Array<string> | null, schedule?: string | null, lastExecutedAt?: any | null, createdAt?: any | null, updatedAt?: any | null } };
 
+export type CloneWidgetMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type CloneWidgetMutation = { __typename?: 'Mutation', cloneWidget: { __typename?: 'Widget', id: string, name: string, description?: string | null, status: WidgetStatus, tenantId: string, code: string, workspace: string, deviceIds?: Array<string> | null, schedule?: string | null, lastExecutedAt?: any | null, createdAt?: any | null, updatedAt?: any | null } };
+
 export type DeleteWidgetMutationVariables = Exact<{
   id: Scalars['ID']['input'];
 }>;
@@ -1259,6 +1775,20 @@ export type DeleteWidgetMutationVariables = Exact<{
 
 export type DeleteWidgetMutation = { __typename?: 'Mutation', deleteWidget: string };
 
+export const OrganizationInfoFragmentDoc = gql`
+    fragment OrganizationInfo on Organization {
+  id
+  name
+  ownerUserId
+  members {
+    id
+    userId
+    username
+    role
+  }
+  createdAt
+}
+    `;
 export const DashboardWidgetInfoFragmentDoc = gql`
     fragment DashboardWidgetInfo on DashboardWidget {
   id
@@ -1356,6 +1886,19 @@ export const DeviceInfoFragmentDoc = gql`
   updatedAt
 }
     `;
+export const IntegrationInfoFragmentDoc = gql`
+    fragment IntegrationInfo on Integration {
+  id
+  name
+  type
+  endpoint
+  hasAuthToken
+  config
+  enabled
+  createdAt
+  updatedAt
+}
+    `;
 export const DeviceMetricInfoFragmentDoc = gql`
     fragment DeviceMetricInfo on DeviceMetric {
   id
@@ -1386,6 +1929,53 @@ export const AggregatedMetricInfoFragmentDoc = gql`
   endTime
 }
     `;
+export const RuleConditionGroupInfoFragmentDoc = gql`
+    fragment RuleConditionGroupInfo on RuleConditionGroup {
+  groupId
+  conditions {
+    id
+    metricName
+    operator
+    threshold
+  }
+}
+    `;
+export const RuleActionInfoFragmentDoc = gql`
+    fragment RuleActionInfo on RuleAction {
+  id
+  seqOrder
+  type
+  targetDeviceId
+  operation
+  notificationType
+  notificationConfig
+  integrationId
+  delaySeconds
+}
+    `;
+export const AutomationRuleInfoFragmentDoc = gql`
+    fragment AutomationRuleInfo on AutomationRule {
+  id
+  name
+  description
+  enabled
+  cooldownSeconds
+  conditions {
+    ...RuleConditionGroupInfo
+  }
+  actions {
+    ...RuleActionInfo
+  }
+  lastTriggeredAt
+  createdAt
+  updatedAt
+  device {
+    id
+    name
+  }
+}
+    ${RuleConditionGroupInfoFragmentDoc}
+${RuleActionInfoFragmentDoc}`;
 export const WidgetInfoFragmentDoc = gql`
     fragment WidgetInfo on Widget {
   id
@@ -1402,6 +1992,179 @@ export const WidgetInfoFragmentDoc = gql`
   updatedAt
 }
     `;
+export const GetUsersDocument = gql`
+    query GetUsers {
+  users {
+    id
+    username
+    role
+    createdAt
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class GetUsersGQL extends Apollo.Query<GetUsersQuery, GetUsersQueryVariables> {
+    document = GetUsersDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const UpdateUserRoleAdminDocument = gql`
+    mutation UpdateUserRoleAdmin($userId: ID!, $role: Role!) {
+  updateUserRole(userId: $userId, role: $role) {
+    id
+    username
+    role
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class UpdateUserRoleAdminGQL extends Apollo.Mutation<UpdateUserRoleAdminMutation, UpdateUserRoleAdminMutationVariables> {
+    document = UpdateUserRoleAdminDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const GetOrganizationsDocument = gql`
+    query GetOrganizations {
+  organizations {
+    ...OrganizationInfo
+  }
+}
+    ${OrganizationInfoFragmentDoc}`;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class GetOrganizationsGQL extends Apollo.Query<GetOrganizationsQuery, GetOrganizationsQueryVariables> {
+    document = GetOrganizationsDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const CreateOrganizationDocument = gql`
+    mutation CreateOrganization($input: CreateOrganizationInput!) {
+  createOrganization(input: $input) {
+    ...OrganizationInfo
+  }
+}
+    ${OrganizationInfoFragmentDoc}`;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class CreateOrganizationGQL extends Apollo.Mutation<CreateOrganizationMutation, CreateOrganizationMutationVariables> {
+    document = CreateOrganizationDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const RenameOrganizationDocument = gql`
+    mutation RenameOrganization($id: ID!, $name: String!) {
+  renameOrganization(id: $id, name: $name) {
+    ...OrganizationInfo
+  }
+}
+    ${OrganizationInfoFragmentDoc}`;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class RenameOrganizationGQL extends Apollo.Mutation<RenameOrganizationMutation, RenameOrganizationMutationVariables> {
+    document = RenameOrganizationDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const DeleteOrganizationDocument = gql`
+    mutation DeleteOrganization($id: ID!) {
+  deleteOrganization(id: $id)
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class DeleteOrganizationGQL extends Apollo.Mutation<DeleteOrganizationMutation, DeleteOrganizationMutationVariables> {
+    document = DeleteOrganizationDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const AddOrganizationMemberDocument = gql`
+    mutation AddOrganizationMember($organizationId: ID!, $userId: ID!, $role: Role!) {
+  addOrganizationMember(
+    organizationId: $organizationId
+    userId: $userId
+    role: $role
+  ) {
+    ...OrganizationInfo
+  }
+}
+    ${OrganizationInfoFragmentDoc}`;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class AddOrganizationMemberGQL extends Apollo.Mutation<AddOrganizationMemberMutation, AddOrganizationMemberMutationVariables> {
+    document = AddOrganizationMemberDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const UpdateOrganizationMemberRoleDocument = gql`
+    mutation UpdateOrganizationMemberRole($organizationId: ID!, $userId: ID!, $role: Role!) {
+  updateOrganizationMemberRole(
+    organizationId: $organizationId
+    userId: $userId
+    role: $role
+  ) {
+    ...OrganizationInfo
+  }
+}
+    ${OrganizationInfoFragmentDoc}`;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class UpdateOrganizationMemberRoleGQL extends Apollo.Mutation<UpdateOrganizationMemberRoleMutation, UpdateOrganizationMemberRoleMutationVariables> {
+    document = UpdateOrganizationMemberRoleDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const RemoveOrganizationMemberDocument = gql`
+    mutation RemoveOrganizationMember($organizationId: ID!, $userId: ID!) {
+  removeOrganizationMember(organizationId: $organizationId, userId: $userId) {
+    ...OrganizationInfo
+  }
+}
+    ${OrganizationInfoFragmentDoc}`;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class RemoveOrganizationMemberGQL extends Apollo.Mutation<RemoveOrganizationMemberMutation, RemoveOrganizationMemberMutationVariables> {
+    document = RemoveOrganizationMemberDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
 export const GetAlertRulesDocument = gql`
     query GetAlertRules($deviceId: ID, $first: Int, $after: PageCursor) {
   alertRules(deviceId: $deviceId, first: $first, after: $after) {
@@ -1997,6 +2760,40 @@ export const GetAllDevicesDocument = gql`
       super(apollo);
     }
   }
+export const GetDevicesByTagsDocument = gql`
+    query GetDevicesByTags($tags: [String!]!) {
+  devicesByTags(tags: $tags) {
+    ...DeviceInfo
+  }
+}
+    ${DeviceInfoFragmentDoc}`;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class GetDevicesByTagsGQL extends Apollo.Query<GetDevicesByTagsQuery, GetDevicesByTagsQueryVariables> {
+    document = GetDevicesByTagsDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const GetDeviceTagsDocument = gql`
+    query GetDeviceTags {
+  deviceTags
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class GetDeviceTagsGQL extends Apollo.Query<GetDeviceTagsQuery, GetDeviceTagsQueryVariables> {
+    document = GetDeviceTagsDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
 export const GetDeviceDocument = gql`
     query GetDevice($id: ID!) {
   device(id: $id) {
@@ -2054,6 +2851,24 @@ export const CreateDeviceDocument = gql`
   })
   export class CreateDeviceGQL extends Apollo.Mutation<CreateDeviceMutation, CreateDeviceMutationVariables> {
     document = CreateDeviceDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const CloneDeviceDocument = gql`
+    mutation CloneDevice($id: ID!) {
+  cloneDevice(id: $id) {
+    ...DeviceInfo
+  }
+}
+    ${DeviceInfoFragmentDoc}`;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class CloneDeviceGQL extends Apollo.Mutation<CloneDeviceMutation, CloneDeviceMutationVariables> {
+    document = CloneDeviceDocument;
     
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
@@ -2158,6 +2973,129 @@ export const TestDeviceConnectionDocument = gql`
   })
   export class TestDeviceConnectionGQL extends Apollo.Query<TestDeviceConnectionQuery, TestDeviceConnectionQueryVariables> {
     document = TestDeviceConnectionDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const OnDeviceStatusChangedDocument = gql`
+    subscription OnDeviceStatusChanged($deviceId: ID) {
+  deviceStatusChanged(deviceId: $deviceId) {
+    deviceId
+    status
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class OnDeviceStatusChangedGQL extends Apollo.Subscription<OnDeviceStatusChangedSubscription, OnDeviceStatusChangedSubscriptionVariables> {
+    document = OnDeviceStatusChangedDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const GetIntegrationsDocument = gql`
+    query GetIntegrations {
+  integrations {
+    ...IntegrationInfo
+  }
+}
+    ${IntegrationInfoFragmentDoc}`;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class GetIntegrationsGQL extends Apollo.Query<GetIntegrationsQuery, GetIntegrationsQueryVariables> {
+    document = GetIntegrationsDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const GetIntegrationDocument = gql`
+    query GetIntegration($id: ID!) {
+  integration(id: $id) {
+    ...IntegrationInfo
+  }
+}
+    ${IntegrationInfoFragmentDoc}`;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class GetIntegrationGQL extends Apollo.Query<GetIntegrationQuery, GetIntegrationQueryVariables> {
+    document = GetIntegrationDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const CreateIntegrationDocument = gql`
+    mutation CreateIntegration($input: CreateIntegrationInput!) {
+  createIntegration(input: $input) {
+    ...IntegrationInfo
+  }
+}
+    ${IntegrationInfoFragmentDoc}`;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class CreateIntegrationGQL extends Apollo.Mutation<CreateIntegrationMutation, CreateIntegrationMutationVariables> {
+    document = CreateIntegrationDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const UpdateIntegrationDocument = gql`
+    mutation UpdateIntegration($id: ID!, $input: UpdateIntegrationInput!) {
+  updateIntegration(id: $id, input: $input) {
+    ...IntegrationInfo
+  }
+}
+    ${IntegrationInfoFragmentDoc}`;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class UpdateIntegrationGQL extends Apollo.Mutation<UpdateIntegrationMutation, UpdateIntegrationMutationVariables> {
+    document = UpdateIntegrationDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const DeleteIntegrationDocument = gql`
+    mutation DeleteIntegration($id: ID!) {
+  deleteIntegration(id: $id)
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class DeleteIntegrationGQL extends Apollo.Mutation<DeleteIntegrationMutation, DeleteIntegrationMutationVariables> {
+    document = DeleteIntegrationDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const TestIntegrationDocument = gql`
+    mutation TestIntegration($id: ID!) {
+  testIntegration(id: $id)
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class TestIntegrationGQL extends Apollo.Mutation<TestIntegrationMutation, TestIntegrationMutationVariables> {
+    document = TestIntegrationDocument;
     
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
@@ -2277,6 +3215,121 @@ export const OnMetricRecordedDocument = gql`
       super(apollo);
     }
   }
+export const GetAutomationRulesDocument = gql`
+    query GetAutomationRules($first: Int, $after: PageCursor) {
+  automationRules(first: $first, after: $after) {
+    data {
+      ...AutomationRuleInfo
+    }
+    pageInfo {
+      startCursor
+      endCursor
+      hasNextPage
+    }
+    totalCount
+  }
+}
+    ${AutomationRuleInfoFragmentDoc}`;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class GetAutomationRulesGQL extends Apollo.Query<GetAutomationRulesQuery, GetAutomationRulesQueryVariables> {
+    document = GetAutomationRulesDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const GetAutomationRuleDocument = gql`
+    query GetAutomationRule($id: ID!) {
+  automationRule(id: $id) {
+    ...AutomationRuleInfo
+  }
+}
+    ${AutomationRuleInfoFragmentDoc}`;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class GetAutomationRuleGQL extends Apollo.Query<GetAutomationRuleQuery, GetAutomationRuleQueryVariables> {
+    document = GetAutomationRuleDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const CreateAutomationRuleDocument = gql`
+    mutation CreateAutomationRule($input: CreateAutomationRuleInput!) {
+  createAutomationRule(input: $input) {
+    ...AutomationRuleInfo
+  }
+}
+    ${AutomationRuleInfoFragmentDoc}`;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class CreateAutomationRuleGQL extends Apollo.Mutation<CreateAutomationRuleMutation, CreateAutomationRuleMutationVariables> {
+    document = CreateAutomationRuleDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const UpdateAutomationRuleDocument = gql`
+    mutation UpdateAutomationRule($id: ID!, $input: UpdateAutomationRuleInput!) {
+  updateAutomationRule(id: $id, input: $input) {
+    ...AutomationRuleInfo
+  }
+}
+    ${AutomationRuleInfoFragmentDoc}`;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class UpdateAutomationRuleGQL extends Apollo.Mutation<UpdateAutomationRuleMutation, UpdateAutomationRuleMutationVariables> {
+    document = UpdateAutomationRuleDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const SetAutomationRuleEnabledDocument = gql`
+    mutation SetAutomationRuleEnabled($id: ID!, $enabled: Boolean!) {
+  setAutomationRuleEnabled(id: $id, enabled: $enabled) {
+    id
+    enabled
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class SetAutomationRuleEnabledGQL extends Apollo.Mutation<SetAutomationRuleEnabledMutation, SetAutomationRuleEnabledMutationVariables> {
+    document = SetAutomationRuleEnabledDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const DeleteAutomationRuleDocument = gql`
+    mutation DeleteAutomationRule($id: ID!) {
+  deleteAutomationRule(id: $id)
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class DeleteAutomationRuleGQL extends Apollo.Mutation<DeleteAutomationRuleMutation, DeleteAutomationRuleMutationVariables> {
+    document = DeleteAutomationRuleDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
 export const GetAllWidgetsDocument = gql`
     query GetAllWidgets {
   widgets {
@@ -2334,6 +3387,24 @@ export const CreateWidgetDocument = gql`
   })
   export class CreateWidgetGQL extends Apollo.Mutation<CreateWidgetMutation, CreateWidgetMutationVariables> {
     document = CreateWidgetDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const CloneWidgetDocument = gql`
+    mutation CloneWidget($id: ID!) {
+  cloneWidget(id: $id) {
+    ...WidgetInfo
+  }
+}
+    ${WidgetInfoFragmentDoc}`;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class CloneWidgetGQL extends Apollo.Mutation<CloneWidgetMutation, CloneWidgetMutationVariables> {
+    document = CloneWidgetDocument;
     
     constructor(apollo: Apollo.Apollo) {
       super(apollo);

@@ -65,6 +65,10 @@ models:
     fields:
       device:
         resolver: true
+  AutomationRule:
+    fields:
+      device:
+        resolver: true
   DashboardWidget:
     fields:
       device:

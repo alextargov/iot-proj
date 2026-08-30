@@ -1,0 +1,50 @@
+.admin-container {
+    padding: 24px;
+}
+
+.tab-content {
+    padding: 16px 0;
+}
+
+.loading {
+    display: flex;
+    justify-content: center;
+    padding: 32px;
+}
+
+.admin-table {
+    width: 100%;
+    margin-bottom: 16px;
+}
+
+.mono {
+    font-family: monospace;
+    font-size: 12px;
+}
+
+.create-org {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.org-card {
+    margin-bottom: 16px;
+}
+
+.org-card mat-card-header {
+    display: flex;
+    align-items: center;
+}
+
+.spacer {
+    flex: 1;
+}
+
+.add-member {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 8px;
+}

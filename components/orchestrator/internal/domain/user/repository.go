@@ -96,3 +96,18 @@ func (r *repository) DeleteByID(ctx context.Context, id string) error {
 	logger.C(ctx).Debugf("Deleting a user by ID %s", id)
 	return r.deleterGlobal.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
+
+// List returns all users (global, not tenant-scoped) — used by the admin UI.
+func (r *repository) List(ctx context.Context) ([]*model.User, error) {
+	logger.C(ctx).Debug("Listing all users")
+	var entities EntityCollection
+	if err := r.listerGlobal.ListGlobal(ctx, &entities); err != nil {
+		return nil, err
+	}
+
+	users := make([]*model.User, 0, len(entities))
+	for i := range entities {
+		users = append(users, r.conv.FromEntity(&entities[i]))
+	}
+	return users, nil
+}

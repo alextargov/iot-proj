@@ -36,6 +36,22 @@ export class StatusIndicatorWidgetComponent implements OnInit, OnDestroy, OnChan
                 .pipe(takeUntil(this.destroy$))
                 .subscribe(() => this.loadData());
         }
+
+        // Live status updates via WebSocket subscription.
+        if (this.deviceId) {
+            this.deviceService
+                .subscribeToDeviceStatus(this.deviceId)
+                .pipe(takeUntil(this.destroy$))
+                .subscribe({
+                    next: (event) => {
+                        this.status = event.status;
+                        this.cdr.detectChanges();
+                    },
+                    error: () => {
+                        /* non-fatal; polling still runs */
+                    },
+                });
+        }
     }
 
     ngOnChanges(changes: SimpleChanges): void {

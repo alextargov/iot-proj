@@ -41,6 +41,23 @@ export class GaugeWidgetComponent implements OnInit, OnDestroy, OnChanges {
                 .pipe(takeUntil(this.destroy$))
                 .subscribe(() => this.loadData());
         }
+
+        // Live updates: re-fetch the aggregate when a matching metric arrives.
+        if (this.deviceId) {
+            this.metricsService
+                .subscribeToMetrics(this.deviceId)
+                .pipe(takeUntil(this.destroy$))
+                .subscribe({
+                    next: (metric) => {
+                        if (!this.metricName || metric.metricName === this.metricName) {
+                            this.loadData();
+                        }
+                    },
+                    error: () => {
+                        /* non-fatal; polling still runs */
+                    },
+                });
+        }
     }
 
     ngOnChanges(changes: SimpleChanges): void {

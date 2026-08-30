@@ -1,0 +1,83 @@
+<div class="integrations-container">
+    <div class="header">
+        <h1>Integrations</h1>
+        <button *ngIf="canWrite" mat-raised-button color="primary" (click)="create()">
+            <mat-icon>add</mat-icon>
+            Add Integration
+        </button>
+    </div>
+
+    <div *ngIf="loading" class="loading">
+        <mat-spinner diameter="40"></mat-spinner>
+    </div>
+
+    <div *ngIf="!loading && integrations.length === 0" class="empty">
+        <mat-icon>hub</mat-icon>
+        <p>No integrations configured.</p>
+    </div>
+
+    <table
+        mat-table
+        [dataSource]="integrations"
+        *ngIf="!loading && integrations.length > 0"
+        class="integrations-table"
+    >
+        <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef>Name</th>
+            <td mat-cell *matCellDef="let i">{{ i.name }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="type">
+            <th mat-header-cell *matHeaderCellDef>Type</th>
+            <td mat-cell *matCellDef="let i">{{ i.type }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="endpoint">
+            <th mat-header-cell *matHeaderCellDef>Endpoint</th>
+            <td mat-cell *matCellDef="let i" class="endpoint-cell">{{ i.endpoint }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="enabled">
+            <th mat-header-cell *matHeaderCellDef>Enabled</th>
+            <td mat-cell *matCellDef="let i">
+                <mat-icon [class.on]="i.enabled" [class.off]="!i.enabled">
+                    {{ i.enabled ? 'check_circle' : 'cancel' }}
+                </mat-icon>
+            </td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef></th>
+            <td mat-cell *matCellDef="let i">
+                <button
+                    mat-icon-button
+                    *ngIf="canWrite"
+                    (click)="test(i)"
+                    matTooltip="Send test request"
+                >
+                    <mat-icon
+                        [class.on]="testResult[i.id] === 'ok'"
+                        [class.off]="testResult[i.id] === 'fail'"
+                    >
+                        {{ testResult[i.id] === 'pending' ? 'hourglass_empty' : 'send' }}
+                    </mat-icon>
+                </button>
+                <button mat-icon-button *ngIf="canWrite" (click)="edit(i)" matTooltip="Edit">
+                    <mat-icon>edit</mat-icon>
+                </button>
+                <button
+                    mat-icon-button
+                    *ngIf="canWrite"
+                    color="warn"
+                    (click)="remove(i)"
+                    matTooltip="Delete"
+                >
+                    <mat-icon>delete</mat-icon>
+                </button>
+            </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+    </table>
+</div>

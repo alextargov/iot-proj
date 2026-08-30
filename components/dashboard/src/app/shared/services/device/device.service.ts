@@ -10,6 +10,8 @@ import {
     DeviceInfoFragment,
     GetAllDevicesGQL,
     GetDeviceGQL,
+    OnDeviceStatusChangedGQL,
+    DeviceStatus as GqlDeviceStatus,
 } from '../../graphql/generated';
 import { DeviceInput } from '../../graphql/generated';
 import { FetchResult } from '@apollo/client/core';
@@ -61,6 +63,59 @@ const TestDeviceConnectionDocument = gql`
         testDeviceConnection(url: $url)
     }
 `;
+
+const CloneDeviceDocument = gql`
+    mutation CloneDevice($id: ID!) {
+        cloneDevice(id: $id) {
+            id
+            name
+            description
+            status
+        }
+    }
+`;
+
+interface CloneDeviceMutation {
+    cloneDevice: DeviceInfoFragment;
+}
+
+const GetDeviceTagsDocument = gql`
+    query GetDeviceTags {
+        deviceTags
+    }
+`;
+
+interface GetDeviceTagsQuery {
+    deviceTags: string[];
+}
+
+const GetDevicesByTagsDocument = gql`
+    query GetDevicesByTags($tags: [String!]!) {
+        devicesByTags(tags: $tags) {
+            id
+            name
+            description
+            status
+            tenantId
+            tags
+            host {
+                id
+                url
+                turnOnEndpoint
+                turnOffEndpoint
+            }
+            hasCertificate
+            certificateSerial
+            certificateExpiresAt
+            createdAt
+            updatedAt
+        }
+    }
+`;
+
+interface GetDevicesByTagsQuery {
+    devicesByTags: DeviceInfoFragment[];
+}
 
 const UpdateDeviceDocument = gql`
     mutation UpdateDevice($id: ID!, $input: UpdateDeviceInput!) {
@@ -139,6 +194,7 @@ export class DeviceService {
     constructor(
         private readonly getAllDevicesGql: GetAllDevicesGQL,
         private readonly getDeviceGql: GetDeviceGQL,
+        private readonly onDeviceStatusChangedGql: OnDeviceStatusChangedGQL,
         private readonly apollo: Apollo
     ) {}
 
@@ -163,6 +219,41 @@ export class DeviceService {
                 input: data,
             },
         });
+    }
+
+    public getDeviceTags(): Observable<string[]> {
+        return this.apollo
+            .query<GetDeviceTagsQuery>({
+                query: GetDeviceTagsDocument,
+                fetchPolicy: 'network-only',
+            })
+            .pipe(map((res) => res.data?.deviceTags ?? []));
+    }
+
+    public getDevicesByTags(tags: string[]): Observable<DeviceInfoFragment[]> {
+        return this.apollo
+            .query<GetDevicesByTagsQuery>({
+                query: GetDevicesByTagsDocument,
+                variables: { tags },
+                fetchPolicy: 'network-only',
+            })
+            .pipe(
+                map(
+                    (res) =>
+                        (res.data?.devicesByTags ?? []) as DeviceInfoFragment[]
+                )
+            );
+    }
+
+    public cloneDevice(
+        id: string
+    ): Observable<DeviceInfoFragment | null> {
+        return this.apollo
+            .mutate<CloneDeviceMutation>({
+                mutation: CloneDeviceDocument,
+                variables: { id },
+            })
+            .pipe(map((res) => res.data?.cloneDevice ?? null));
     }
 
     public deleteDevice(
@@ -226,5 +317,26 @@ export class DeviceService {
                 fetchPolicy: 'network-only',
             })
             .pipe(map((res) => res.data?.testDeviceConnection ?? false));
+    }
+
+    /**
+     * Subscribe to real-time device status changes. Pass a deviceId to receive
+     * events for a single device, or omit it to receive status changes for all
+     * devices (used by the devices list view).
+     */
+    public subscribeToDeviceStatus(
+        deviceId?: string
+    ): Observable<{ deviceId: string; status: GqlDeviceStatus }> {
+        return this.onDeviceStatusChangedGql
+            .subscribe({ variables: { deviceId } })
+            .pipe(
+                map((res) => {
+                    const evt = res.data!.deviceStatusChanged;
+                    return {
+                        deviceId: evt.deviceId,
+                        status: evt.status,
+                    };
+                })
+            );
     }
 }

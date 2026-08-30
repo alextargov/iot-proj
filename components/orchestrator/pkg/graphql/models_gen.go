@@ -140,6 +140,30 @@ type AuthInput struct {
 	AccessStrategy       *string              `json:"accessStrategy,omitempty"`
 }
 
+type AutomationRule struct {
+	ID              string                `json:"id"`
+	Device          *Device               `json:"device"`
+	Name            string                `json:"name"`
+	Description     *string               `json:"description,omitempty"`
+	Enabled         bool                  `json:"enabled"`
+	CooldownSeconds int                   `json:"cooldownSeconds"`
+	Conditions      []*RuleConditionGroup `json:"conditions"`
+	Actions         []*RuleAction         `json:"actions"`
+	LastTriggeredAt *Timestamp            `json:"lastTriggeredAt,omitempty"`
+	CreatedAt       *Timestamp            `json:"createdAt,omitempty"`
+	UpdatedAt       *Timestamp            `json:"updatedAt,omitempty"`
+}
+
+type AutomationRulePage struct {
+	Data       []*AutomationRule `json:"data"`
+	PageInfo   *PageInfo         `json:"pageInfo"`
+	TotalCount int               `json:"totalCount"`
+}
+
+func (AutomationRulePage) IsPageable()                 {}
+func (this AutomationRulePage) GetPageInfo() *PageInfo { return this.PageInfo }
+func (this AutomationRulePage) GetTotalCount() int     { return this.TotalCount }
+
 type BasicCredentialData struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
@@ -180,6 +204,27 @@ type CreateAlertRuleInput struct {
 	CooldownMinutes *int                      `json:"cooldownMinutes,omitempty"`
 	Conditions      []*AlertConditionInput    `json:"conditions"`
 	Notifications   []*AlertNotificationInput `json:"notifications"`
+}
+
+type CreateAutomationRuleInput struct {
+	DeviceID        string                `json:"deviceId"`
+	Name            string                `json:"name"`
+	Description     *string               `json:"description,omitempty"`
+	CooldownSeconds *int                  `json:"cooldownSeconds,omitempty"`
+	Conditions      []*RuleConditionInput `json:"conditions"`
+	Actions         []*RuleActionInput    `json:"actions"`
+}
+
+type CreateIntegrationInput struct {
+	Name      string          `json:"name"`
+	Type      IntegrationType `json:"type"`
+	Endpoint  string          `json:"endpoint"`
+	AuthToken *string         `json:"authToken,omitempty"`
+	Config    *string         `json:"config,omitempty"`
+}
+
+type CreateOrganizationInput struct {
+	Name string `json:"name"`
 }
 
 type CredentialDataInput struct {
@@ -308,6 +353,11 @@ func (DevicePage) IsPageable()                 {}
 func (this DevicePage) GetPageInfo() *PageInfo { return this.PageInfo }
 func (this DevicePage) GetTotalCount() int     { return this.TotalCount }
 
+type DeviceStatusEvent struct {
+	DeviceID string       `json:"deviceId"`
+	Status   DeviceStatus `json:"status"`
+}
+
 type Host struct {
 	ID              string  `json:"id"`
 	URL             string  `json:"url"`
@@ -319,6 +369,18 @@ type HostInput struct {
 	URL             string  `json:"url"`
 	TurnOnEndpoint  *string `json:"turnOnEndpoint,omitempty"`
 	TurnOffEndpoint *string `json:"turnOffEndpoint,omitempty"`
+}
+
+type Integration struct {
+	ID           string          `json:"id"`
+	Name         string          `json:"name"`
+	Type         IntegrationType `json:"type"`
+	Endpoint     string          `json:"endpoint"`
+	HasAuthToken bool            `json:"hasAuthToken"`
+	Config       *string         `json:"config,omitempty"`
+	Enabled      bool            `json:"enabled"`
+	CreatedAt    *Timestamp      `json:"createdAt,omitempty"`
+	UpdatedAt    *Timestamp      `json:"updatedAt,omitempty"`
 }
 
 type MetricFilterInput struct {
@@ -351,6 +413,22 @@ type OAuthCredentialDataInput struct {
 	URL          string `json:"url"`
 }
 
+type Organization struct {
+	ID          string                `json:"id"`
+	Name        string                `json:"name"`
+	OwnerUserID string                `json:"ownerUserId"`
+	Members     []*OrganizationMember `json:"members"`
+	CreatedAt   *Timestamp            `json:"createdAt,omitempty"`
+	UpdatedAt   *Timestamp            `json:"updatedAt,omitempty"`
+}
+
+type OrganizationMember struct {
+	ID       string `json:"id"`
+	UserID   string `json:"userId"`
+	Username string `json:"username"`
+	Role     Role   `json:"role"`
+}
+
 type PageInfo struct {
 	StartCursor string `json:"startCursor"`
 	EndCursor   string `json:"endCursor"`
@@ -358,6 +436,48 @@ type PageInfo struct {
 }
 
 type Query struct {
+}
+
+type RuleAction struct {
+	ID                 string         `json:"id"`
+	SeqOrder           int            `json:"seqOrder"`
+	Type               RuleActionType `json:"type"`
+	TargetDeviceID     *string        `json:"targetDeviceId,omitempty"`
+	Operation          *OperationType `json:"operation,omitempty"`
+	NotificationType   *string        `json:"notificationType,omitempty"`
+	NotificationConfig *string        `json:"notificationConfig,omitempty"`
+	IntegrationID      *string        `json:"integrationId,omitempty"`
+	DelaySeconds       int            `json:"delaySeconds"`
+}
+
+type RuleActionInput struct {
+	SeqOrder           int            `json:"seqOrder"`
+	Type               RuleActionType `json:"type"`
+	TargetDeviceID     *string        `json:"targetDeviceId,omitempty"`
+	Operation          *OperationType `json:"operation,omitempty"`
+	NotificationType   *string        `json:"notificationType,omitempty"`
+	NotificationConfig *string        `json:"notificationConfig,omitempty"`
+	IntegrationID      *string        `json:"integrationId,omitempty"`
+	DelaySeconds       *int           `json:"delaySeconds,omitempty"`
+}
+
+type RuleCondition struct {
+	ID         string                `json:"id"`
+	MetricName string                `json:"metricName"`
+	Operator   RuleConditionOperator `json:"operator"`
+	Threshold  float64               `json:"threshold"`
+}
+
+type RuleConditionGroup struct {
+	GroupID    int              `json:"groupId"`
+	Conditions []*RuleCondition `json:"conditions"`
+}
+
+type RuleConditionInput struct {
+	GroupID    int                   `json:"groupId"`
+	MetricName string                `json:"metricName"`
+	Operator   RuleConditionOperator `json:"operator"`
+	Threshold  float64               `json:"threshold"`
 }
 
 type Subscription struct {
@@ -375,6 +495,15 @@ type UpdateAlertRuleInput struct {
 	CooldownMinutes *int                      `json:"cooldownMinutes,omitempty"`
 	Conditions      []*AlertConditionInput    `json:"conditions,omitempty"`
 	Notifications   []*AlertNotificationInput `json:"notifications,omitempty"`
+}
+
+type UpdateAutomationRuleInput struct {
+	Name            *string               `json:"name,omitempty"`
+	Description     *string               `json:"description,omitempty"`
+	Enabled         *bool                 `json:"enabled,omitempty"`
+	CooldownSeconds *int                  `json:"cooldownSeconds,omitempty"`
+	Conditions      []*RuleConditionInput `json:"conditions,omitempty"`
+	Actions         []*RuleActionInput    `json:"actions,omitempty"`
 }
 
 type UpdateDashboardLayoutInput struct {
@@ -410,6 +539,14 @@ type UpdateDeviceInput struct {
 	Auth        *AuthInput    `json:"auth,omitempty"`
 	DataModel   *string       `json:"dataModel,omitempty"`
 	Tags        []string      `json:"tags,omitempty"`
+}
+
+type UpdateIntegrationInput struct {
+	Name      *string `json:"name,omitempty"`
+	Endpoint  *string `json:"endpoint,omitempty"`
+	AuthToken *string `json:"authToken,omitempty"`
+	Config    *string `json:"config,omitempty"`
+	Enabled   *bool   `json:"enabled,omitempty"`
 }
 
 type User struct {
@@ -939,6 +1076,65 @@ func (e DeviceStatus) MarshalJSON() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+type IntegrationType string
+
+const (
+	IntegrationTypeWebhook       IntegrationType = "WEBHOOK"
+	IntegrationTypeIfttt         IntegrationType = "IFTTT"
+	IntegrationTypeHomeAssistant IntegrationType = "HOME_ASSISTANT"
+	IntegrationTypeGenericHTTP   IntegrationType = "GENERIC_HTTP"
+)
+
+var AllIntegrationType = []IntegrationType{
+	IntegrationTypeWebhook,
+	IntegrationTypeIfttt,
+	IntegrationTypeHomeAssistant,
+	IntegrationTypeGenericHTTP,
+}
+
+func (e IntegrationType) IsValid() bool {
+	switch e {
+	case IntegrationTypeWebhook, IntegrationTypeIfttt, IntegrationTypeHomeAssistant, IntegrationTypeGenericHTTP:
+		return true
+	}
+	return false
+}
+
+func (e IntegrationType) String() string {
+	return string(e)
+}
+
+func (e *IntegrationType) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = IntegrationType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid IntegrationType", str)
+	}
+	return nil
+}
+
+func (e IntegrationType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *IntegrationType) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e IntegrationType) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
 type OperationType string
 
 const (
@@ -1050,6 +1246,128 @@ func (e *Role) UnmarshalJSON(b []byte) error {
 }
 
 func (e Role) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type RuleActionType string
+
+const (
+	RuleActionTypeDeviceOperation RuleActionType = "DEVICE_OPERATION"
+	RuleActionTypeNotification    RuleActionType = "NOTIFICATION"
+	RuleActionTypeDelay           RuleActionType = "DELAY"
+	RuleActionTypeIntegration     RuleActionType = "INTEGRATION"
+)
+
+var AllRuleActionType = []RuleActionType{
+	RuleActionTypeDeviceOperation,
+	RuleActionTypeNotification,
+	RuleActionTypeDelay,
+	RuleActionTypeIntegration,
+}
+
+func (e RuleActionType) IsValid() bool {
+	switch e {
+	case RuleActionTypeDeviceOperation, RuleActionTypeNotification, RuleActionTypeDelay, RuleActionTypeIntegration:
+		return true
+	}
+	return false
+}
+
+func (e RuleActionType) String() string {
+	return string(e)
+}
+
+func (e *RuleActionType) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = RuleActionType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid RuleActionType", str)
+	}
+	return nil
+}
+
+func (e RuleActionType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *RuleActionType) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e RuleActionType) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type RuleConditionOperator string
+
+const (
+	RuleConditionOperatorGt  RuleConditionOperator = "GT"
+	RuleConditionOperatorLt  RuleConditionOperator = "LT"
+	RuleConditionOperatorEq  RuleConditionOperator = "EQ"
+	RuleConditionOperatorGte RuleConditionOperator = "GTE"
+	RuleConditionOperatorLte RuleConditionOperator = "LTE"
+	RuleConditionOperatorNe  RuleConditionOperator = "NE"
+)
+
+var AllRuleConditionOperator = []RuleConditionOperator{
+	RuleConditionOperatorGt,
+	RuleConditionOperatorLt,
+	RuleConditionOperatorEq,
+	RuleConditionOperatorGte,
+	RuleConditionOperatorLte,
+	RuleConditionOperatorNe,
+}
+
+func (e RuleConditionOperator) IsValid() bool {
+	switch e {
+	case RuleConditionOperatorGt, RuleConditionOperatorLt, RuleConditionOperatorEq, RuleConditionOperatorGte, RuleConditionOperatorLte, RuleConditionOperatorNe:
+		return true
+	}
+	return false
+}
+
+func (e RuleConditionOperator) String() string {
+	return string(e)
+}
+
+func (e *RuleConditionOperator) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = RuleConditionOperator(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid RuleConditionOperator", str)
+	}
+	return nil
+}
+
+func (e RuleConditionOperator) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *RuleConditionOperator) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e RuleConditionOperator) MarshalJSON() ([]byte, error) {
 	var buf bytes.Buffer
 	e.MarshalGQL(&buf)
 	return buf.Bytes(), nil
