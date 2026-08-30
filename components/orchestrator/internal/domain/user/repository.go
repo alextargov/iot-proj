@@ -11,9 +11,9 @@ import (
 const tableName string = `public.users`
 
 var (
-	updatableTableColumns = []string{"password", "updated_at"}
+	updatableTableColumns = []string{"password", "role", "updated_at"}
 	idTableColumns        = []string{"id"}
-	tableColumns          = append(idTableColumns, "username", "password", "created_at", "updated_at")
+	tableColumns          = append(idTableColumns, "username", "password", "role", "created_at", "updated_at")
 )
 
 type EntityConverter interface {
@@ -83,6 +83,13 @@ func (r *repository) Create(ctx context.Context, item model.User) error {
 
 	logger.C(ctx).Debugf("Persisting User entity with id %s to db", item.ID)
 	return r.creator.Create(ctx, entity)
+}
+
+func (r *repository) Update(ctx context.Context, item model.User) error {
+	logger.C(ctx).Debugf("Updating User entity with id %s", item.ID)
+	entity := r.conv.ToEntity(item)
+
+	return r.updaterGlobal.UpdateSingleGlobal(ctx, entity)
 }
 
 func (r *repository) DeleteByID(ctx context.Context, id string) error {

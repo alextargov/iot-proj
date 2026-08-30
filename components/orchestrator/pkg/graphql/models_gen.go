@@ -263,6 +263,14 @@ type DataModelVersion struct {
 	CreatedBy         *string   `json:"createdBy,omitempty"`
 }
 
+type DeviceCertificate struct {
+	Certificate   string    `json:"certificate"`
+	PrivateKey    *string   `json:"privateKey,omitempty"`
+	CaCertificate string    `json:"caCertificate"`
+	Serial        string    `json:"serial"`
+	ExpiresAt     Timestamp `json:"expiresAt"`
+}
+
 type DeviceInput struct {
 	Name        string       `json:"name"`
 	Description *string      `json:"description,omitempty"`
@@ -407,6 +415,7 @@ type UpdateDeviceInput struct {
 type User struct {
 	ID        string     `json:"id"`
 	Username  string     `json:"username"`
+	Role      Role       `json:"role"`
 	CreatedAt *Timestamp `json:"createdAt,omitempty"`
 	UpdatedAt *Timestamp `json:"updatedAt,omitempty"`
 }
@@ -984,6 +993,63 @@ func (e *OperationType) UnmarshalJSON(b []byte) error {
 }
 
 func (e OperationType) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type Role string
+
+const (
+	RoleAdmin    Role = "ADMIN"
+	RoleOperator Role = "OPERATOR"
+	RoleViewer   Role = "VIEWER"
+)
+
+var AllRole = []Role{
+	RoleAdmin,
+	RoleOperator,
+	RoleViewer,
+}
+
+func (e Role) IsValid() bool {
+	switch e {
+	case RoleAdmin, RoleOperator, RoleViewer:
+		return true
+	}
+	return false
+}
+
+func (e Role) String() string {
+	return string(e)
+}
+
+func (e *Role) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = Role(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid Role", str)
+	}
+	return nil
+}
+
+func (e Role) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *Role) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e Role) MarshalJSON() ([]byte, error) {
 	var buf bytes.Buffer
 	e.MarshalGQL(&buf)
 	return buf.Bytes(), nil

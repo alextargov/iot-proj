@@ -139,7 +139,7 @@ func (s *WidgetScheduler) executeWidget(ctx context.Context, widgetID, code, wor
 		logger.C(ctx).Errorf("Failed to update last_executed_at for widget %s: %v", widgetID, err)
 	}
 
-	logger.C(ctx).Info("Successfully executed scheduled widget: %s", widgetID)
+	logger.C(ctx).Infof("Successfully executed scheduled widget: %s", widgetID)
 }
 
 // GetJobCount returns the number of active cron jobs

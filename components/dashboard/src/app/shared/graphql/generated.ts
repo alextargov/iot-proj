@@ -136,6 +136,41 @@ export enum AlertSeverity {
   Warning = 'WARNING'
 }
 
+export enum AuditAction {
+  Create = 'CREATE',
+  Delete = 'DELETE',
+  Update = 'UPDATE'
+}
+
+export type AuditLog = {
+  __typename?: 'AuditLog';
+  action: AuditAction;
+  createdAt?: Maybe<Scalars['Timestamp']['output']>;
+  details?: Maybe<Scalars['String']['output']>;
+  errorMessage?: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  ipAddress?: Maybe<Scalars['String']['output']>;
+  resourceId?: Maybe<Scalars['ID']['output']>;
+  resourceName?: Maybe<Scalars['String']['output']>;
+  resourceType: Scalars['String']['output'];
+  status: AuditStatus;
+  userAgent?: Maybe<Scalars['String']['output']>;
+  userId: Scalars['ID']['output'];
+  username: Scalars['String']['output'];
+};
+
+export type AuditLogPage = Pageable & {
+  __typename?: 'AuditLogPage';
+  data: Array<AuditLog>;
+  pageInfo: PageInfo;
+  totalCount: Scalars['Int']['output'];
+};
+
+export enum AuditStatus {
+  Failure = 'FAILURE',
+  Success = 'SUCCESS'
+}
+
 export type Auth = {
   __typename?: 'Auth';
   accessStrategy?: Maybe<Scalars['String']['output']>;
@@ -286,9 +321,12 @@ export type DataModelVersion = {
 export type Device = {
   __typename?: 'Device';
   auth?: Maybe<Auth>;
+  certificateExpiresAt?: Maybe<Scalars['Timestamp']['output']>;
+  certificateSerial?: Maybe<Scalars['String']['output']>;
   createdAt?: Maybe<Scalars['Timestamp']['output']>;
   dataModel?: Maybe<DataModel>;
   description?: Maybe<Scalars['String']['output']>;
+  hasCertificate: Scalars['Boolean']['output'];
   host?: Maybe<Host>;
   id: Scalars['ID']['output'];
   name: Scalars['String']['output'];
@@ -296,6 +334,15 @@ export type Device = {
   tags?: Maybe<Array<Scalars['String']['output']>>;
   tenantId: Scalars['ID']['output'];
   updatedAt?: Maybe<Scalars['Timestamp']['output']>;
+};
+
+export type DeviceCertificate = {
+  __typename?: 'DeviceCertificate';
+  caCertificate: Scalars['String']['output'];
+  certificate: Scalars['String']['output'];
+  expiresAt: Scalars['Timestamp']['output'];
+  privateKey?: Maybe<Scalars['String']['output']>;
+  serial: Scalars['String']['output'];
 };
 
 export type DeviceInput = {
@@ -383,9 +430,11 @@ export type Mutation = {
   deleteDataModel: Scalars['String']['output'];
   deleteDevice: Scalars['String']['output'];
   deleteWidget: Scalars['String']['output'];
+  generateDeviceCertificate: DeviceCertificate;
   generateDeviceToken: Scalars['String']['output'];
   recordDeviceMetric: DeviceMetric;
   recordDeviceMetrics: Scalars['Boolean']['output'];
+  revokeDeviceCertificate: Scalars['Boolean']['output'];
   rollbackDataModel: DataModel;
   setDeviceOperation: Device;
   setOperation: Scalars['Boolean']['output'];
@@ -393,6 +442,8 @@ export type Mutation = {
   updateDashboardLayout: DashboardLayout;
   updateDashboardWidget: DashboardWidget;
   updateDataModel: DataModel;
+  updateDevice: Device;
+  updateUserRole: User;
   updateWidgetPositions: Scalars['Boolean']['output'];
 };
 
@@ -463,6 +514,16 @@ export type MutationDeleteWidgetArgs = {
 };
 
 
+export type MutationGenerateDeviceCertificateArgs = {
+  deviceId: Scalars['ID']['input'];
+};
+
+
+export type MutationGenerateDeviceTokenArgs = {
+  deviceId: Scalars['ID']['input'];
+};
+
+
 export type MutationRecordDeviceMetricArgs = {
   input: DeviceMetricInput;
 };
@@ -470,6 +531,11 @@ export type MutationRecordDeviceMetricArgs = {
 
 export type MutationRecordDeviceMetricsArgs = {
   inputs: Array<DeviceMetricInput>;
+};
+
+
+export type MutationRevokeDeviceCertificateArgs = {
+  deviceId: Scalars['ID']['input'];
 };
 
 
@@ -515,6 +581,18 @@ export type MutationUpdateDataModelArgs = {
 };
 
 
+export type MutationUpdateDeviceArgs = {
+  id: Scalars['ID']['input'];
+  input: UpdateDeviceInput;
+};
+
+
+export type MutationUpdateUserRoleArgs = {
+  role: Role;
+  userId: Scalars['ID']['input'];
+};
+
+
 export type MutationUpdateWidgetPositionsArgs = {
   layoutId: Scalars['ID']['input'];
   positions: Array<WidgetPositionInput>;
@@ -557,6 +635,8 @@ export type Query = {
   alertEvents: AlertEventPage;
   alertRule?: Maybe<AlertRule>;
   alertRules: AlertRulePage;
+  auditLogs: AuditLogPage;
+  auditLogsForResource: Array<AuditLog>;
   dashboardLayout?: Maybe<DashboardLayout>;
   dashboardLayouts: Array<DashboardLayout>;
   dataModelVersion?: Maybe<DataModelVersion>;
@@ -570,6 +650,7 @@ export type Query = {
   deviceMetricsSeries: Array<MetricSeries>;
   devices: Array<Maybe<Device>>;
   devicesPage: DevicePage;
+  me?: Maybe<User>;
   testDeviceConnection: Scalars['Boolean']['output'];
   widget?: Maybe<Widget>;
   widgets: Array<Maybe<Widget>>;
@@ -594,6 +675,19 @@ export type QueryAlertRulesArgs = {
   after?: InputMaybe<Scalars['PageCursor']['input']>;
   deviceId?: InputMaybe<Scalars['ID']['input']>;
   first?: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+export type QueryAuditLogsArgs = {
+  after?: InputMaybe<Scalars['PageCursor']['input']>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+export type QueryAuditLogsForResourceArgs = {
+  first?: InputMaybe<Scalars['Int']['input']>;
+  resourceId: Scalars['ID']['input'];
+  resourceType: Scalars['String']['input'];
 };
 
 
@@ -665,6 +759,12 @@ export type QueryWidgetsPageArgs = {
   first?: InputMaybe<Scalars['Int']['input']>;
 };
 
+export enum Role {
+  Admin = 'ADMIN',
+  Operator = 'OPERATOR',
+  Viewer = 'VIEWER'
+}
+
 export type Subscription = {
   __typename?: 'Subscription';
   metricRecorded: DeviceMetric;
@@ -712,6 +812,25 @@ export type UpdateDataModelInput = {
   description?: InputMaybe<Scalars['String']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
   schema?: InputMaybe<Scalars['JSON']['input']>;
+};
+
+export type UpdateDeviceInput = {
+  auth?: InputMaybe<AuthInput>;
+  dataModel?: InputMaybe<Scalars['String']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  host?: InputMaybe<HostInput>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  status?: InputMaybe<DeviceStatus>;
+  tags?: InputMaybe<Array<Scalars['String']['input']>>;
+};
+
+export type User = {
+  __typename?: 'User';
+  createdAt?: Maybe<Scalars['Timestamp']['output']>;
+  id: Scalars['ID']['output'];
+  role: Role;
+  updatedAt?: Maybe<Scalars['Timestamp']['output']>;
+  username: Scalars['String']['output'];
 };
 
 export type Widget = {
@@ -814,6 +933,19 @@ export type AcknowledgeAlertEventMutationVariables = Exact<{
 
 
 export type AcknowledgeAlertEventMutation = { __typename?: 'Mutation', acknowledgeAlertEvent: { __typename?: 'AlertEvent', id: string, status: AlertEventStatus } };
+
+export type MeQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type MeQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: string, username: string, role: Role, createdAt?: any | null, updatedAt?: any | null } | null };
+
+export type UpdateUserRoleMutationVariables = Exact<{
+  userId: Scalars['ID']['input'];
+  role: Role;
+}>;
+
+
+export type UpdateUserRoleMutation = { __typename?: 'Mutation', updateUserRole: { __typename?: 'User', id: string, username: string, role: Role } };
 
 export type DashboardWidgetInfoFragment = { __typename?: 'DashboardWidget', id: string, dashboardLayoutId: string, widgetType: DashboardWidgetType, title: string, gridX: number, gridY: number, gridCols: number, gridRows: number, metricName?: string | null, config: any, createdAt?: any | null, updatedAt?: any | null };
 
@@ -943,7 +1075,7 @@ export type RollbackDataModelMutationVariables = Exact<{
 
 export type RollbackDataModelMutation = { __typename?: 'Mutation', rollbackDataModel: { __typename?: 'DataModel', id: string, name: string, description: string, schema: any, deviceCount: number, currentVersion: number, createdAt?: any | null, updatedAt?: any | null } };
 
-export type DeviceInfoFragment = { __typename?: 'Device', id: string, name: string, description?: string | null, status: DeviceStatus, tenantId: string, tags?: Array<string> | null, createdAt?: any | null, updatedAt?: any | null, auth?: { __typename?: 'Auth', credentialForService?: string | null, credentialForDevice?:
+export type DeviceInfoFragment = { __typename?: 'Device', id: string, name: string, description?: string | null, status: DeviceStatus, tenantId: string, tags?: Array<string> | null, hasCertificate: boolean, certificateSerial?: string | null, certificateExpiresAt?: any | null, createdAt?: any | null, updatedAt?: any | null, auth?: { __typename?: 'Auth', credentialForService?: string | null, credentialForDevice?:
       | { __typename?: 'BasicCredentialData', username: string, password: string }
       | { __typename?: 'BearerTokenCredentialData', token: string }
       | { __typename?: 'CertificateOAuthCredentialData', clientId: string, certificate: string, url: string }
@@ -953,7 +1085,7 @@ export type DeviceInfoFragment = { __typename?: 'Device', id: string, name: stri
 export type GetAllDevicesQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetAllDevicesQuery = { __typename?: 'Query', devices: Array<{ __typename?: 'Device', id: string, name: string, description?: string | null, status: DeviceStatus, tenantId: string, tags?: Array<string> | null, createdAt?: any | null, updatedAt?: any | null, auth?: { __typename?: 'Auth', credentialForService?: string | null, credentialForDevice?:
+export type GetAllDevicesQuery = { __typename?: 'Query', devices: Array<{ __typename?: 'Device', id: string, name: string, description?: string | null, status: DeviceStatus, tenantId: string, tags?: Array<string> | null, hasCertificate: boolean, certificateSerial?: string | null, certificateExpiresAt?: any | null, createdAt?: any | null, updatedAt?: any | null, auth?: { __typename?: 'Auth', credentialForService?: string | null, credentialForDevice?:
         | { __typename?: 'BasicCredentialData', username: string, password: string }
         | { __typename?: 'BearerTokenCredentialData', token: string }
         | { __typename?: 'CertificateOAuthCredentialData', clientId: string, certificate: string, url: string }
@@ -965,7 +1097,7 @@ export type GetDeviceQueryVariables = Exact<{
 }>;
 
 
-export type GetDeviceQuery = { __typename?: 'Query', device?: { __typename?: 'Device', id: string, name: string, description?: string | null, status: DeviceStatus, tenantId: string, tags?: Array<string> | null, createdAt?: any | null, updatedAt?: any | null, auth?: { __typename?: 'Auth', credentialForService?: string | null, credentialForDevice?:
+export type GetDeviceQuery = { __typename?: 'Query', device?: { __typename?: 'Device', id: string, name: string, description?: string | null, status: DeviceStatus, tenantId: string, tags?: Array<string> | null, hasCertificate: boolean, certificateSerial?: string | null, certificateExpiresAt?: any | null, createdAt?: any | null, updatedAt?: any | null, auth?: { __typename?: 'Auth', credentialForService?: string | null, credentialForDevice?:
         | { __typename?: 'BasicCredentialData', username: string, password: string }
         | { __typename?: 'BearerTokenCredentialData', token: string }
         | { __typename?: 'CertificateOAuthCredentialData', clientId: string, certificate: string, url: string }
@@ -978,7 +1110,7 @@ export type GetDevicesPageQueryVariables = Exact<{
 }>;
 
 
-export type GetDevicesPageQuery = { __typename?: 'Query', devicesPage: { __typename?: 'DevicePage', totalCount: number, data: Array<{ __typename?: 'Device', id: string, name: string, description?: string | null, status: DeviceStatus, tenantId: string, tags?: Array<string> | null, createdAt?: any | null, updatedAt?: any | null, auth?: { __typename?: 'Auth', credentialForService?: string | null, credentialForDevice?:
+export type GetDevicesPageQuery = { __typename?: 'Query', devicesPage: { __typename?: 'DevicePage', totalCount: number, data: Array<{ __typename?: 'Device', id: string, name: string, description?: string | null, status: DeviceStatus, tenantId: string, tags?: Array<string> | null, hasCertificate: boolean, certificateSerial?: string | null, certificateExpiresAt?: any | null, createdAt?: any | null, updatedAt?: any | null, auth?: { __typename?: 'Auth', credentialForService?: string | null, credentialForDevice?:
           | { __typename?: 'BasicCredentialData', username: string, password: string }
           | { __typename?: 'BearerTokenCredentialData', token: string }
           | { __typename?: 'CertificateOAuthCredentialData', clientId: string, certificate: string, url: string }
@@ -990,7 +1122,20 @@ export type CreateDeviceMutationVariables = Exact<{
 }>;
 
 
-export type CreateDeviceMutation = { __typename?: 'Mutation', createDevice: { __typename?: 'Device', id: string, name: string, description?: string | null, status: DeviceStatus, tenantId: string, tags?: Array<string> | null, createdAt?: any | null, updatedAt?: any | null, auth?: { __typename?: 'Auth', credentialForService?: string | null, credentialForDevice?:
+export type CreateDeviceMutation = { __typename?: 'Mutation', createDevice: { __typename?: 'Device', id: string, name: string, description?: string | null, status: DeviceStatus, tenantId: string, tags?: Array<string> | null, hasCertificate: boolean, certificateSerial?: string | null, certificateExpiresAt?: any | null, createdAt?: any | null, updatedAt?: any | null, auth?: { __typename?: 'Auth', credentialForService?: string | null, credentialForDevice?:
+        | { __typename?: 'BasicCredentialData', username: string, password: string }
+        | { __typename?: 'BearerTokenCredentialData', token: string }
+        | { __typename?: 'CertificateOAuthCredentialData', clientId: string, certificate: string, url: string }
+        | { __typename?: 'OAuthCredentialData', clientId: string, clientSecret: string, url: string }
+       | null } | null, host?: { __typename?: 'Host', id: string, url: string, turnOnEndpoint?: string | null, turnOffEndpoint?: string | null } | null } };
+
+export type UpdateDeviceMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  input: UpdateDeviceInput;
+}>;
+
+
+export type UpdateDeviceMutation = { __typename?: 'Mutation', updateDevice: { __typename?: 'Device', id: string, name: string, description?: string | null, status: DeviceStatus, tenantId: string, tags?: Array<string> | null, hasCertificate: boolean, certificateSerial?: string | null, certificateExpiresAt?: any | null, createdAt?: any | null, updatedAt?: any | null, auth?: { __typename?: 'Auth', credentialForService?: string | null, credentialForDevice?:
         | { __typename?: 'BasicCredentialData', username: string, password: string }
         | { __typename?: 'BearerTokenCredentialData', token: string }
         | { __typename?: 'CertificateOAuthCredentialData', clientId: string, certificate: string, url: string }
@@ -1004,10 +1149,26 @@ export type DeleteDeviceMutationVariables = Exact<{
 
 export type DeleteDeviceMutation = { __typename?: 'Mutation', deleteDevice: string };
 
-export type GenerateDeviceTokenMutationVariables = Exact<{ [key: string]: never; }>;
+export type GenerateDeviceTokenMutationVariables = Exact<{
+  deviceId: Scalars['ID']['input'];
+}>;
 
 
 export type GenerateDeviceTokenMutation = { __typename?: 'Mutation', generateDeviceToken: string };
+
+export type GenerateDeviceCertificateMutationVariables = Exact<{
+  deviceId: Scalars['ID']['input'];
+}>;
+
+
+export type GenerateDeviceCertificateMutation = { __typename?: 'Mutation', generateDeviceCertificate: { __typename?: 'DeviceCertificate', certificate: string, privateKey?: string | null, caCertificate: string, serial: string, expiresAt: any } };
+
+export type RevokeDeviceCertificateMutationVariables = Exact<{
+  deviceId: Scalars['ID']['input'];
+}>;
+
+
+export type RevokeDeviceCertificateMutation = { __typename?: 'Mutation', revokeDeviceCertificate: boolean };
 
 export type TestDeviceConnectionQueryVariables = Exact<{
   url: Scalars['String']['input'];
@@ -1188,6 +1349,9 @@ export const DeviceInfoFragmentDoc = gql`
     turnOffEndpoint
   }
   tags
+  hasCertificate
+  certificateSerial
+  certificateExpiresAt
   createdAt
   updatedAt
 }
@@ -1470,6 +1634,48 @@ export const AcknowledgeAlertEventDocument = gql`
   })
   export class AcknowledgeAlertEventGQL extends Apollo.Mutation<AcknowledgeAlertEventMutation, AcknowledgeAlertEventMutationVariables> {
     document = AcknowledgeAlertEventDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const MeDocument = gql`
+    query Me {
+  me {
+    id
+    username
+    role
+    createdAt
+    updatedAt
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class MeGQL extends Apollo.Query<MeQuery, MeQueryVariables> {
+    document = MeDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const UpdateUserRoleDocument = gql`
+    mutation UpdateUserRole($userId: ID!, $role: Role!) {
+  updateUserRole(userId: $userId, role: $role) {
+    id
+    username
+    role
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class UpdateUserRoleGQL extends Apollo.Mutation<UpdateUserRoleMutation, UpdateUserRoleMutationVariables> {
+    document = UpdateUserRoleDocument;
     
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
@@ -1853,6 +2059,24 @@ export const CreateDeviceDocument = gql`
       super(apollo);
     }
   }
+export const UpdateDeviceDocument = gql`
+    mutation UpdateDevice($id: ID!, $input: UpdateDeviceInput!) {
+  updateDevice(id: $id, input: $input) {
+    ...DeviceInfo
+  }
+}
+    ${DeviceInfoFragmentDoc}`;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class UpdateDeviceGQL extends Apollo.Mutation<UpdateDeviceMutation, UpdateDeviceMutationVariables> {
+    document = UpdateDeviceDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
 export const DeleteDeviceDocument = gql`
     mutation DeleteDevice($id: String!) {
   deleteDevice(id: $id)
@@ -1870,8 +2094,8 @@ export const DeleteDeviceDocument = gql`
     }
   }
 export const GenerateDeviceTokenDocument = gql`
-    mutation GenerateDeviceToken {
-  generateDeviceToken
+    mutation GenerateDeviceToken($deviceId: ID!) {
+  generateDeviceToken(deviceId: $deviceId)
 }
     `;
 
@@ -1880,6 +2104,44 @@ export const GenerateDeviceTokenDocument = gql`
   })
   export class GenerateDeviceTokenGQL extends Apollo.Mutation<GenerateDeviceTokenMutation, GenerateDeviceTokenMutationVariables> {
     document = GenerateDeviceTokenDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const GenerateDeviceCertificateDocument = gql`
+    mutation GenerateDeviceCertificate($deviceId: ID!) {
+  generateDeviceCertificate(deviceId: $deviceId) {
+    certificate
+    privateKey
+    caCertificate
+    serial
+    expiresAt
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class GenerateDeviceCertificateGQL extends Apollo.Mutation<GenerateDeviceCertificateMutation, GenerateDeviceCertificateMutationVariables> {
+    document = GenerateDeviceCertificateDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const RevokeDeviceCertificateDocument = gql`
+    mutation RevokeDeviceCertificate($deviceId: ID!) {
+  revokeDeviceCertificate(deviceId: $deviceId)
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class RevokeDeviceCertificateGQL extends Apollo.Mutation<RevokeDeviceCertificateMutation, RevokeDeviceCertificateMutationVariables> {
+    document = RevokeDeviceCertificateDocument;
     
     constructor(apollo: Apollo.Apollo) {
       super(apollo);

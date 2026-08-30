@@ -68,16 +68,20 @@ func (udi *UpdateDeviceInput) ToModel(device *Device) {
 }
 
 type Device struct {
-	ID                 string       `json:"id"`
-	TenantID           string       `json:"tenantID"`
-	Name               string       `json:"name"`
-	Description        *string      `json:"description"`
-	Status             DeviceStatus `json:"status"`
-	Host               *Host        `json:"host"`
-	CommunicationToken *string      `json:"communicationToken"`
-	Auth               *Auth        `json:"auth"`
-	DataModelID        string       `json:"dataModelID"`
-	Tags               []string     `json:"tags"`
-	CreatedAt          *time.Time   `json:"createdAt"`
-	UpdatedAt          *time.Time   `json:"updatedAt"`
+	ID                  string       `json:"id"`
+	TenantID            string       `json:"tenantID"`
+	Name                string       `json:"name"`
+	Description         *string      `json:"description"`
+	Status              DeviceStatus `json:"status"`
+	Host                *Host        `json:"host"`
+	CommunicationToken  *string      `json:"communicationToken"`
+	Auth                *Auth        `json:"auth"`
+	DataModelID         string       `json:"dataModelID"`
+	Tags                []string     `json:"tags"`
+	ClientCert          *string      `json:"clientCert"`
+	ClientCertKey       *string      `json:"clientCertKey"`
+	ClientCertSerial    *string      `json:"clientCertSerial"`
+	ClientCertExpiresAt *time.Time   `json:"clientCertExpiresAt"`
+	CreatedAt           *time.Time   `json:"createdAt"`
+	UpdatedAt           *time.Time   `json:"updatedAt"`
 }

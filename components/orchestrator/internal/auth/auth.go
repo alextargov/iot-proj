@@ -28,17 +28,19 @@ func NewJwtWrapper(c Config) *JwtWrapper {
 	}
 }
 
-// JwtClaim adds email as a claim to the token
+// JwtClaim adds the username and role as claims to the token
 type JwtClaim struct {
 	Username string
+	Role     string
 	jwt.StandardClaims
 }
 
 // GenerateToken generates a jwt token
-func (j *JwtWrapper) GenerateToken(username string) (string, error) {
+func (j *JwtWrapper) GenerateToken(username, role string) (string, error) {
 	now := time.Now().Local()
 	claims := &JwtClaim{
 		Username: username,
+		Role:     role,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: now.Add(time.Hour * time.Duration(j.ExpirationHours)).Unix(),
 			Issuer:    j.Issuer,

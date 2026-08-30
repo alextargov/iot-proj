@@ -22,6 +22,40 @@ const GenerateDeviceTokenDocument = gql`
     }
 `;
 
+const GenerateDeviceCertificateDocument = gql`
+    mutation GenerateDeviceCertificate($deviceId: ID!) {
+        generateDeviceCertificate(deviceId: $deviceId) {
+            certificate
+            privateKey
+            caCertificate
+            serial
+            expiresAt
+        }
+    }
+`;
+
+const RevokeDeviceCertificateDocument = gql`
+    mutation RevokeDeviceCertificate($deviceId: ID!) {
+        revokeDeviceCertificate(deviceId: $deviceId)
+    }
+`;
+
+export interface DeviceCertificate {
+    certificate: string;
+    privateKey?: string | null;
+    caCertificate: string;
+    serial: string;
+    expiresAt: string;
+}
+
+interface GenerateDeviceCertificateMutation {
+    generateDeviceCertificate: DeviceCertificate;
+}
+
+interface RevokeDeviceCertificateMutation {
+    revokeDeviceCertificate: boolean;
+}
+
 const TestDeviceConnectionDocument = gql`
     query TestDeviceConnection($url: String!) {
         testDeviceConnection(url: $url)
@@ -162,6 +196,26 @@ export class DeviceService {
                 variables: { deviceId },
             })
             .pipe(map((res) => res.data?.generateDeviceToken ?? ''));
+    }
+
+    public generateDeviceCertificate(
+        deviceId: string
+    ): Observable<DeviceCertificate | null> {
+        return this.apollo
+            .mutate<GenerateDeviceCertificateMutation>({
+                mutation: GenerateDeviceCertificateDocument,
+                variables: { deviceId },
+            })
+            .pipe(map((res) => res.data?.generateDeviceCertificate ?? null));
+    }
+
+    public revokeDeviceCertificate(deviceId: string): Observable<boolean> {
+        return this.apollo
+            .mutate<RevokeDeviceCertificateMutation>({
+                mutation: RevokeDeviceCertificateDocument,
+                variables: { deviceId },
+            })
+            .pipe(map((res) => res.data?.revokeDeviceCertificate ?? false));
     }
 
     public testDeviceConnection(url: string): Observable<boolean> {

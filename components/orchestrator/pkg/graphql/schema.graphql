@@ -3,6 +3,16 @@ scalar Any
 scalar Timestamp
 scalar JSON
 
+# hasRole enforces that the authenticated user has at least the given role.
+# Role hierarchy (most to least privileged): ADMIN > OPERATOR > VIEWER.
+directive @hasRole(minimum: Role!) on FIELD_DEFINITION
+
+enum Role {
+    ADMIN
+    OPERATOR
+    VIEWER
+}
+
 union CredentialData = BasicCredentialData | OAuthCredentialData | CertificateOAuthCredentialData | BearerTokenCredentialData
 
 interface Pageable {
@@ -83,6 +93,7 @@ enum AuditStatus {
 type User {
     id: ID!
     username: String!
+    role: Role!
     createdAt: Timestamp
     updatedAt: Timestamp
 }
@@ -130,8 +141,22 @@ type Device {
     auth: Auth
     dataModel: DataModel
     tags: [String!]
+    hasCertificate: Boolean!
+    certificateSerial: String
+    certificateExpiresAt: Timestamp
     createdAt: Timestamp
     updatedAt: Timestamp
+}
+
+# DeviceCertificate is returned when a device certificate is issued. The
+# privateKey is only ever returned at issuance time and never stored in
+# retrievable plaintext afterwards.
+type DeviceCertificate {
+    certificate: String!
+    privateKey: String
+    caCertificate: String!
+    serial: String!
+    expiresAt: Timestamp!
 }
 
 type Host {
@@ -521,31 +546,34 @@ type Query {
 }
 
 type Mutation {
-    createDevice(input: DeviceInput!): Device!
-    updateDevice(id: ID!, input: UpdateDeviceInput!): Device!
-    setDeviceOperation(id: ID!, op: OperationType!): Device!
-    setOperation(op: OperationType!, data: Any): Boolean!
-    deleteDevice(id: String!): String!
-    createWidget(input: WidgetInput!): Widget!
-    deleteWidget(id: ID!): String!
-    createDataModel(input: DataModelInput!): DataModel!
-    deleteDataModel(id: ID!): String!
-    updateDataModel(id: ID!, input: UpdateDataModelInput!): DataModel!
-    rollbackDataModel(dataModelId: ID!, toVersion: Int!): DataModel!
-    generateDeviceToken(deviceId: ID!): String!
-    recordDeviceMetric(input: DeviceMetricInput!): DeviceMetric!
-    recordDeviceMetrics(inputs: [DeviceMetricInput!]!): Boolean!
-    createAlertRule(input: CreateAlertRuleInput!): AlertRule!
-    updateAlertRule(id: ID!, input: UpdateAlertRuleInput!): AlertRule!
-    deleteAlertRule(id: ID!): ID!
-    acknowledgeAlertEvent(id: ID!): AlertEvent!
-    createDashboardLayout(input: DashboardLayoutInput!): DashboardLayout!
-    updateDashboardLayout(id: ID!, input: UpdateDashboardLayoutInput!): DashboardLayout!
-    deleteDashboardLayout(id: ID!): ID!
-    addDashboardWidget(layoutId: ID!, input: DashboardWidgetInput!): DashboardWidget!
-    updateDashboardWidget(id: ID!, input: UpdateDashboardWidgetInput!): DashboardWidget!
-    deleteDashboardWidget(id: ID!): ID!
-    updateWidgetPositions(layoutId: ID!, positions: [WidgetPositionInput!]!): Boolean!
+    createDevice(input: DeviceInput!): Device! @hasRole(minimum: OPERATOR)
+    updateDevice(id: ID!, input: UpdateDeviceInput!): Device! @hasRole(minimum: OPERATOR)
+    setDeviceOperation(id: ID!, op: OperationType!): Device! @hasRole(minimum: OPERATOR)
+    setOperation(op: OperationType!, data: Any): Boolean! @hasRole(minimum: OPERATOR)
+    deleteDevice(id: String!): String! @hasRole(minimum: OPERATOR)
+    createWidget(input: WidgetInput!): Widget! @hasRole(minimum: OPERATOR)
+    deleteWidget(id: ID!): String! @hasRole(minimum: OPERATOR)
+    createDataModel(input: DataModelInput!): DataModel! @hasRole(minimum: OPERATOR)
+    deleteDataModel(id: ID!): String! @hasRole(minimum: OPERATOR)
+    updateDataModel(id: ID!, input: UpdateDataModelInput!): DataModel! @hasRole(minimum: OPERATOR)
+    rollbackDataModel(dataModelId: ID!, toVersion: Int!): DataModel! @hasRole(minimum: OPERATOR)
+    generateDeviceToken(deviceId: ID!): String! @hasRole(minimum: OPERATOR)
+    generateDeviceCertificate(deviceId: ID!): DeviceCertificate! @hasRole(minimum: OPERATOR)
+    revokeDeviceCertificate(deviceId: ID!): Boolean! @hasRole(minimum: OPERATOR)
+    recordDeviceMetric(input: DeviceMetricInput!): DeviceMetric! @hasRole(minimum: OPERATOR)
+    recordDeviceMetrics(inputs: [DeviceMetricInput!]!): Boolean! @hasRole(minimum: OPERATOR)
+    createAlertRule(input: CreateAlertRuleInput!): AlertRule! @hasRole(minimum: OPERATOR)
+    updateAlertRule(id: ID!, input: UpdateAlertRuleInput!): AlertRule! @hasRole(minimum: OPERATOR)
+    deleteAlertRule(id: ID!): ID! @hasRole(minimum: OPERATOR)
+    acknowledgeAlertEvent(id: ID!): AlertEvent! @hasRole(minimum: OPERATOR)
+    createDashboardLayout(input: DashboardLayoutInput!): DashboardLayout! @hasRole(minimum: OPERATOR)
+    updateDashboardLayout(id: ID!, input: UpdateDashboardLayoutInput!): DashboardLayout! @hasRole(minimum: OPERATOR)
+    deleteDashboardLayout(id: ID!): ID! @hasRole(minimum: OPERATOR)
+    addDashboardWidget(layoutId: ID!, input: DashboardWidgetInput!): DashboardWidget! @hasRole(minimum: OPERATOR)
+    updateDashboardWidget(id: ID!, input: UpdateDashboardWidgetInput!): DashboardWidget! @hasRole(minimum: OPERATOR)
+    deleteDashboardWidget(id: ID!): ID! @hasRole(minimum: OPERATOR)
+    updateWidgetPositions(layoutId: ID!, positions: [WidgetPositionInput!]!): Boolean! @hasRole(minimum: OPERATOR)
+    updateUserRole(userId: ID!, role: Role!): User! @hasRole(minimum: ADMIN)
 }
 
 type Subscription {

@@ -10,6 +10,7 @@ import { DeviceInfoFragment } from 'src/app/shared/graphql/generated';
 import { MatDialog } from '@angular/material/dialog';
 import { DeviceDeleteComponent } from '../device-delete/device-delete.component';
 import { getDeviceStatusConfig, StatusConfig } from 'src/app/shared/utils/status-config.utils';
+import { AuthService } from 'src/app/shared/services/auth/auth.service';
 
 @Component({
     standalone: false,
@@ -29,14 +30,7 @@ export class DevicesListComponent implements OnInit, AfterViewInit {
     activeTagFilter: string | null = null;
     private searchFilter: string = '';
 
-    public buttons: ContentHeaderButton[] = [
-        {
-            text: 'Create device',
-            icon: 'add',
-            action: this.onAddClick.bind(this),
-            color: 'primary',
-        },
-    ];
+    public buttons: ContentHeaderButton[] = [];
 
     @ViewChild(MatPaginator) public paginator: MatPaginator;
 
@@ -47,10 +41,27 @@ export class DevicesListComponent implements OnInit, AfterViewInit {
     constructor(
         private deviceService: DeviceService,
         private router: Router,
-        private dialog: MatDialog
+        private dialog: MatDialog,
+        private authService: AuthService
     ) {}
 
+    /** Whether the current user may perform write operations (OPERATOR+). */
+    public get canWrite(): boolean {
+        return this.authService.hasRole('OPERATOR');
+    }
+
     public ngOnInit(): void {
+        if (this.canWrite) {
+            this.buttons = [
+                {
+                    text: 'Create device',
+                    icon: 'add',
+                    action: this.onAddClick.bind(this),
+                    color: 'primary',
+                },
+            ];
+        }
+
         this.dataSource.filterPredicate = (data: DeviceInfoFragment, filter: string) => {
             // Parse the combined filter
             const { search, tag } = JSON.parse(filter || '{}');

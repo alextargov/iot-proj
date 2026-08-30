@@ -59,12 +59,13 @@ type RootResolver struct {
 	dashboardLayout *dashboard_layout.Resolver
 	dashboardWidget *dashboard_widget.Resolver
 	user            *user.Resolver
+	auth            *auth.Resolver
 	audit           *audit.Resolver
 	metricPubSub    *pubsub.MetricPubSub
 	deviceSvc       DeviceServiceWithToken
 }
 
-func NewRootResolver(persistence persistence.Transactioner, notificationSMTPConfig notification.SMTPConfig, scheduler k8s.Scheduler, cronScheduler CronScheduler, log *logrus.Logger, sharedMetricSvc MetricServiceWithPublisher) *RootResolver {
+func NewRootResolver(persistence persistence.Transactioner, notificationSMTPConfig notification.SMTPConfig, scheduler k8s.Scheduler, cronScheduler CronScheduler, log *logrus.Logger, sharedMetricSvc MetricServiceWithPublisher, certIssuer device.CertificateIssuer) *RootResolver {
 	uuidService := uuid.NewService()
 	authConv := auth.NewConverter()
 
@@ -79,7 +80,7 @@ func NewRootResolver(persistence persistence.Transactioner, notificationSMTPConf
 
 	deviceConv := device.NewConverter(hostConv, authConv)
 	deviceRepo := device.NewRepository(deviceConv)
-	deviceSvc := device.NewService(deviceRepo, uuidService, hostSvc)
+	deviceSvc := device.NewService(deviceRepo, uuidService, hostSvc, certIssuer)
 
 	widgetConv := widget.NewConverter()
 	widgetRepo := widget.NewRepository(widgetConv)
@@ -122,6 +123,16 @@ func NewRootResolver(persistence persistence.Transactioner, notificationSMTPConf
 	widgetRes := widget.NewResolver(persistence, widgetSvc, widgetConv, scheduler, cronScheduler)
 	userRes := user.NewResolver()
 
+	// Auth domain (user-management surface, e.g. updateUserRole). Composes over
+	// the user service to avoid duplicating persistence logic. The JWT token
+	// service is only needed for REST login/register (handled in handlers), so
+	// nil is passed here — GraphQL auth mutations do not mint tokens.
+	userConv := user.NewConverter()
+	userRepo := user.NewRepository(userConv)
+	userSvc := user.NewService(userRepo, uuidService)
+	authSvc := auth.NewService(userSvc, nil)
+	authRes := auth.NewResolver(persistence, authSvc)
+
 	// Audit domain
 	auditConv := audit.NewConverter()
 	auditRepo := audit.NewRepository(auditConv)
@@ -138,6 +149,7 @@ func NewRootResolver(persistence persistence.Transactioner, notificationSMTPConf
 		dashboardLayout: dashboardLayoutRes,
 		dashboardWidget: dashboardWidgetRes,
 		user:            userRes,
+		auth:            authRes,
 		audit:           auditRes,
 		metricPubSub:    metricPubSub,
 		deviceSvc:       deviceSvc,
@@ -378,6 +390,14 @@ func (r *mutationResolver) GenerateDeviceToken(ctx context.Context, deviceID str
 	return token, nil
 }
 
+func (r *mutationResolver) GenerateDeviceCertificate(ctx context.Context, deviceID string) (*graphql.DeviceCertificate, error) {
+	return r.device.GenerateDeviceCertificate(ctx, deviceID)
+}
+
+func (r *mutationResolver) RevokeDeviceCertificate(ctx context.Context, deviceID string) (bool, error) {
+	return r.device.RevokeDeviceCertificate(ctx, deviceID)
+}
+
 func (r *mutationResolver) RecordDeviceMetric(ctx context.Context, input graphql.DeviceMetricInput) (*graphql.DeviceMetric, error) {
 	return r.metric.RecordDeviceMetric(ctx, input)
 }
@@ -428,6 +448,10 @@ func (r *mutationResolver) DeleteDashboardWidget(ctx context.Context, id string)
 
 func (r *mutationResolver) UpdateWidgetPositions(ctx context.Context, layoutID string, positions []*graphql.WidgetPositionInput) (bool, error) {
 	return r.dashboardWidget.UpdateWidgetPositions(ctx, layoutID, positions)
+}
+
+func (r *mutationResolver) UpdateUserRole(ctx context.Context, userID string, role graphql.Role) (*graphql.User, error) {
+	return r.auth.UpdateUserRole(ctx, userID, role)
 }
 
 type deviceResolver struct {

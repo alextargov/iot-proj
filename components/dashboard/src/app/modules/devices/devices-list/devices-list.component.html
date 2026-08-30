@@ -138,18 +138,20 @@
                         (click)="$event.stopPropagation(); onDuplicate(element)"
                         >content_copy</mat-icon
                     >
-                    <mat-icon
-                        class="device-list__table-definition-actions-edit"
-                        matTooltip="Edit"
-                        (click)="$event.stopPropagation()"
-                        >edit</mat-icon
-                    >
-                    <mat-icon
-                        class="device-list__table-definition-actions-delete"
-                        matTooltip="Delete"
-                        (click)="$event.stopPropagation(); onDelete(element)"
-                        >delete</mat-icon
-                    >
+                    @if (canWrite) {
+                        <mat-icon
+                            class="device-list__table-definition-actions-edit"
+                            matTooltip="Edit"
+                            (click)="$event.stopPropagation()"
+                            >edit</mat-icon
+                        >
+                        <mat-icon
+                            class="device-list__table-definition-actions-delete"
+                            matTooltip="Delete"
+                            (click)="$event.stopPropagation(); onDelete(element)"
+                            >delete</mat-icon
+                        >
+                    }
                 </div>
             </td>
         </ng-container>

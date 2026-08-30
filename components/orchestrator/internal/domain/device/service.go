@@ -3,6 +3,7 @@ package device
 import (
 	"context"
 
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/certmanager"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/model"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/pagination"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/tenant"
@@ -39,17 +40,24 @@ type HostService interface {
 	Update(ctx context.Context, id string, hostInput model.HostInput) error
 }
 
+// CertificateIssuer issues client certificates for devices.
+type CertificateIssuer interface {
+	IssueDeviceCertificate(deviceID, commonName string) (*certmanager.IssuedCertificate, error)
+}
+
 type service struct {
 	deviceRepo  DeviceRepository
 	uuidService UUIDService
 	hostService HostService
+	certIssuer  CertificateIssuer
 }
 
-func NewService(repo DeviceRepository, uuidService UUIDService, hostService HostService) *service {
+func NewService(repo DeviceRepository, uuidService UUIDService, hostService HostService, certIssuer CertificateIssuer) *service {
 	return &service{
 		deviceRepo:  repo,
 		uuidService: uuidService,
 		hostService: hostService,
+		certIssuer:  certIssuer,
 	}
 }
 
@@ -187,6 +195,63 @@ func (s *service) SetCommunicationToken(ctx context.Context, id, token string) e
 
 func (s *service) GetByToken(ctx context.Context, token string) (*model.Device, error) {
 	return s.deviceRepo.GetByToken(ctx, token)
+}
+
+// GenerateDeviceCertificate issues (or rotates) an mTLS client certificate for
+// the device and persists the certificate, private key, serial and expiry.
+// The returned IssuedCertificate contains the private key, which is only
+// available at issuance time.
+func (s *service) GenerateDeviceCertificate(ctx context.Context, id string) (*certmanager.IssuedCertificate, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	if s.certIssuer == nil {
+		return nil, errors.New("certificate issuer is not configured")
+	}
+
+	device, err := s.deviceRepo.Get(ctx, id, tnt)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting device %s", id)
+	}
+
+	issued, err := s.certIssuer.IssueDeviceCertificate(device.ID, device.Name)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while issuing certificate for device %s", id)
+	}
+
+	device.ClientCert = &issued.CertificatePEM
+	device.ClientCertKey = &issued.PrivateKeyPEM
+	device.ClientCertSerial = &issued.Serial
+	expiresAt := issued.ExpiresAt
+	device.ClientCertExpiresAt = &expiresAt
+
+	if err := s.deviceRepo.Update(ctx, *device); err != nil {
+		return nil, errors.Wrapf(err, "while persisting certificate for device %s", id)
+	}
+
+	return issued, nil
+}
+
+// RevokeDeviceCertificate clears the stored certificate material for a device.
+func (s *service) RevokeDeviceCertificate(ctx context.Context, id string) error {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	device, err := s.deviceRepo.Get(ctx, id, tnt)
+	if err != nil {
+		return errors.Wrapf(err, "while getting device %s", id)
+	}
+
+	device.ClientCert = nil
+	device.ClientCertKey = nil
+	device.ClientCertSerial = nil
+	device.ClientCertExpiresAt = nil
+
+	return s.deviceRepo.Update(ctx, *device)
 }
 
 func (s *service) createRelatedResources(ctx context.Context, deviceID string, device model.DeviceInput) error {

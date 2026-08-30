@@ -3,8 +3,10 @@
         <div class="app__user-info">
             <div class="app__user-header">
                 <div class="app__user-details">
-                    <h4 class="name">John Smith</h4>
-                    <p class="designation">Software Engineer</p>
+                    <h4 class="name">{{ currentUsername || 'Guest' }}</h4>
+                    @if (currentUserRole) {
+                        <p class="designation">{{ currentUserRole | titlecase }}</p>
+                    }
                 </div>
                 @if (isLoggedIn) {
                     <button mat-icon-button class="app__logout-btn" (click)="onLogoutClick()" matTooltip="Logout">
@@ -81,7 +83,7 @@
                             <div class="dashboard-submenu__empty">No dashboards yet</div>
                         }
 
-                        <button mat-button class="menu-button dashboard-submenu__add-btn" (click)="createNewDashboard()">
+                        <button mat-button class="menu-button dashboard-submenu__add-btn" (click)="createNewDashboard()" [disabled]="!canWrite">
                             <mat-icon>add</mat-icon>
                             <span>New Dashboard</span>
                         </button>

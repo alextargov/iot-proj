@@ -33,6 +33,9 @@ fragment DeviceInfo on Device {
         turnOffEndpoint
     }
     tags
+    hasCertificate
+    certificateSerial
+    certificateExpiresAt
     createdAt
     updatedAt
 }
@@ -81,6 +84,20 @@ mutation DeleteDevice($id: String!) {
 
 mutation GenerateDeviceToken($deviceId: ID!) {
     generateDeviceToken(deviceId: $deviceId)
+}
+
+mutation GenerateDeviceCertificate($deviceId: ID!) {
+    generateDeviceCertificate(deviceId: $deviceId) {
+        certificate
+        privateKey
+        caCertificate
+        serial
+        expiresAt
+    }
+}
+
+mutation RevokeDeviceCertificate($deviceId: ID!) {
+    revokeDeviceCertificate(deviceId: $deviceId)
 }
 
 query TestDeviceConnection($url: String!) {

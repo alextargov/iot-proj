@@ -5,16 +5,35 @@ import { tap } from 'rxjs/operators';
 import { AppConfigService } from '../app-config/app-config.service';
 import { ApiService } from '../api/api.service';
 
+export type Role = 'ADMIN' | 'OPERATOR' | 'VIEWER';
+
+// Role hierarchy rank used for @hasRole-style checks (higher = more privileged).
+const ROLE_RANK: Record<Role, number> = {
+    ADMIN: 3,
+    OPERATOR: 2,
+    VIEWER: 1,
+};
+
 interface ILoginResponse {
     id: string;
     token: string;
     username: string;
+    role: Role;
     createdAt: Date;
     updatedAt: Date;
 }
 
+interface StoredUser {
+    name: string;
+    token: string;
+    userId: string;
+    role: Role;
+    createdAt: Date;
+}
+
 interface JwtPayload {
     Username: string;
+    Role?: Role;
     exp: number;
     iat: number;
     iss: string;
@@ -139,10 +158,11 @@ export class AuthService {
 
     private setUserSession(user: ILoginResponse): void {
         if (user.token) {
-            const data = {
+            const data: StoredUser = {
                 name: user.username,
                 token: user.token,
                 userId: user.id,
+                role: user.role,
                 createdAt: user.createdAt,
             };
             this.authToken = user.token;
@@ -154,6 +174,54 @@ export class AuthService {
             console.error('User token is undefined');
             this.isAuthenticated = false;
         }
+    }
+
+    /** Returns the persisted current user, or null if not logged in. */
+    public getCurrentUser(): StoredUser | null {
+        const raw =
+            sessionStorage.getItem(this.USER_DATA_KEY) ||
+            localStorage.getItem(this.USER_DATA_KEY);
+        if (!raw) {
+            return null;
+        }
+        try {
+            return JSON.parse(raw) as StoredUser;
+        } catch {
+            return null;
+        }
+    }
+
+    /** Returns the current user's display name, or null. */
+    public getCurrentUsername(): string | null {
+        return this.getCurrentUser()?.name ?? null;
+    }
+
+    /**
+     * Returns the current user's role. Prefers the persisted user data and
+     * falls back to the role claim embedded in the JWT.
+     */
+    public getCurrentUserRole(): Role | null {
+        const stored = this.getCurrentUser();
+        if (stored?.role) {
+            return stored.role;
+        }
+        const token = this.getToken();
+        if (token) {
+            return this.decodeJwtPayload(token)?.Role ?? null;
+        }
+        return null;
+    }
+
+    /**
+     * Reports whether the current user has at least the given role, using the
+     * ADMIN > OPERATOR > VIEWER hierarchy.
+     */
+    public hasRole(minimum: Role): boolean {
+        const role = this.getCurrentUserRole();
+        if (!role) {
+            return false;
+        }
+        return ROLE_RANK[role] >= ROLE_RANK[minimum];
     }
 
     private setStorageItem(key: string, value: string): void {

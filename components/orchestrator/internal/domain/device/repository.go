@@ -17,7 +17,7 @@ const (
 )
 
 var (
-	updatableTableColumns = []string{"name", "description", "tenant_id", "status", "data_model_id", "auth", "tags", "communication_token", "created_at", "updated_at"}
+	updatableTableColumns = []string{"name", "description", "tenant_id", "status", "data_model_id", "auth", "tags", "communication_token", "client_cert", "client_cert_key", "client_cert_serial", "client_cert_expires_at", "created_at", "updated_at"}
 	idTableColumns        = []string{"id"}
 	tableColumns          = append(idTableColumns, updatableTableColumns...)
 )

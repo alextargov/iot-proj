@@ -12,6 +12,7 @@ type UserRepository interface {
 	GetByUsername(ctx context.Context, username string) (*model.User, error)
 	Exists(ctx context.Context, username string) (bool, error)
 	Create(ctx context.Context, item model.User) error
+	Update(ctx context.Context, item model.User) error
 	DeleteByID(ctx context.Context, id string) error
 }
 
@@ -86,4 +87,24 @@ func (s *service) DeleteByID(ctx context.Context, id string) error {
 	}
 
 	return nil
+}
+
+func (s *service) UpdateRole(ctx context.Context, id string, role model.Role) (*model.User, error) {
+	logger.C(ctx).Infof("Updating role of user with ID %s to %s", id, role)
+
+	if !role.IsValid() {
+		return nil, errors.Errorf("invalid role %q", role)
+	}
+
+	user, err := s.userRepo.GetByID(ctx, id)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting user with ID %s", id)
+	}
+
+	user.Role = role
+	if err := s.userRepo.Update(ctx, *user); err != nil {
+		return nil, errors.Wrapf(err, "while updating role of user with ID %s", id)
+	}
+
+	return user, nil
 }

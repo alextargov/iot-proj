@@ -15,7 +15,9 @@ import (
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/alextargov/iot-proj/components/controller/client"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/auth"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/certmanager"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain"
+	domainauth "github.com/alextargov/iot-proj/components/orchestrator/internal/domain/auth"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/device"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/host"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/domain/metric"
@@ -61,6 +63,7 @@ type config struct {
 
 	Database persistence.DatabaseConfig
 	Config   auth.Config
+	DeviceCA certmanager.Config
 
 	ApplicationsNamespace string `envconfig:"default=default,APP_APPLICATIONS_NAMESPACE"`
 
@@ -148,7 +151,16 @@ func initAPIHandler(ctx context.Context, cfg config, db persistence.Transactione
 	userRepo := user.NewRepository(userConv)
 	userService := user.NewService(userRepo, uidService)
 	authMiddleware := authmiddleware.NewMiddleware(db, jwtWrapper, userService)
-	authHandler := handlers.NewAuthHandler(db, userService, jwtWrapper)
+	authService := domainauth.NewService(userService, jwtWrapper)
+	authHandler := handlers.NewAuthHandler(db, authService)
+
+	certManager, err := certmanager.NewManager(cfg.DeviceCA)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "while initializing device certificate manager")
+	}
+	if cfg.DeviceCA.CACertFile == "" || cfg.DeviceCA.CAKeyFile == "" {
+		logrus.Warn("APP_DEVICE_CA_CERT/APP_DEVICE_CA_KEY not set: using an ephemeral in-memory device CA (dev only). Issued certificates will not persist across restarts.")
+	}
 
 	applicationsScheduler, err := buildScheduler(cfg)
 	if err != nil {
@@ -169,7 +181,7 @@ func initAPIHandler(ctx context.Context, cfg config, db persistence.Transactione
 	hostRepo := host.NewRepository(hostConv)
 	hostSvc := host.NewService(hostRepo, uidService)
 	deviceRepo := device.NewRepository(authDevConv)
-	deviceSvc := device.NewService(deviceRepo, uidService, hostSvc)
+	deviceSvc := device.NewService(deviceRepo, uidService, hostSvc, certManager)
 
 	// Create shared metric service with PubSub for real-time subscriptions
 	metricConv := metric.NewConverter()
@@ -195,9 +207,14 @@ func initAPIHandler(ctx context.Context, cfg config, db persistence.Transactione
 	apiRouter.HandleFunc("/devices/{deviceId}/metrics", metricsHandler.RecordDeviceMetrics).Methods(http.MethodPost)
 
 	// Pass the shared metric service to the root resolver so PubSub is wired correctly
-	rootResolver := domain.NewRootResolver(db, cfg.NotificationService.SMTP, applicationsScheduler, widgetScheduler, logrus.StandardLogger(), metricSvc)
+	rootResolver := domain.NewRootResolver(db, cfg.NotificationService.SMTP, applicationsScheduler, widgetScheduler, logrus.StandardLogger(), metricSvc, certManager)
 
-	srv := handler.New(graphql.NewExecutableSchema(graphql.Config{Resolvers: rootResolver}))
+	srv := handler.New(graphql.NewExecutableSchema(graphql.Config{
+		Resolvers: rootResolver,
+		Directives: graphql.DirectiveRoot{
+			HasRole: domain.NewHasRoleDirective(),
+		},
+	}))
 
 	srv.AddTransport(transport.Options{})
 	srv.AddTransport(transport.GET{})

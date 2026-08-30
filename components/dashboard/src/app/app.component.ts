@@ -4,7 +4,7 @@ import { NavigationEnd, Router } from '@angular/router';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import { delay, filter } from 'rxjs';
 import { MatDialog } from '@angular/material/dialog';
-import { AuthService } from './shared/services/auth/auth.service';
+import { AuthService, Role } from './shared/services/auth/auth.service';
 import { EventBusService } from './shared/services/eventbus/eventbus.service';
 import { DashboardLayoutService } from './shared/services/dashboard-layout/dashboard-layout.service';
 import { DashboardLayoutInfoFragment } from './shared/graphql/generated';
@@ -19,6 +19,8 @@ import { DashboardLayoutInfoFragment } from './shared/graphql/generated';
 export class AppComponent {
     title = 'dashboard';
     public isLoggedIn: boolean = false;
+    public currentUsername: string | null = null;
+    public currentUserRole: Role | null = null;
     public dashboardLayouts: DashboardLayoutInfoFragment[] = [];
     public isDashboardsExpanded: boolean = false;
     public currentDashboardId: string | null = null;
@@ -34,6 +36,7 @@ export class AppComponent {
 
     ngOnInit(): void {
         this.isLoggedIn = this.authService.isLoggedIn();
+        this.refreshUser();
 
         if (this.isLoggedIn) {
             this.loadDashboardLayouts();
@@ -42,6 +45,7 @@ export class AppComponent {
         this.eventBusService.on('onLoginChange').subscribe({
             next: () => {
                 this.isLoggedIn = this.authService.isLoggedIn();
+                this.refreshUser();
                 if (this.isLoggedIn) {
                     this.loadDashboardLayouts();
                 } else {
@@ -56,6 +60,16 @@ export class AppComponent {
                 this.loadDashboardLayouts();
             },
         });
+    }
+
+    private refreshUser(): void {
+        this.currentUsername = this.authService.getCurrentUsername();
+        this.currentUserRole = this.authService.getCurrentUserRole();
+    }
+
+    /** Whether the current user may perform write operations (OPERATOR+). */
+    public get canWrite(): boolean {
+        return this.authService.hasRole('OPERATOR');
     }
 
     private loadDashboardLayouts(): void {

@@ -1,7 +1,8 @@
 import {Component, OnInit, OnDestroy, ChangeDetectorRef} from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import {finalize, Subject, takeUntil} from 'rxjs';
-import { DeviceService } from '../../../shared/services/device/device.service';
+import { DeviceService, DeviceCertificate } from '../../../shared/services/device/device.service';
+import { AuthService } from '../../../shared/services/auth/auth.service';
 import {
     DeviceInfoFragment,
     DeviceStatus,
@@ -23,6 +24,11 @@ export class DeviceDetailComponent implements OnInit, OnDestroy {
     public device: DeviceInfoFragment | null = null;
     public isLoading = true;
     public deviceId: string = '';
+
+    // Certificate management state. issuedCertificate is only populated right
+    // after generation, since the private key is returned only once.
+    public issuedCertificate: DeviceCertificate | null = null;
+    public isCertBusy = false;
 
     private readonly destroy$ = new Subject<void>();
 
@@ -53,6 +59,7 @@ export class DeviceDetailComponent implements OnInit, OnDestroy {
         private route: ActivatedRoute,
         private router: Router,
         private deviceService: DeviceService,
+        private authService: AuthService,
         private cdr: ChangeDetectorRef
     ) {}
 
@@ -104,5 +111,75 @@ export class DeviceDetailComponent implements OnInit, OnDestroy {
 
     public goBack(): void {
         this.router.navigate(['/devices']);
+    }
+
+    /** Whether the current user may manage device certificates (OPERATOR+). */
+    public get canManageCerts(): boolean {
+        return this.authService.hasRole('OPERATOR');
+    }
+
+    public generateCertificate(): void {
+        if (!this.deviceId || this.isCertBusy) {
+            return;
+        }
+        this.isCertBusy = true;
+        this.deviceService
+            .generateDeviceCertificate(this.deviceId)
+            .pipe(
+                takeUntil(this.destroy$),
+                finalize(() => {
+                    this.isCertBusy = false;
+                    this.cdr.detectChanges();
+                })
+            )
+            .subscribe({
+                next: (cert) => {
+                    this.issuedCertificate = cert;
+                    this.loadDevice();
+                },
+                error: (err) => console.error('Failed to generate certificate:', err),
+            });
+    }
+
+    public revokeCertificate(): void {
+        if (!this.deviceId || this.isCertBusy) {
+            return;
+        }
+        this.isCertBusy = true;
+        this.deviceService
+            .revokeDeviceCertificate(this.deviceId)
+            .pipe(
+                takeUntil(this.destroy$),
+                finalize(() => {
+                    this.isCertBusy = false;
+                    this.cdr.detectChanges();
+                })
+            )
+            .subscribe({
+                next: () => {
+                    this.issuedCertificate = null;
+                    this.loadDevice();
+                },
+                error: (err) => console.error('Failed to revoke certificate:', err),
+            });
+    }
+
+    /** Triggers a browser download of the issued certificate + key bundle. */
+    public downloadCertificate(): void {
+        if (!this.issuedCertificate) {
+            return;
+        }
+        const parts = [
+            this.issuedCertificate.certificate,
+            this.issuedCertificate.privateKey ?? '',
+            this.issuedCertificate.caCertificate,
+        ];
+        const blob = new Blob([parts.join('\n')], { type: 'application/x-pem-file' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `device-${this.deviceId}-cert.pem`;
+        link.click();
+        URL.revokeObjectURL(url);
     }
 }

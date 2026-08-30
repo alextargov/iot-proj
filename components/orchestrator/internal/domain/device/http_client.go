@@ -30,6 +30,27 @@ func NewAuthenticatedHTTPClient() *AuthenticatedHTTPClient {
 	}
 }
 
+// NewAuthenticatedHTTPClientWithCert creates a client that presents the given
+// PEM-encoded client certificate/key for mTLS to the device endpoint. If the
+// certificate cannot be parsed, it falls back to a client without a client cert.
+func NewAuthenticatedHTTPClientWithCert(certPEM, keyPEM string) *AuthenticatedHTTPClient {
+	transport := &http.Transport{}
+	if certPEM != "" && keyPEM != "" {
+		if cert, err := tls.X509KeyPair([]byte(certPEM), []byte(keyPEM)); err == nil {
+			transport.TLSClientConfig = &tls.Config{
+				Certificates: []tls.Certificate{cert},
+			}
+		}
+	}
+
+	return &AuthenticatedHTTPClient{
+		client: &http.Client{
+			Timeout:   10 * time.Second,
+			Transport: transport,
+		},
+	}
+}
+
 // DoRequest performs an HTTP request with authentication based on device credentials
 func (c *AuthenticatedHTTPClient) DoRequest(ctx context.Context, method, endpoint string, body []byte, auth *model.Auth) (*http.Response, error) {
 	var bodyReader io.Reader

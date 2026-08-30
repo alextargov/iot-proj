@@ -70,6 +70,61 @@
                 </mat-card-content>
             </mat-card>
 
+            <!-- Device Certificate Card -->
+            <mat-card class="device-detail__cert-card">
+                <mat-card-header>
+                    <mat-card-title>
+                        <mat-icon>verified_user</mat-icon>
+                        Device Certificate (mTLS)
+                    </mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                    @if (device.hasCertificate) {
+                        <p>
+                            <strong>Status:</strong> Active<br />
+                            <strong>Serial:</strong> {{ device.certificateSerial }}<br />
+                            @if (device.certificateExpiresAt) {
+                                <strong>Expires:</strong> {{ device.certificateExpiresAt | date: 'medium' }}
+                            }
+                        </p>
+                    } @else {
+                        <p>No certificate has been issued for this device.</p>
+                    }
+
+                    @if (canManageCerts) {
+                        <div class="device-detail__cert-actions">
+                            <button mat-stroked-button color="primary"
+                                    [disabled]="isCertBusy"
+                                    (click)="generateCertificate()">
+                                <mat-icon>add_moderator</mat-icon>
+                                {{ device.hasCertificate ? 'Rotate Certificate' : 'Generate Certificate' }}
+                            </button>
+                            @if (device.hasCertificate) {
+                                <button mat-stroked-button color="warn"
+                                        [disabled]="isCertBusy"
+                                        (click)="revokeCertificate()">
+                                    <mat-icon>gpp_bad</mat-icon>
+                                    Revoke
+                                </button>
+                            }
+                        </div>
+                    }
+
+                    @if (issuedCertificate) {
+                        <div class="device-detail__cert-issued">
+                            <p>
+                                <mat-icon>warning</mat-icon>
+                                The private key is shown only once. Download and store it securely now.
+                            </p>
+                            <button mat-flat-button color="primary" (click)="downloadCertificate()">
+                                <mat-icon>download</mat-icon>
+                                Download certificate bundle
+                            </button>
+                        </div>
+                    }
+                </mat-card-content>
+            </mat-card>
+
             <!-- Metrics Chart Card -->
             <mat-card class="device-detail__metrics-card">
                 <mat-card-header>

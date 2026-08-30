@@ -10,40 +10,45 @@ import (
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/model"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/logger"
 	"github.com/alextargov/iot-proj/components/orchestrator/pkg/persistence"
-	"golang.org/x/crypto/bcrypt"
 )
 
+// UserService is used by both the auth and metrics handlers for user lookups.
 type UserService interface {
 	GetByUsername(ctx context.Context, username string) (*model.User, error)
 	Exists(ctx context.Context, username string) (bool, error)
 	Create(ctx context.Context, userInput model.UserInput) (*model.User, error)
 }
 
+// JWTService is used by both the auth and metrics handlers.
 type JWTService interface {
-	GenerateToken(username string) (string, error)
+	GenerateToken(username, role string) (string, error)
 	ValidateToken(token string) (*auth.JwtClaim, error)
+}
+
+// AuthService encapsulates login/registration business logic. The HTTP handler
+// is a thin adapter over the auth domain service (internal/domain/auth).
+type AuthService interface {
+	Register(ctx context.Context, input model.UserInput) (*model.User, error)
+	Login(ctx context.Context, username, password string) (string, *model.User, error)
 }
 
 type authHandler struct {
 	db          persistence.Transactioner
-	userService UserService
-	jwtService  JWTService
+	authService AuthService
 }
 
-func NewAuthHandler(db persistence.Transactioner, userService UserService, jwtService JWTService) *authHandler {
+func NewAuthHandler(db persistence.Transactioner, authService AuthService) *authHandler {
 	return &authHandler{
 		db:          db,
-		userService: userService,
-		jwtService:  jwtService,
+		authService: authService,
 	}
 }
 
 func (h *authHandler) Register(w http.ResponseWriter, r *http.Request) {
-	var user model.UserInput
+	var input model.UserInput
 	ctx := r.Context()
 
-	err := json.NewDecoder(r.Body).Decode(&user)
-	if err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		apperrors.WriteBadRequest(w, "Invalid request payload")
 		return
 	}
@@ -57,28 +62,13 @@ func (h *authHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	exists, err := h.userService.Exists(ctx, user.Username)
+	user, err := h.authService.Register(ctx, input)
 	if err != nil {
-		logger.C(ctx).Errorf("Error while checking for existence %+v", err.Error())
-		apperrors.WriteInternalError(w, "Error checking user existence")
-		return
-	}
-
-	if exists {
-		apperrors.WriteErrorWithStatus(w, http.StatusConflict, "User already exists")
-		return
-	}
-
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
-	if err != nil {
-		apperrors.WriteInternalError(w, "Error hashing user password")
-		return
-	}
-
-	user.Password = string(hashedPassword)
-
-	if _, err = h.userService.Create(ctx, user); err != nil {
-		logger.C(ctx).Errorf("Error while creating a user %+v", err.Error())
+		if apperrors.IsNotUniqueError(err) {
+			apperrors.WriteErrorWithStatus(w, http.StatusConflict, "User already exists")
+			return
+		}
+		logger.C(ctx).Errorf("Error while registering a user %+v", err.Error())
 		apperrors.WriteInternalError(w, "Error creating user")
 		return
 	}
@@ -90,14 +80,20 @@ func (h *authHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(user)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"id":        user.ID,
+		"username":  user.Username,
+		"role":      user.Role,
+		"createdAt": user.CreatedAt,
+		"updatedAt": user.UpdatedAt,
+	})
 }
 
 func (h *authHandler) Login(w http.ResponseWriter, r *http.Request) {
-	var user *model.User
+	var creds model.UserInput
 	ctx := r.Context()
-	err := json.NewDecoder(r.Body).Decode(&user)
-	if err != nil {
+
+	if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
 		logger.C(ctx).Errorf("Error while decoding %+v", err.Error())
 		apperrors.WriteBadRequest(w, "Invalid request payload")
 		return
@@ -112,39 +108,10 @@ func (h *authHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	exists, err := h.userService.Exists(ctx, user.Username)
+	token, user, err := h.authService.Login(ctx, creds.Username, creds.Password)
 	if err != nil {
-		logger.C(ctx).Errorf("Error while checking for existence %+v", err.Error())
-		apperrors.WriteInternalError(w, "Error checking user existence")
-		return
-	}
-
-	if !exists {
-		logger.C(ctx).Errorf("User with name %s does not exist", user.Username)
+		logger.C(ctx).Errorf("Login failed for %q: %+v", creds.Username, err.Error())
 		apperrors.WriteUnauthorized(w, "Invalid credentials")
-		return
-	}
-
-	logger.C(ctx).Infof("User %q exists", user.Username)
-
-	userFromService, err := h.userService.GetByUsername(ctx, user.Username)
-	if err != nil {
-		logger.C(ctx).Errorf("Error while getting user %+v", err.Error())
-		apperrors.WriteUnauthorized(w, "Invalid credentials")
-		return
-	}
-
-	err = bcrypt.CompareHashAndPassword([]byte(userFromService.Password), []byte(user.Password))
-	if err != nil {
-		logger.C(ctx).Errorf("Error while comparing passwords %+v", err.Error())
-		apperrors.WriteUnauthorized(w, "Invalid credentials")
-		return
-	}
-
-	tokenString, err := h.jwtService.GenerateToken(user.Username)
-	if err != nil {
-		logger.C(ctx).Errorf("Error while generating a token %+v", err.Error())
-		apperrors.WriteInternalError(w, "Error generating token")
 		return
 	}
 
@@ -153,13 +120,13 @@ func (h *authHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Return the token in the response body as JSON
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"id":        userFromService.ID,
-		"token":     tokenString,
-		"username":  userFromService.Username,
-		"createdAt": userFromService.CreatedAt,
-		"updatedAt": userFromService.UpdatedAt,
+		"id":        user.ID,
+		"token":     token,
+		"username":  user.Username,
+		"role":      user.Role,
+		"createdAt": user.CreatedAt,
+		"updatedAt": user.UpdatedAt,
 	})
 }

@@ -45,17 +45,21 @@ func (c *converter) ToEntity(model model.Device) (*Entity, error) {
 	}
 
 	return &Entity{
-		ID:                 model.ID,
-		TenantID:           model.TenantID,
-		Name:               model.Name,
-		Description:        repo.NewNullableString(model.Description),
-		Status:             string(model.Status),
-		Auth:               optionalAuth,
-		DataModelID:        model.DataModelID,
-		Tags:               optionalTags,
-		CommunicationToken: repo.NewNullableString(model.CommunicationToken),
-		CreatedAt:          model.CreatedAt,
-		UpdatedAt:          model.UpdatedAt,
+		ID:                  model.ID,
+		TenantID:            model.TenantID,
+		Name:                model.Name,
+		Description:         repo.NewNullableString(model.Description),
+		Status:              string(model.Status),
+		Auth:                optionalAuth,
+		DataModelID:         model.DataModelID,
+		Tags:                optionalTags,
+		CommunicationToken:  repo.NewNullableString(model.CommunicationToken),
+		ClientCert:          repo.NewNullableString(model.ClientCert),
+		ClientCertKey:       repo.NewNullableString(model.ClientCertKey),
+		ClientCertSerial:    repo.NewNullableString(model.ClientCertSerial),
+		ClientCertExpiresAt: repo.NewNullableTime(model.ClientCertExpiresAt),
+		CreatedAt:           model.CreatedAt,
+		UpdatedAt:           model.UpdatedAt,
 	}, nil
 }
 
@@ -76,17 +80,21 @@ func (c *converter) FromEntity(entity *Entity) (*model.Device, error) {
 	}
 
 	return &model.Device{
-		ID:                 entity.ID,
-		Name:               entity.Name,
-		Description:        repo.StringPtrFromNullableString(entity.Description),
-		TenantID:           entity.TenantID,
-		Status:             model.DeviceStatus(entity.Status),
-		Auth:               auth,
-		DataModelID:        entity.DataModelID,
-		Tags:               tags,
-		CommunicationToken: repo.StringPtrFromNullableString(entity.CommunicationToken),
-		CreatedAt:          entity.CreatedAt,
-		UpdatedAt:          entity.UpdatedAt,
+		ID:                  entity.ID,
+		Name:                entity.Name,
+		Description:         repo.StringPtrFromNullableString(entity.Description),
+		TenantID:            entity.TenantID,
+		Status:              model.DeviceStatus(entity.Status),
+		Auth:                auth,
+		DataModelID:         entity.DataModelID,
+		Tags:                tags,
+		CommunicationToken:  repo.StringPtrFromNullableString(entity.CommunicationToken),
+		ClientCert:          repo.StringPtrFromNullableString(entity.ClientCert),
+		ClientCertKey:       repo.StringPtrFromNullableString(entity.ClientCertKey),
+		ClientCertSerial:    repo.StringPtrFromNullableString(entity.ClientCertSerial),
+		ClientCertExpiresAt: repo.TimePtrFromNullableTime(entity.ClientCertExpiresAt),
+		CreatedAt:           entity.CreatedAt,
+		UpdatedAt:           entity.UpdatedAt,
 	}, nil
 }
 
@@ -131,17 +139,20 @@ func timePtrToTimestampPtr(time *time.Time) *graphql.Timestamp {
 
 func (c *converter) ToGraphQL(in *model.Device) *graphql.Device {
 	return &graphql.Device{
-		ID:          in.ID,
-		TenantID:    in.TenantID,
-		Name:        in.Name,
-		Description: in.Description,
-		Status:      graphql.DeviceStatus(in.Status),
-		Host:        c.hostConv.ToGraphQL(in.Host),
-		Auth:        c.authConv.ToGraphQL(in.Auth),
-		DataModelID: in.DataModelID,
-		Tags:        in.Tags,
-		CreatedAt:   graphql.TimePtrToTimestampPtr(in.CreatedAt),
-		UpdatedAt:   graphql.TimePtrToTimestampPtr(in.UpdatedAt),
+		ID:                   in.ID,
+		TenantID:             in.TenantID,
+		Name:                 in.Name,
+		Description:          in.Description,
+		Status:               graphql.DeviceStatus(in.Status),
+		Host:                 c.hostConv.ToGraphQL(in.Host),
+		Auth:                 c.authConv.ToGraphQL(in.Auth),
+		DataModelID:          in.DataModelID,
+		Tags:                 in.Tags,
+		HasCertificate:       in.ClientCert != nil && *in.ClientCert != "",
+		CertificateSerial:    in.ClientCertSerial,
+		CertificateExpiresAt: graphql.TimePtrToTimestampPtr(in.ClientCertExpiresAt),
+		CreatedAt:            graphql.TimePtrToTimestampPtr(in.CreatedAt),
+		UpdatedAt:            graphql.TimePtrToTimestampPtr(in.UpdatedAt),
 	}
 }
 

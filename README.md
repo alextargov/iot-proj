@@ -14,3 +14,7 @@
 1. Start Docker
 2. Run: `./scripts/install.sh`
 3. Access from `http://localhost:8080`
+
+### Initial user
+- Username: `alex`
+- Password: `pass`

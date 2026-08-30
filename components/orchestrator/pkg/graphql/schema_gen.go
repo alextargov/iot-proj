@@ -38,6 +38,7 @@ type ResolverRoot interface {
 }
 
 type DirectiveRoot struct {
+	HasRole func(ctx context.Context, obj any, next graphql.Resolver, minimum Role) (res any, err error)
 }
 
 type ComplexityRoot struct {
@@ -197,17 +198,28 @@ type ComplexityRoot struct {
 	}
 
 	Device struct {
-		Auth        func(childComplexity int) int
-		CreatedAt   func(childComplexity int) int
-		DataModel   func(childComplexity int) int
-		Description func(childComplexity int) int
-		Host        func(childComplexity int) int
-		ID          func(childComplexity int) int
-		Name        func(childComplexity int) int
-		Status      func(childComplexity int) int
-		Tags        func(childComplexity int) int
-		TenantID    func(childComplexity int) int
-		UpdatedAt   func(childComplexity int) int
+		Auth                 func(childComplexity int) int
+		CertificateExpiresAt func(childComplexity int) int
+		CertificateSerial    func(childComplexity int) int
+		CreatedAt            func(childComplexity int) int
+		DataModel            func(childComplexity int) int
+		Description          func(childComplexity int) int
+		HasCertificate       func(childComplexity int) int
+		Host                 func(childComplexity int) int
+		ID                   func(childComplexity int) int
+		Name                 func(childComplexity int) int
+		Status               func(childComplexity int) int
+		Tags                 func(childComplexity int) int
+		TenantID             func(childComplexity int) int
+		UpdatedAt            func(childComplexity int) int
+	}
+
+	DeviceCertificate struct {
+		CaCertificate func(childComplexity int) int
+		Certificate   func(childComplexity int) int
+		ExpiresAt     func(childComplexity int) int
+		PrivateKey    func(childComplexity int) int
+		Serial        func(childComplexity int) int
 	}
 
 	DeviceMetric struct {
@@ -239,31 +251,34 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		AcknowledgeAlertEvent func(childComplexity int, id string) int
-		AddDashboardWidget    func(childComplexity int, layoutID string, input DashboardWidgetInput) int
-		CreateAlertRule       func(childComplexity int, input CreateAlertRuleInput) int
-		CreateDashboardLayout func(childComplexity int, input DashboardLayoutInput) int
-		CreateDataModel       func(childComplexity int, input DataModelInput) int
-		CreateDevice          func(childComplexity int, input DeviceInput) int
-		CreateWidget          func(childComplexity int, input WidgetInput) int
-		DeleteAlertRule       func(childComplexity int, id string) int
-		DeleteDashboardLayout func(childComplexity int, id string) int
-		DeleteDashboardWidget func(childComplexity int, id string) int
-		DeleteDataModel       func(childComplexity int, id string) int
-		DeleteDevice          func(childComplexity int, id string) int
-		DeleteWidget          func(childComplexity int, id string) int
-		GenerateDeviceToken   func(childComplexity int, deviceID string) int
-		RecordDeviceMetric    func(childComplexity int, input DeviceMetricInput) int
-		RecordDeviceMetrics   func(childComplexity int, inputs []*DeviceMetricInput) int
-		RollbackDataModel     func(childComplexity int, dataModelID string, toVersion int) int
-		SetDeviceOperation    func(childComplexity int, id string, op OperationType) int
-		SetOperation          func(childComplexity int, op OperationType, data interface{}) int
-		UpdateAlertRule       func(childComplexity int, id string, input UpdateAlertRuleInput) int
-		UpdateDashboardLayout func(childComplexity int, id string, input UpdateDashboardLayoutInput) int
-		UpdateDashboardWidget func(childComplexity int, id string, input UpdateDashboardWidgetInput) int
-		UpdateDataModel       func(childComplexity int, id string, input UpdateDataModelInput) int
-		UpdateDevice          func(childComplexity int, id string, input UpdateDeviceInput) int
-		UpdateWidgetPositions func(childComplexity int, layoutID string, positions []*WidgetPositionInput) int
+		AcknowledgeAlertEvent     func(childComplexity int, id string) int
+		AddDashboardWidget        func(childComplexity int, layoutID string, input DashboardWidgetInput) int
+		CreateAlertRule           func(childComplexity int, input CreateAlertRuleInput) int
+		CreateDashboardLayout     func(childComplexity int, input DashboardLayoutInput) int
+		CreateDataModel           func(childComplexity int, input DataModelInput) int
+		CreateDevice              func(childComplexity int, input DeviceInput) int
+		CreateWidget              func(childComplexity int, input WidgetInput) int
+		DeleteAlertRule           func(childComplexity int, id string) int
+		DeleteDashboardLayout     func(childComplexity int, id string) int
+		DeleteDashboardWidget     func(childComplexity int, id string) int
+		DeleteDataModel           func(childComplexity int, id string) int
+		DeleteDevice              func(childComplexity int, id string) int
+		DeleteWidget              func(childComplexity int, id string) int
+		GenerateDeviceCertificate func(childComplexity int, deviceID string) int
+		GenerateDeviceToken       func(childComplexity int, deviceID string) int
+		RecordDeviceMetric        func(childComplexity int, input DeviceMetricInput) int
+		RecordDeviceMetrics       func(childComplexity int, inputs []*DeviceMetricInput) int
+		RevokeDeviceCertificate   func(childComplexity int, deviceID string) int
+		RollbackDataModel         func(childComplexity int, dataModelID string, toVersion int) int
+		SetDeviceOperation        func(childComplexity int, id string, op OperationType) int
+		SetOperation              func(childComplexity int, op OperationType, data interface{}) int
+		UpdateAlertRule           func(childComplexity int, id string, input UpdateAlertRuleInput) int
+		UpdateDashboardLayout     func(childComplexity int, id string, input UpdateDashboardLayoutInput) int
+		UpdateDashboardWidget     func(childComplexity int, id string, input UpdateDashboardWidgetInput) int
+		UpdateDataModel           func(childComplexity int, id string, input UpdateDataModelInput) int
+		UpdateDevice              func(childComplexity int, id string, input UpdateDeviceInput) int
+		UpdateUserRole            func(childComplexity int, userID string, role Role) int
+		UpdateWidgetPositions     func(childComplexity int, layoutID string, positions []*WidgetPositionInput) int
 	}
 
 	OAuthCredentialData struct {
@@ -312,6 +327,7 @@ type ComplexityRoot struct {
 	User struct {
 		CreatedAt func(childComplexity int) int
 		ID        func(childComplexity int) int
+		Role      func(childComplexity int) int
 		UpdatedAt func(childComplexity int) int
 		Username  func(childComplexity int) int
 	}
@@ -370,6 +386,8 @@ type MutationResolver interface {
 	UpdateDataModel(ctx context.Context, id string, input UpdateDataModelInput) (*DataModel, error)
 	RollbackDataModel(ctx context.Context, dataModelID string, toVersion int) (*DataModel, error)
 	GenerateDeviceToken(ctx context.Context, deviceID string) (string, error)
+	GenerateDeviceCertificate(ctx context.Context, deviceID string) (*DeviceCertificate, error)
+	RevokeDeviceCertificate(ctx context.Context, deviceID string) (bool, error)
 	RecordDeviceMetric(ctx context.Context, input DeviceMetricInput) (*DeviceMetric, error)
 	RecordDeviceMetrics(ctx context.Context, inputs []*DeviceMetricInput) (bool, error)
 	CreateAlertRule(ctx context.Context, input CreateAlertRuleInput) (*AlertRule, error)
@@ -383,6 +401,7 @@ type MutationResolver interface {
 	UpdateDashboardWidget(ctx context.Context, id string, input UpdateDashboardWidgetInput) (*DashboardWidget, error)
 	DeleteDashboardWidget(ctx context.Context, id string) (string, error)
 	UpdateWidgetPositions(ctx context.Context, layoutID string, positions []*WidgetPositionInput) (bool, error)
+	UpdateUserRole(ctx context.Context, userID string, role Role) (*User, error)
 }
 type QueryResolver interface {
 	Me(ctx context.Context) (*User, error)
@@ -1061,6 +1080,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Device.Auth(childComplexity), true
+	case "Device.certificateExpiresAt":
+		if e.ComplexityRoot.Device.CertificateExpiresAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Device.CertificateExpiresAt(childComplexity), true
+	case "Device.certificateSerial":
+		if e.ComplexityRoot.Device.CertificateSerial == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Device.CertificateSerial(childComplexity), true
 	case "Device.createdAt":
 		if e.ComplexityRoot.Device.CreatedAt == nil {
 			break
@@ -1079,6 +1110,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Device.Description(childComplexity), true
+	case "Device.hasCertificate":
+		if e.ComplexityRoot.Device.HasCertificate == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Device.HasCertificate(childComplexity), true
 	case "Device.host":
 		if e.ComplexityRoot.Device.Host == nil {
 			break
@@ -1121,6 +1158,37 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Device.UpdatedAt(childComplexity), true
+
+	case "DeviceCertificate.caCertificate":
+		if e.ComplexityRoot.DeviceCertificate.CaCertificate == nil {
+			break
+		}
+
+		return e.ComplexityRoot.DeviceCertificate.CaCertificate(childComplexity), true
+	case "DeviceCertificate.certificate":
+		if e.ComplexityRoot.DeviceCertificate.Certificate == nil {
+			break
+		}
+
+		return e.ComplexityRoot.DeviceCertificate.Certificate(childComplexity), true
+	case "DeviceCertificate.expiresAt":
+		if e.ComplexityRoot.DeviceCertificate.ExpiresAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.DeviceCertificate.ExpiresAt(childComplexity), true
+	case "DeviceCertificate.privateKey":
+		if e.ComplexityRoot.DeviceCertificate.PrivateKey == nil {
+			break
+		}
+
+		return e.ComplexityRoot.DeviceCertificate.PrivateKey(childComplexity), true
+	case "DeviceCertificate.serial":
+		if e.ComplexityRoot.DeviceCertificate.Serial == nil {
+			break
+		}
+
+		return e.ComplexityRoot.DeviceCertificate.Serial(childComplexity), true
 
 	case "DeviceMetric.deviceId":
 		if e.ComplexityRoot.DeviceMetric.DeviceID == nil {
@@ -1365,6 +1433,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.DeleteWidget(childComplexity, args["id"].(string)), true
+	case "Mutation.generateDeviceCertificate":
+		if e.ComplexityRoot.Mutation.GenerateDeviceCertificate == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_generateDeviceCertificate_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.GenerateDeviceCertificate(childComplexity, args["deviceId"].(string)), true
 	case "Mutation.generateDeviceToken":
 		if e.ComplexityRoot.Mutation.GenerateDeviceToken == nil {
 			break
@@ -1398,6 +1477,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.RecordDeviceMetrics(childComplexity, args["inputs"].([]*DeviceMetricInput)), true
+	case "Mutation.revokeDeviceCertificate":
+		if e.ComplexityRoot.Mutation.RevokeDeviceCertificate == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_revokeDeviceCertificate_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.RevokeDeviceCertificate(childComplexity, args["deviceId"].(string)), true
 	case "Mutation.rollbackDataModel":
 		if e.ComplexityRoot.Mutation.RollbackDataModel == nil {
 			break
@@ -1486,6 +1576,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.UpdateDevice(childComplexity, args["id"].(string), args["input"].(UpdateDeviceInput)), true
+	case "Mutation.updateUserRole":
+		if e.ComplexityRoot.Mutation.UpdateUserRole == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateUserRole_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.UpdateUserRole(childComplexity, args["userId"].(string), args["role"].(Role)), true
 	case "Mutation.updateWidgetPositions":
 		if e.ComplexityRoot.Mutation.UpdateWidgetPositions == nil {
 			break
@@ -1791,6 +1892,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.User.ID(childComplexity), true
+	case "User.role":
+		if e.ComplexityRoot.User.Role == nil {
+			break
+		}
+
+		return e.ComplexityRoot.User.Role(childComplexity), true
 	case "User.updatedAt":
 		if e.ComplexityRoot.User.UpdatedAt == nil {
 			break
@@ -2364,12 +2471,34 @@ func (ec *executionContext) childFields_Device(ctx context.Context, field graphq
 		return ec.fieldContext_Device_dataModel(ctx, field)
 	case "tags":
 		return ec.fieldContext_Device_tags(ctx, field)
+	case "hasCertificate":
+		return ec.fieldContext_Device_hasCertificate(ctx, field)
+	case "certificateSerial":
+		return ec.fieldContext_Device_certificateSerial(ctx, field)
+	case "certificateExpiresAt":
+		return ec.fieldContext_Device_certificateExpiresAt(ctx, field)
 	case "createdAt":
 		return ec.fieldContext_Device_createdAt(ctx, field)
 	case "updatedAt":
 		return ec.fieldContext_Device_updatedAt(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type Device", field.Name)
+}
+
+func (ec *executionContext) childFields_DeviceCertificate(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "certificate":
+		return ec.fieldContext_DeviceCertificate_certificate(ctx, field)
+	case "privateKey":
+		return ec.fieldContext_DeviceCertificate_privateKey(ctx, field)
+	case "caCertificate":
+		return ec.fieldContext_DeviceCertificate_caCertificate(ctx, field)
+	case "serial":
+		return ec.fieldContext_DeviceCertificate_serial(ctx, field)
+	case "expiresAt":
+		return ec.fieldContext_DeviceCertificate_expiresAt(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type DeviceCertificate", field.Name)
 }
 
 func (ec *executionContext) childFields_DeviceMetric(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -2446,6 +2575,8 @@ func (ec *executionContext) childFields_User(ctx context.Context, field graphql.
 		return ec.fieldContext_User_id(ctx, field)
 	case "username":
 		return ec.fieldContext_User_username(ctx, field)
+	case "role":
+		return ec.fieldContext_User_role(ctx, field)
 	case "createdAt":
 		return ec.fieldContext_User_createdAt(ctx, field)
 	case "updatedAt":
@@ -2619,6 +2750,20 @@ func (ec *executionContext) childFields___Type(ctx context.Context, field graphq
 // endregion ************************** internal!.gotpl ***************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) dir_hasRole_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "minimum",
+		func(ctx context.Context, v any) (Role, error) {
+			return ec.unmarshalNRole2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐRole(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["minimum"] = arg0
+	return args, nil
+}
 
 func (ec *executionContext) field_Mutation_acknowledgeAlertEvent_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
@@ -2810,6 +2955,20 @@ func (ec *executionContext) field_Mutation_deleteWidget_args(ctx context.Context
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_generateDeviceCertificate_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "deviceId",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["deviceId"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_generateDeviceToken_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -2849,6 +3008,20 @@ func (ec *executionContext) field_Mutation_recordDeviceMetrics_args(ctx context.
 		return nil, err
 	}
 	args["inputs"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_revokeDeviceCertificate_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "deviceId",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["deviceId"] = arg0
 	return args, nil
 }
 
@@ -3025,6 +3198,28 @@ func (ec *executionContext) field_Mutation_updateDevice_args(ctx context.Context
 		return nil, err
 	}
 	args["input"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateUserRole_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "userId",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["userId"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "role",
+		func(ctx context.Context, v any) (Role, error) {
+			return ec.unmarshalNRole2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐRole(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["role"] = arg1
 	return args, nil
 }
 
@@ -6177,6 +6372,75 @@ func (ec *executionContext) fieldContext_Device_tags(_ context.Context, field gr
 	return graphql.NewScalarFieldContext("Device", field, false, false, errors.New("field of type String does not have child fields"))
 }
 
+func (ec *executionContext) _Device_hasCertificate(ctx context.Context, field graphql.CollectedField, obj *Device) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Device_hasCertificate(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.HasCertificate, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Device_hasCertificate(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Device", field, false, false, errors.New("field of type Boolean does not have child fields"))
+}
+
+func (ec *executionContext) _Device_certificateSerial(ctx context.Context, field graphql.CollectedField, obj *Device) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Device_certificateSerial(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CertificateSerial, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Device_certificateSerial(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Device", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _Device_certificateExpiresAt(ctx context.Context, field graphql.CollectedField, obj *Device) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Device_certificateExpiresAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CertificateExpiresAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *Timestamp) graphql.Marshaler {
+			return ec.marshalOTimestamp2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐTimestamp(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Device_certificateExpiresAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Device", field, false, false, errors.New("field of type Timestamp does not have child fields"))
+}
+
 func (ec *executionContext) _Device_createdAt(ctx context.Context, field graphql.CollectedField, obj *Device) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -6221,6 +6485,121 @@ func (ec *executionContext) _Device_updatedAt(ctx context.Context, field graphql
 }
 func (ec *executionContext) fieldContext_Device_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("Device", field, false, false, errors.New("field of type Timestamp does not have child fields"))
+}
+
+func (ec *executionContext) _DeviceCertificate_certificate(ctx context.Context, field graphql.CollectedField, obj *DeviceCertificate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_DeviceCertificate_certificate(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Certificate, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_DeviceCertificate_certificate(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("DeviceCertificate", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _DeviceCertificate_privateKey(ctx context.Context, field graphql.CollectedField, obj *DeviceCertificate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_DeviceCertificate_privateKey(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.PrivateKey, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_DeviceCertificate_privateKey(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("DeviceCertificate", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _DeviceCertificate_caCertificate(ctx context.Context, field graphql.CollectedField, obj *DeviceCertificate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_DeviceCertificate_caCertificate(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CaCertificate, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_DeviceCertificate_caCertificate(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("DeviceCertificate", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _DeviceCertificate_serial(ctx context.Context, field graphql.CollectedField, obj *DeviceCertificate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_DeviceCertificate_serial(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Serial, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_DeviceCertificate_serial(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("DeviceCertificate", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _DeviceCertificate_expiresAt(ctx context.Context, field graphql.CollectedField, obj *DeviceCertificate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_DeviceCertificate_expiresAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ExpiresAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v Timestamp) graphql.Marshaler {
+			return ec.marshalNTimestamp2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐTimestamp(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_DeviceCertificate_expiresAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("DeviceCertificate", field, false, false, errors.New("field of type Timestamp does not have child fields"))
 }
 
 func (ec *executionContext) _DeviceMetric_id(ctx context.Context, field graphql.CollectedField, obj *DeviceMetric) (ret graphql.Marshaler) {
@@ -6630,7 +7009,25 @@ func (ec *executionContext) _Mutation_createDevice(ctx context.Context, field gr
 			fc := graphql.GetFieldContext(ctx)
 			return ec.Resolvers.Mutation().CreateDevice(ctx, fc.Args["input"].(DeviceInput))
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				minimum, err := ec.unmarshalNRole2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐRole(ctx, "OPERATOR")
+				if err != nil {
+					var zeroVal *Device
+					return zeroVal, err
+				}
+				if ec.Directives.HasRole == nil {
+					var zeroVal *Device
+					return zeroVal, errors.New("directive hasRole is not implemented")
+				}
+				return ec.Directives.HasRole(ctx, nil, directive0, minimum)
+			}
+
+			next = directive1
+			return next
+		},
 		func(ctx context.Context, selections ast.SelectionSet, v *Device) graphql.Marshaler {
 			return ec.marshalNDevice2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDevice(ctx, selections, v)
 		},
@@ -6674,7 +7071,25 @@ func (ec *executionContext) _Mutation_updateDevice(ctx context.Context, field gr
 			fc := graphql.GetFieldContext(ctx)
 			return ec.Resolvers.Mutation().UpdateDevice(ctx, fc.Args["id"].(string), fc.Args["input"].(UpdateDeviceInput))
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				minimum, err := ec.unmarshalNRole2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐRole(ctx, "OPERATOR")
+				if err != nil {
+					var zeroVal *Device
+					return zeroVal, err
+				}
+				if ec.Directives.HasRole == nil {
+					var zeroVal *Device
+					return zeroVal, errors.New("directive hasRole is not implemented")
+				}
+				return ec.Directives.HasRole(ctx, nil, directive0, minimum)
+			}
+
+			next = directive1
+			return next
+		},
 		func(ctx context.Context, selections ast.SelectionSet, v *Device) graphql.Marshaler {
 			return ec.marshalNDevice2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDevice(ctx, selections, v)
 		},
@@ -6718,7 +7133,25 @@ func (ec *executionContext) _Mutation_setDeviceOperation(ctx context.Context, fi
 			fc := graphql.GetFieldContext(ctx)
 			return ec.Resolvers.Mutation().SetDeviceOperation(ctx, fc.Args["id"].(string), fc.Args["op"].(OperationType))
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				minimum, err := ec.unmarshalNRole2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐRole(ctx, "OPERATOR")
+				if err != nil {
+					var zeroVal *Device
+					return zeroVal, err
+				}
+				if ec.Directives.HasRole == nil {
+					var zeroVal *Device
+					return zeroVal, errors.New("directive hasRole is not implemented")
+				}
+				return ec.Directives.HasRole(ctx, nil, directive0, minimum)
+			}
+
+			next = directive1
+			return next
+		},
 		func(ctx context.Context, selections ast.SelectionSet, v *Device) graphql.Marshaler {
 			return ec.marshalNDevice2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDevice(ctx, selections, v)
 		},
@@ -6768,7 +7201,25 @@ func (ec *executionContext) _Mutation_setOperation(ctx context.Context, field gr
 					return fc.Args["data"].(any)
 				}())
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				minimum, err := ec.unmarshalNRole2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐRole(ctx, "OPERATOR")
+				if err != nil {
+					var zeroVal bool
+					return zeroVal, err
+				}
+				if ec.Directives.HasRole == nil {
+					var zeroVal bool
+					return zeroVal, errors.New("directive hasRole is not implemented")
+				}
+				return ec.Directives.HasRole(ctx, nil, directive0, minimum)
+			}
+
+			next = directive1
+			return next
+		},
 		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
 			return ec.marshalNBoolean2bool(ctx, selections, v)
 		},
@@ -6812,7 +7263,25 @@ func (ec *executionContext) _Mutation_deleteDevice(ctx context.Context, field gr
 			fc := graphql.GetFieldContext(ctx)
 			return ec.Resolvers.Mutation().DeleteDevice(ctx, fc.Args["id"].(string))
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				minimum, err := ec.unmarshalNRole2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐRole(ctx, "OPERATOR")
+				if err != nil {
+					var zeroVal string
+					return zeroVal, err
+				}
+				if ec.Directives.HasRole == nil {
+					var zeroVal string
+					return zeroVal, errors.New("directive hasRole is not implemented")
+				}
+				return ec.Directives.HasRole(ctx, nil, directive0, minimum)
+			}
+
+			next = directive1
+			return next
+		},
 		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
 			return ec.marshalNString2string(ctx, selections, v)
 		},
@@ -6856,7 +7325,25 @@ func (ec *executionContext) _Mutation_createWidget(ctx context.Context, field gr
 			fc := graphql.GetFieldContext(ctx)
 			return ec.Resolvers.Mutation().CreateWidget(ctx, fc.Args["input"].(WidgetInput))
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				minimum, err := ec.unmarshalNRole2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐRole(ctx, "OPERATOR")
+				if err != nil {
+					var zeroVal *Widget
+					return zeroVal, err
+				}
+				if ec.Directives.HasRole == nil {
+					var zeroVal *Widget
+					return zeroVal, errors.New("directive hasRole is not implemented")
+				}
+				return ec.Directives.HasRole(ctx, nil, directive0, minimum)
+			}
+
+			next = directive1
+			return next
+		},
 		func(ctx context.Context, selections ast.SelectionSet, v *Widget) graphql.Marshaler {
 			return ec.marshalNWidget2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐWidget(ctx, selections, v)
 		},
@@ -6900,7 +7387,25 @@ func (ec *executionContext) _Mutation_deleteWidget(ctx context.Context, field gr
 			fc := graphql.GetFieldContext(ctx)
 			return ec.Resolvers.Mutation().DeleteWidget(ctx, fc.Args["id"].(string))
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				minimum, err := ec.unmarshalNRole2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐRole(ctx, "OPERATOR")
+				if err != nil {
+					var zeroVal string
+					return zeroVal, err
+				}
+				if ec.Directives.HasRole == nil {
+					var zeroVal string
+					return zeroVal, errors.New("directive hasRole is not implemented")
+				}
+				return ec.Directives.HasRole(ctx, nil, directive0, minimum)
+			}
+
+			next = directive1
+			return next
+		},
 		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
 			return ec.marshalNString2string(ctx, selections, v)
 		},
@@ -6944,7 +7449,25 @@ func (ec *executionContext) _Mutation_createDataModel(ctx context.Context, field
 			fc := graphql.GetFieldContext(ctx)
 			return ec.Resolvers.Mutation().CreateDataModel(ctx, fc.Args["input"].(DataModelInput))
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				minimum, err := ec.unmarshalNRole2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐRole(ctx, "OPERATOR")
+				if err != nil {
+					var zeroVal *DataModel
+					return zeroVal, err
+				}
+				if ec.Directives.HasRole == nil {
+					var zeroVal *DataModel
+					return zeroVal, errors.New("directive hasRole is not implemented")
+				}
+				return ec.Directives.HasRole(ctx, nil, directive0, minimum)
+			}
+
+			next = directive1
+			return next
+		},
 		func(ctx context.Context, selections ast.SelectionSet, v *DataModel) graphql.Marshaler {
 			return ec.marshalNDataModel2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDataModel(ctx, selections, v)
 		},
@@ -6988,7 +7511,25 @@ func (ec *executionContext) _Mutation_deleteDataModel(ctx context.Context, field
 			fc := graphql.GetFieldContext(ctx)
 			return ec.Resolvers.Mutation().DeleteDataModel(ctx, fc.Args["id"].(string))
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				minimum, err := ec.unmarshalNRole2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐRole(ctx, "OPERATOR")
+				if err != nil {
+					var zeroVal string
+					return zeroVal, err
+				}
+				if ec.Directives.HasRole == nil {
+					var zeroVal string
+					return zeroVal, errors.New("directive hasRole is not implemented")
+				}
+				return ec.Directives.HasRole(ctx, nil, directive0, minimum)
+			}
+
+			next = directive1
+			return next
+		},
 		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
 			return ec.marshalNString2string(ctx, selections, v)
 		},
@@ -7032,7 +7573,25 @@ func (ec *executionContext) _Mutation_updateDataModel(ctx context.Context, field
 			fc := graphql.GetFieldContext(ctx)
 			return ec.Resolvers.Mutation().UpdateDataModel(ctx, fc.Args["id"].(string), fc.Args["input"].(UpdateDataModelInput))
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				minimum, err := ec.unmarshalNRole2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐRole(ctx, "OPERATOR")
+				if err != nil {
+					var zeroVal *DataModel
+					return zeroVal, err
+				}
+				if ec.Directives.HasRole == nil {
+					var zeroVal *DataModel
+					return zeroVal, errors.New("directive hasRole is not implemented")
+				}
+				return ec.Directives.HasRole(ctx, nil, directive0, minimum)
+			}
+
+			next = directive1
+			return next
+		},
 		func(ctx context.Context, selections ast.SelectionSet, v *DataModel) graphql.Marshaler {
 			return ec.marshalNDataModel2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDataModel(ctx, selections, v)
 		},
@@ -7076,7 +7635,25 @@ func (ec *executionContext) _Mutation_rollbackDataModel(ctx context.Context, fie
 			fc := graphql.GetFieldContext(ctx)
 			return ec.Resolvers.Mutation().RollbackDataModel(ctx, fc.Args["dataModelId"].(string), fc.Args["toVersion"].(int))
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				minimum, err := ec.unmarshalNRole2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐRole(ctx, "OPERATOR")
+				if err != nil {
+					var zeroVal *DataModel
+					return zeroVal, err
+				}
+				if ec.Directives.HasRole == nil {
+					var zeroVal *DataModel
+					return zeroVal, errors.New("directive hasRole is not implemented")
+				}
+				return ec.Directives.HasRole(ctx, nil, directive0, minimum)
+			}
+
+			next = directive1
+			return next
+		},
 		func(ctx context.Context, selections ast.SelectionSet, v *DataModel) graphql.Marshaler {
 			return ec.marshalNDataModel2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDataModel(ctx, selections, v)
 		},
@@ -7120,7 +7697,25 @@ func (ec *executionContext) _Mutation_generateDeviceToken(ctx context.Context, f
 			fc := graphql.GetFieldContext(ctx)
 			return ec.Resolvers.Mutation().GenerateDeviceToken(ctx, fc.Args["deviceId"].(string))
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				minimum, err := ec.unmarshalNRole2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐRole(ctx, "OPERATOR")
+				if err != nil {
+					var zeroVal string
+					return zeroVal, err
+				}
+				if ec.Directives.HasRole == nil {
+					var zeroVal string
+					return zeroVal, errors.New("directive hasRole is not implemented")
+				}
+				return ec.Directives.HasRole(ctx, nil, directive0, minimum)
+			}
+
+			next = directive1
+			return next
+		},
 		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
 			return ec.marshalNString2string(ctx, selections, v)
 		},
@@ -7152,6 +7747,130 @@ func (ec *executionContext) fieldContext_Mutation_generateDeviceToken(ctx contex
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_generateDeviceCertificate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_generateDeviceCertificate(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().GenerateDeviceCertificate(ctx, fc.Args["deviceId"].(string))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				minimum, err := ec.unmarshalNRole2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐRole(ctx, "OPERATOR")
+				if err != nil {
+					var zeroVal *DeviceCertificate
+					return zeroVal, err
+				}
+				if ec.Directives.HasRole == nil {
+					var zeroVal *DeviceCertificate
+					return zeroVal, errors.New("directive hasRole is not implemented")
+				}
+				return ec.Directives.HasRole(ctx, nil, directive0, minimum)
+			}
+
+			next = directive1
+			return next
+		},
+		func(ctx context.Context, selections ast.SelectionSet, v *DeviceCertificate) graphql.Marshaler {
+			return ec.marshalNDeviceCertificate2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDeviceCertificate(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_generateDeviceCertificate(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_DeviceCertificate(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_generateDeviceCertificate_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_revokeDeviceCertificate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_revokeDeviceCertificate(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().RevokeDeviceCertificate(ctx, fc.Args["deviceId"].(string))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				minimum, err := ec.unmarshalNRole2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐRole(ctx, "OPERATOR")
+				if err != nil {
+					var zeroVal bool
+					return zeroVal, err
+				}
+				if ec.Directives.HasRole == nil {
+					var zeroVal bool
+					return zeroVal, errors.New("directive hasRole is not implemented")
+				}
+				return ec.Directives.HasRole(ctx, nil, directive0, minimum)
+			}
+
+			next = directive1
+			return next
+		},
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_revokeDeviceCertificate(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_revokeDeviceCertificate_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_recordDeviceMetric(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -7164,7 +7883,25 @@ func (ec *executionContext) _Mutation_recordDeviceMetric(ctx context.Context, fi
 			fc := graphql.GetFieldContext(ctx)
 			return ec.Resolvers.Mutation().RecordDeviceMetric(ctx, fc.Args["input"].(DeviceMetricInput))
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				minimum, err := ec.unmarshalNRole2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐRole(ctx, "OPERATOR")
+				if err != nil {
+					var zeroVal *DeviceMetric
+					return zeroVal, err
+				}
+				if ec.Directives.HasRole == nil {
+					var zeroVal *DeviceMetric
+					return zeroVal, errors.New("directive hasRole is not implemented")
+				}
+				return ec.Directives.HasRole(ctx, nil, directive0, minimum)
+			}
+
+			next = directive1
+			return next
+		},
 		func(ctx context.Context, selections ast.SelectionSet, v *DeviceMetric) graphql.Marshaler {
 			return ec.marshalNDeviceMetric2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDeviceMetric(ctx, selections, v)
 		},
@@ -7208,7 +7945,25 @@ func (ec *executionContext) _Mutation_recordDeviceMetrics(ctx context.Context, f
 			fc := graphql.GetFieldContext(ctx)
 			return ec.Resolvers.Mutation().RecordDeviceMetrics(ctx, fc.Args["inputs"].([]*DeviceMetricInput))
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				minimum, err := ec.unmarshalNRole2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐRole(ctx, "OPERATOR")
+				if err != nil {
+					var zeroVal bool
+					return zeroVal, err
+				}
+				if ec.Directives.HasRole == nil {
+					var zeroVal bool
+					return zeroVal, errors.New("directive hasRole is not implemented")
+				}
+				return ec.Directives.HasRole(ctx, nil, directive0, minimum)
+			}
+
+			next = directive1
+			return next
+		},
 		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
 			return ec.marshalNBoolean2bool(ctx, selections, v)
 		},
@@ -7252,7 +8007,25 @@ func (ec *executionContext) _Mutation_createAlertRule(ctx context.Context, field
 			fc := graphql.GetFieldContext(ctx)
 			return ec.Resolvers.Mutation().CreateAlertRule(ctx, fc.Args["input"].(CreateAlertRuleInput))
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				minimum, err := ec.unmarshalNRole2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐRole(ctx, "OPERATOR")
+				if err != nil {
+					var zeroVal *AlertRule
+					return zeroVal, err
+				}
+				if ec.Directives.HasRole == nil {
+					var zeroVal *AlertRule
+					return zeroVal, errors.New("directive hasRole is not implemented")
+				}
+				return ec.Directives.HasRole(ctx, nil, directive0, minimum)
+			}
+
+			next = directive1
+			return next
+		},
 		func(ctx context.Context, selections ast.SelectionSet, v *AlertRule) graphql.Marshaler {
 			return ec.marshalNAlertRule2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐAlertRule(ctx, selections, v)
 		},
@@ -7296,7 +8069,25 @@ func (ec *executionContext) _Mutation_updateAlertRule(ctx context.Context, field
 			fc := graphql.GetFieldContext(ctx)
 			return ec.Resolvers.Mutation().UpdateAlertRule(ctx, fc.Args["id"].(string), fc.Args["input"].(UpdateAlertRuleInput))
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				minimum, err := ec.unmarshalNRole2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐRole(ctx, "OPERATOR")
+				if err != nil {
+					var zeroVal *AlertRule
+					return zeroVal, err
+				}
+				if ec.Directives.HasRole == nil {
+					var zeroVal *AlertRule
+					return zeroVal, errors.New("directive hasRole is not implemented")
+				}
+				return ec.Directives.HasRole(ctx, nil, directive0, minimum)
+			}
+
+			next = directive1
+			return next
+		},
 		func(ctx context.Context, selections ast.SelectionSet, v *AlertRule) graphql.Marshaler {
 			return ec.marshalNAlertRule2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐAlertRule(ctx, selections, v)
 		},
@@ -7340,7 +8131,25 @@ func (ec *executionContext) _Mutation_deleteAlertRule(ctx context.Context, field
 			fc := graphql.GetFieldContext(ctx)
 			return ec.Resolvers.Mutation().DeleteAlertRule(ctx, fc.Args["id"].(string))
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				minimum, err := ec.unmarshalNRole2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐRole(ctx, "OPERATOR")
+				if err != nil {
+					var zeroVal string
+					return zeroVal, err
+				}
+				if ec.Directives.HasRole == nil {
+					var zeroVal string
+					return zeroVal, errors.New("directive hasRole is not implemented")
+				}
+				return ec.Directives.HasRole(ctx, nil, directive0, minimum)
+			}
+
+			next = directive1
+			return next
+		},
 		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
 			return ec.marshalNID2string(ctx, selections, v)
 		},
@@ -7384,7 +8193,25 @@ func (ec *executionContext) _Mutation_acknowledgeAlertEvent(ctx context.Context,
 			fc := graphql.GetFieldContext(ctx)
 			return ec.Resolvers.Mutation().AcknowledgeAlertEvent(ctx, fc.Args["id"].(string))
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				minimum, err := ec.unmarshalNRole2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐRole(ctx, "OPERATOR")
+				if err != nil {
+					var zeroVal *AlertEvent
+					return zeroVal, err
+				}
+				if ec.Directives.HasRole == nil {
+					var zeroVal *AlertEvent
+					return zeroVal, errors.New("directive hasRole is not implemented")
+				}
+				return ec.Directives.HasRole(ctx, nil, directive0, minimum)
+			}
+
+			next = directive1
+			return next
+		},
 		func(ctx context.Context, selections ast.SelectionSet, v *AlertEvent) graphql.Marshaler {
 			return ec.marshalNAlertEvent2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐAlertEvent(ctx, selections, v)
 		},
@@ -7428,7 +8255,25 @@ func (ec *executionContext) _Mutation_createDashboardLayout(ctx context.Context,
 			fc := graphql.GetFieldContext(ctx)
 			return ec.Resolvers.Mutation().CreateDashboardLayout(ctx, fc.Args["input"].(DashboardLayoutInput))
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				minimum, err := ec.unmarshalNRole2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐRole(ctx, "OPERATOR")
+				if err != nil {
+					var zeroVal *DashboardLayout
+					return zeroVal, err
+				}
+				if ec.Directives.HasRole == nil {
+					var zeroVal *DashboardLayout
+					return zeroVal, errors.New("directive hasRole is not implemented")
+				}
+				return ec.Directives.HasRole(ctx, nil, directive0, minimum)
+			}
+
+			next = directive1
+			return next
+		},
 		func(ctx context.Context, selections ast.SelectionSet, v *DashboardLayout) graphql.Marshaler {
 			return ec.marshalNDashboardLayout2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDashboardLayout(ctx, selections, v)
 		},
@@ -7472,7 +8317,25 @@ func (ec *executionContext) _Mutation_updateDashboardLayout(ctx context.Context,
 			fc := graphql.GetFieldContext(ctx)
 			return ec.Resolvers.Mutation().UpdateDashboardLayout(ctx, fc.Args["id"].(string), fc.Args["input"].(UpdateDashboardLayoutInput))
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				minimum, err := ec.unmarshalNRole2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐRole(ctx, "OPERATOR")
+				if err != nil {
+					var zeroVal *DashboardLayout
+					return zeroVal, err
+				}
+				if ec.Directives.HasRole == nil {
+					var zeroVal *DashboardLayout
+					return zeroVal, errors.New("directive hasRole is not implemented")
+				}
+				return ec.Directives.HasRole(ctx, nil, directive0, minimum)
+			}
+
+			next = directive1
+			return next
+		},
 		func(ctx context.Context, selections ast.SelectionSet, v *DashboardLayout) graphql.Marshaler {
 			return ec.marshalNDashboardLayout2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDashboardLayout(ctx, selections, v)
 		},
@@ -7516,7 +8379,25 @@ func (ec *executionContext) _Mutation_deleteDashboardLayout(ctx context.Context,
 			fc := graphql.GetFieldContext(ctx)
 			return ec.Resolvers.Mutation().DeleteDashboardLayout(ctx, fc.Args["id"].(string))
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				minimum, err := ec.unmarshalNRole2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐRole(ctx, "OPERATOR")
+				if err != nil {
+					var zeroVal string
+					return zeroVal, err
+				}
+				if ec.Directives.HasRole == nil {
+					var zeroVal string
+					return zeroVal, errors.New("directive hasRole is not implemented")
+				}
+				return ec.Directives.HasRole(ctx, nil, directive0, minimum)
+			}
+
+			next = directive1
+			return next
+		},
 		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
 			return ec.marshalNID2string(ctx, selections, v)
 		},
@@ -7560,7 +8441,25 @@ func (ec *executionContext) _Mutation_addDashboardWidget(ctx context.Context, fi
 			fc := graphql.GetFieldContext(ctx)
 			return ec.Resolvers.Mutation().AddDashboardWidget(ctx, fc.Args["layoutId"].(string), fc.Args["input"].(DashboardWidgetInput))
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				minimum, err := ec.unmarshalNRole2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐRole(ctx, "OPERATOR")
+				if err != nil {
+					var zeroVal *DashboardWidget
+					return zeroVal, err
+				}
+				if ec.Directives.HasRole == nil {
+					var zeroVal *DashboardWidget
+					return zeroVal, errors.New("directive hasRole is not implemented")
+				}
+				return ec.Directives.HasRole(ctx, nil, directive0, minimum)
+			}
+
+			next = directive1
+			return next
+		},
 		func(ctx context.Context, selections ast.SelectionSet, v *DashboardWidget) graphql.Marshaler {
 			return ec.marshalNDashboardWidget2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDashboardWidget(ctx, selections, v)
 		},
@@ -7604,7 +8503,25 @@ func (ec *executionContext) _Mutation_updateDashboardWidget(ctx context.Context,
 			fc := graphql.GetFieldContext(ctx)
 			return ec.Resolvers.Mutation().UpdateDashboardWidget(ctx, fc.Args["id"].(string), fc.Args["input"].(UpdateDashboardWidgetInput))
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				minimum, err := ec.unmarshalNRole2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐRole(ctx, "OPERATOR")
+				if err != nil {
+					var zeroVal *DashboardWidget
+					return zeroVal, err
+				}
+				if ec.Directives.HasRole == nil {
+					var zeroVal *DashboardWidget
+					return zeroVal, errors.New("directive hasRole is not implemented")
+				}
+				return ec.Directives.HasRole(ctx, nil, directive0, minimum)
+			}
+
+			next = directive1
+			return next
+		},
 		func(ctx context.Context, selections ast.SelectionSet, v *DashboardWidget) graphql.Marshaler {
 			return ec.marshalNDashboardWidget2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDashboardWidget(ctx, selections, v)
 		},
@@ -7648,7 +8565,25 @@ func (ec *executionContext) _Mutation_deleteDashboardWidget(ctx context.Context,
 			fc := graphql.GetFieldContext(ctx)
 			return ec.Resolvers.Mutation().DeleteDashboardWidget(ctx, fc.Args["id"].(string))
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				minimum, err := ec.unmarshalNRole2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐRole(ctx, "OPERATOR")
+				if err != nil {
+					var zeroVal string
+					return zeroVal, err
+				}
+				if ec.Directives.HasRole == nil {
+					var zeroVal string
+					return zeroVal, errors.New("directive hasRole is not implemented")
+				}
+				return ec.Directives.HasRole(ctx, nil, directive0, minimum)
+			}
+
+			next = directive1
+			return next
+		},
 		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
 			return ec.marshalNID2string(ctx, selections, v)
 		},
@@ -7692,7 +8627,25 @@ func (ec *executionContext) _Mutation_updateWidgetPositions(ctx context.Context,
 			fc := graphql.GetFieldContext(ctx)
 			return ec.Resolvers.Mutation().UpdateWidgetPositions(ctx, fc.Args["layoutId"].(string), fc.Args["positions"].([]*WidgetPositionInput))
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				minimum, err := ec.unmarshalNRole2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐRole(ctx, "OPERATOR")
+				if err != nil {
+					var zeroVal bool
+					return zeroVal, err
+				}
+				if ec.Directives.HasRole == nil {
+					var zeroVal bool
+					return zeroVal, errors.New("directive hasRole is not implemented")
+				}
+				return ec.Directives.HasRole(ctx, nil, directive0, minimum)
+			}
+
+			next = directive1
+			return next
+		},
 		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
 			return ec.marshalNBoolean2bool(ctx, selections, v)
 		},
@@ -7718,6 +8671,68 @@ func (ec *executionContext) fieldContext_Mutation_updateWidgetPositions(ctx cont
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_updateWidgetPositions_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateUserRole(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_updateUserRole(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().UpdateUserRole(ctx, fc.Args["userId"].(string), fc.Args["role"].(Role))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				minimum, err := ec.unmarshalNRole2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐRole(ctx, "ADMIN")
+				if err != nil {
+					var zeroVal *User
+					return zeroVal, err
+				}
+				if ec.Directives.HasRole == nil {
+					var zeroVal *User
+					return zeroVal, errors.New("directive hasRole is not implemented")
+				}
+				return ec.Directives.HasRole(ctx, nil, directive0, minimum)
+			}
+
+			next = directive1
+			return next
+		},
+		func(ctx context.Context, selections ast.SelectionSet, v *User) graphql.Marshaler {
+			return ec.marshalNUser2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐUser(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_updateUserRole(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_User(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateUserRole_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -8998,6 +10013,29 @@ func (ec *executionContext) _User_username(ctx context.Context, field graphql.Co
 }
 func (ec *executionContext) fieldContext_User_username(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("User", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _User_role(ctx context.Context, field graphql.CollectedField, obj *User) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_User_role(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Role, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v Role) graphql.Marshaler {
+			return ec.marshalNRole2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐRole(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_User_role(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("User", field, false, false, errors.New("field of type Role does not have child fields"))
 }
 
 func (ec *executionContext) _User_createdAt(ctx context.Context, field graphql.CollectedField, obj *User) (ret graphql.Marshaler) {
@@ -13147,6 +14185,21 @@ func (ec *executionContext) _Device(ctx context.Context, sel ast.SelectionSet, o
 			if out.Values[i] == graphql.RequiredNull {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
+		case "hasCertificate":
+			out.Values[i] = ec._Device_hasCertificate(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "certificateSerial":
+			out.Values[i] = ec._Device_certificateSerial(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "certificateExpiresAt":
+			out.Values[i] = ec._Device_certificateExpiresAt(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		case "createdAt":
 			out.Values[i] = ec._Device_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.RequiredNull {
@@ -13156,6 +14209,64 @@ func (ec *executionContext) _Device(ctx context.Context, sel ast.SelectionSet, o
 			out.Values[i] = ec._Device_updatedAt(ctx, field, obj)
 			if out.Values[i] == graphql.RequiredNull {
 				atomic.AddUint32(&out.Invalids, 1)
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var deviceCertificateImplementors = []string{"DeviceCertificate"}
+
+func (ec *executionContext) _DeviceCertificate(ctx context.Context, sel ast.SelectionSet, obj *DeviceCertificate) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, deviceCertificateImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("DeviceCertificate")
+		case "certificate":
+			out.Values[i] = ec._DeviceCertificate_certificate(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "privateKey":
+			out.Values[i] = ec._DeviceCertificate_privateKey(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "caCertificate":
+			out.Values[i] = ec._DeviceCertificate_caCertificate(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "serial":
+			out.Values[i] = ec._DeviceCertificate_serial(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "expiresAt":
+			out.Values[i] = ec._DeviceCertificate_expiresAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -13494,6 +14605,20 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "generateDeviceCertificate":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_generateDeviceCertificate(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "revokeDeviceCertificate":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_revokeDeviceCertificate(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "recordDeviceMetric":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_recordDeviceMetric(ctx, field)
@@ -13581,6 +14706,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "updateWidgetPositions":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_updateWidgetPositions(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updateUserRole":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateUserRole(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -14324,6 +15456,11 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			}
 		case "username":
 			out.Values[i] = ec._User_username(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "role":
+			out.Values[i] = ec._User_role(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -15429,6 +16566,20 @@ func (ec *executionContext) marshalNDevice2ᚖgithubᚗcomᚋalextargovᚋiotᚑ
 	return ec._Device(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNDeviceCertificate2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDeviceCertificate(ctx context.Context, sel ast.SelectionSet, v DeviceCertificate) graphql.Marshaler {
+	return ec._DeviceCertificate(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNDeviceCertificate2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDeviceCertificate(ctx context.Context, sel ast.SelectionSet, v *DeviceCertificate) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._DeviceCertificate(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNDeviceInput2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDeviceInput(ctx context.Context, v any) (DeviceInput, error) {
 	res, err := ec.unmarshalInputDeviceInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -15632,6 +16783,16 @@ func (ec *executionContext) marshalNPageInfo2ᚖgithubᚗcomᚋalextargovᚋiot�
 	return ec._PageInfo(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNRole2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐRole(ctx context.Context, v any) (Role, error) {
+	var res Role
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNRole2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐRole(ctx context.Context, sel ast.SelectionSet, v Role) graphql.Marshaler {
+	return v
+}
+
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v any) (string, error) {
 	res, err := graphql.UnmarshalString(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -15681,6 +16842,20 @@ func (ec *executionContext) unmarshalNUpdateDataModelInput2githubᚗcomᚋalexta
 func (ec *executionContext) unmarshalNUpdateDeviceInput2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐUpdateDeviceInput(ctx context.Context, v any) (UpdateDeviceInput, error) {
 	res, err := ec.unmarshalInputUpdateDeviceInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNUser2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐUser(ctx context.Context, sel ast.SelectionSet, v User) graphql.Marshaler {
+	return ec._User(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNUser2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐUser(ctx context.Context, sel ast.SelectionSet, v *User) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._User(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNWidget2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐWidget(ctx context.Context, sel ast.SelectionSet, v Widget) graphql.Marshaler {

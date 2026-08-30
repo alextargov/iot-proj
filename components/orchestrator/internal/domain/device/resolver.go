@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/apperrors"
+	"github.com/alextargov/iot-proj/components/orchestrator/internal/certmanager"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/model"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/pagination"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/transaction"
@@ -30,6 +31,8 @@ type DeviceSvc interface {
 	GetByID(ctx context.Context, id string) (*model.Device, error)
 	SetCommunicationToken(ctx context.Context, id, token string) error
 	GetByToken(ctx context.Context, token string) (*model.Device, error)
+	GenerateDeviceCertificate(ctx context.Context, id string) (*certmanager.IssuedCertificate, error)
+	RevokeDeviceCertificate(ctx context.Context, id string) error
 }
 
 type HostSvc interface {
@@ -218,8 +221,14 @@ func (r *Resolver) SetDeviceOperation(ctx context.Context, id string, op graphql
 		return nil, fmt.Errorf("unsupported operation type: %s", op)
 	}
 
-	// Use authenticated HTTP client with device credentials
-	httpClient := NewAuthenticatedHTTPClient()
+	// Use authenticated HTTP client with device credentials. If the device has
+	// an issued mTLS client certificate, present it to the endpoint.
+	var httpClient *AuthenticatedHTTPClient
+	if device.ClientCert != nil && device.ClientCertKey != nil && *device.ClientCert != "" {
+		httpClient = NewAuthenticatedHTTPClientWithCert(*device.ClientCert, *device.ClientCertKey)
+	} else {
+		httpClient = NewAuthenticatedHTTPClient()
+	}
 	resp, err := httpClient.DoRequest(ctx, http.MethodPost, endpoint, nil, device.Auth)
 	if err != nil {
 		return nil, fmt.Errorf("failed to call device endpoint: %w", err)
@@ -293,4 +302,33 @@ func (r *Resolver) DataModel(ctx context.Context, obj *graphql.Device) (*graphql
 	}
 
 	return r.dataModelConv.ToGraphQL(dataModel), nil
+}
+
+// GenerateDeviceCertificate issues a new mTLS client certificate for the device.
+func (r *Resolver) GenerateDeviceCertificate(ctx context.Context, deviceID string) (*graphql.DeviceCertificate, error) {
+	return transaction.WithTransactionResult(ctx, r.transact, func(ctx context.Context) (*graphql.DeviceCertificate, error) {
+		issued, err := r.deviceSvc.GenerateDeviceCertificate(ctx, deviceID)
+		if err != nil {
+			return nil, err
+		}
+
+		privateKey := issued.PrivateKeyPEM
+		return &graphql.DeviceCertificate{
+			Certificate:   issued.CertificatePEM,
+			PrivateKey:    &privateKey,
+			CaCertificate: issued.CACertificatePEM,
+			Serial:        issued.Serial,
+			ExpiresAt:     graphql.Timestamp(issued.ExpiresAt),
+		}, nil
+	})
+}
+
+// RevokeDeviceCertificate clears the stored certificate for the device.
+func (r *Resolver) RevokeDeviceCertificate(ctx context.Context, deviceID string) (bool, error) {
+	return transaction.WithTransactionResult(ctx, r.transact, func(ctx context.Context) (bool, error) {
+		if err := r.deviceSvc.RevokeDeviceCertificate(ctx, deviceID); err != nil {
+			return false, err
+		}
+		return true, nil
+	})
 }

@@ -47,6 +47,7 @@ func ToGraphQL(u *model.User) *graphql.User {
 	return &graphql.User{
 		ID:        u.ID,
 		Username:  u.Username,
+		Role:      graphql.Role(u.Role),
 		CreatedAt: createdAt,
 		UpdatedAt: updatedAt,
 	}
