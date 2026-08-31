@@ -43,7 +43,7 @@ import {
 } from 'src/app/shared/graphql/generated';
 import { ToastrService } from '../../../shared/services/toastr/toastr.service';
 import { WidgetService } from '../../../shared/services/widget/widget.service';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import {
     WIDGET_TEMPLATES,
     TEMPLATE_CATEGORIES,
@@ -159,6 +159,8 @@ export class WidgetCreateComponent implements OnInit {
     public workspaceXML: string;
     public workspaceCode: string;
     private duplicateWorkspace: string | null = null;
+    public editId: string | null = null;
+    private prefillDeviceIds: string[] = [];
 
     public config: BlocklyConfig = {
         trashcan: true,
@@ -190,6 +192,7 @@ export class WidgetCreateComponent implements OnInit {
 
     constructor(
         private router: Router,
+        private route: ActivatedRoute,
         private formBuilder: UntypedFormBuilder,
         private deviceService: DeviceService,
         private widgetService: WidgetService,
@@ -197,68 +200,109 @@ export class WidgetCreateComponent implements OnInit {
     ) {}
 
     ngOnInit(): void {
-        const duplicateData = history.state?.duplicate;
+        this.editId = this.route.snapshot.paramMap.get('id');
 
+        // Build the form empty first; pre-fill values are applied once the
+        // source (duplicate payload or the fetched widget in edit mode) is known.
         this.detailsFormGroup = this.formBuilder.group({
             name: [
-                duplicateData?.name || '',
+                '',
                 [
                     Validators.required,
                     Validators.maxLength(this.NAME_MAX_LENGTH),
                 ],
             ],
             description: [
-                duplicateData?.description || '',
+                '',
                 Validators.maxLength(this.DESCRIPTION_MAX_LENGTH),
             ],
             isActive: [true],
             device: [''],
         });
 
-        // Store duplicate data for later use when devices are loaded
-        const duplicateDeviceIds = duplicateData?.deviceIds || [];
-        this.duplicateWorkspace = duplicateData?.workspace || null;
-        if (duplicateData?.code) {
-            this.workspaceCode = duplicateData.code;
+        if (this.editId) {
+            this.widgetService.getById(this.editId).subscribe({
+                next: (widget) => {
+                    if (widget) {
+                        this.applyPrefill(widget);
+                    } else {
+                        this.toast.showError('Widget not found');
+                    }
+                    this.loadDevices();
+                },
+                error: (err) => {
+                    console.error('Failed to load widget:', err);
+                    this.toast.showError('Failed to load widget');
+                    this.loadDevices();
+                },
+            });
+        } else {
+            const duplicateData = history.state?.duplicate;
+            if (duplicateData) {
+                this.applyPrefill(duplicateData);
+            }
+            this.loadDevices();
+        }
+    }
+
+    // applyPrefill seeds the form + workspace + schedule from an existing widget
+    // (used for both duplicate and edit). Device pre-selection happens in
+    // loadDevices once the device list is available.
+    private applyPrefill(source: any): void {
+        this.detailsFormGroup.patchValue({
+            name: source.name || '',
+            description: source.description || '',
+            isActive: source.status ? source.status === WidgetStatus.Active : true,
+        });
+
+        this.prefillDeviceIds = source.deviceIds || [];
+        this.duplicateWorkspace = source.workspace || null;
+        // Seed workspaceXML so an untouched Blockly editor still saves the
+        // original workspace (workspaceChange only fires on edits).
+        if (source.workspace) {
+            this.workspaceXML = source.workspace;
+        }
+        if (source.code) {
+            this.workspaceCode = source.code;
         }
 
-        // Restore schedule from duplicate data
-        if (duplicateData?.schedule) {
+        if (source.schedule) {
             this.enableScheduling = true;
-            const preset = SCHEDULE_PRESETS.find(p => p.value === duplicateData.schedule);
+            const preset = SCHEDULE_PRESETS.find((p) => p.value === source.schedule);
             if (preset) {
                 this.selectedPreset = preset;
             } else {
                 // Custom cron expression
-                this.selectedPreset = SCHEDULE_PRESETS.find(p => p.value === 'custom') || null;
-                this.customSchedule = duplicateData.schedule;
+                this.selectedPreset = SCHEDULE_PRESETS.find((p) => p.value === 'custom') || null;
+                this.customSchedule = source.schedule;
             }
         }
+    }
 
+    private loadDevices(): void {
         this.deviceService.getAllDevices().subscribe({
             next: (deviceList) => {
                 this.devices = deviceList;
-                console.log('Devices loaded:', deviceList);
 
-                // Pre-select devices from duplicate data
-                if (duplicateDeviceIds.length > 0) {
+                // Pre-select devices from the pre-fill source
+                if (this.prefillDeviceIds.length > 0) {
                     deviceList.forEach((device) => {
-                        if (duplicateDeviceIds.includes(device.id)) {
+                        if (this.prefillDeviceIds.includes(device.id)) {
                             this.selectedDevices.add(device);
                         }
                     });
                 }
 
-            this.isLoaded = true;
+                this.isLoaded = true;
 
-            this.filteredDevices = this.detailsFormGroup
-                .get('device')
-                .valueChanges.pipe(
-                    startWith(null),
-                    map((device: string | null) =>
-                        device ? this._filter(device) : this.devices.slice()
-                    )
-                );
+                this.filteredDevices = this.detailsFormGroup
+                    .get('device')
+                    .valueChanges.pipe(
+                        startWith(null),
+                        map((device: string | null) =>
+                            device ? this._filter(device) : this.devices.slice()
+                        )
+                    );
             },
             error: (err) => {
                 console.error('Failed to load devices:', err);
@@ -351,10 +395,23 @@ export class WidgetCreateComponent implements OnInit {
 
     public async onSaveClick(): Promise<void> {
         const model = this.convertToModel();
-        this.widgetService.create(model).subscribe((data) => {
-            console.log('success', data);
-            this.toast.showSuccess('Successfully created widget');
-        });
+        if (this.editId) {
+            this.widgetService.update(this.editId, model).subscribe({
+                next: (data) => {
+                    console.log('success', data);
+                    this.toast.showSuccess('Successfully updated widget');
+                },
+                error: (err) => {
+                    console.error('Error updating widget:', err);
+                    this.toast.showError('Failed to update widget');
+                },
+            });
+        } else {
+            this.widgetService.create(model).subscribe((data) => {
+                console.log('success', data);
+                this.toast.showSuccess('Successfully created widget');
+            });
+        }
 
         await this.router.navigate(['widgets']);
     }

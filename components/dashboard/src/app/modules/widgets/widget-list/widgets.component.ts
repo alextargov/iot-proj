@@ -156,6 +156,14 @@ export class WidgetsComponent implements OnInit {
         });
     }
 
+    public async onEdit(widget: WidgetInfoFragment): Promise<void> {
+        try {
+            await this.router.navigate(['widgets', widget.id, 'edit']);
+        } catch (e) {
+            console.log(e);
+        }
+    }
+
     public onExport(widget: WidgetInfoFragment): void {
         const exportData = {
             name: widget.name,

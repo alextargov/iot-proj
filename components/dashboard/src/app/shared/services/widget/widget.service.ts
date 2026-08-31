@@ -9,6 +9,9 @@ import {
     DeleteWidgetDocument,
     DeleteWidgetMutation,
     GetAllWidgetsGQL,
+    GetWidgetGQL,
+    UpdateWidgetDocument,
+    UpdateWidgetMutation,
     WidgetInfoFragment,
     WidgetInput,
 } from '../../graphql/generated';
@@ -37,6 +40,7 @@ export class WidgetService {
     constructor(
         private readonly apiService: ApiService,
         private readonly getAllWidgetsGql: GetAllWidgetsGQL,
+        private readonly getWidgetGql: GetWidgetGQL,
         private readonly createWidgetGql: CreateWidgetGQL,
         private readonly apollo: Apollo
     ) {}
@@ -47,12 +51,31 @@ export class WidgetService {
             .valueChanges.pipe(map((res) => (res.data?.widgets ?? []) as WidgetInfoFragment[]));
     }
 
+    public getById(id: string): Observable<WidgetInfoFragment | null> {
+        return this.getWidgetGql
+            .fetch({ variables: { id }, fetchPolicy: 'network-only' })
+            .pipe(map((res) => (res.data?.widget ?? null) as WidgetInfoFragment | null));
+    }
+
     public create(
         data: WidgetInput
     ): Observable<FetchResult<CreateWidgetMutation>> {
         return this.apollo.mutate<CreateWidgetMutation>({
             mutation: CreateWidgetDocument,
             variables: {
+                input: data,
+            },
+        });
+    }
+
+    public update(
+        id: string,
+        data: WidgetInput
+    ): Observable<FetchResult<UpdateWidgetMutation>> {
+        return this.apollo.mutate<UpdateWidgetMutation>({
+            mutation: UpdateWidgetDocument,
+            variables: {
+                id,
                 input: data,
             },
         });

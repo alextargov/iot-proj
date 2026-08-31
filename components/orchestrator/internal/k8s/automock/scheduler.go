@@ -42,6 +42,36 @@ func (_m *Scheduler) Schedule(ctx context.Context, app *k8s.Application) (string
 	return r0, r1
 }
 
+// GetApplication provides a mock function with given fields: ctx, widgetID
+func (_m *Scheduler) GetApplication(ctx context.Context, widgetID string) (*k8s.Application, error) {
+	ret := _m.Called(ctx, widgetID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetApplication")
+	}
+
+	var r0 *k8s.Application
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*k8s.Application, error)); ok {
+		return rf(ctx, widgetID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) *k8s.Application); ok {
+		r0 = rf(ctx, widgetID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*k8s.Application)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, widgetID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // NewScheduler creates a new instance of Scheduler. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewScheduler(t interface {

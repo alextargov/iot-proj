@@ -15,6 +15,10 @@ import (
 //go:generate mockery --name=Scheduler --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Scheduler interface {
 	Schedule(ctx context.Context, app *Application) (string, error)
+	// GetApplication reads the Application CR for the given widget ID and returns
+	// its stored source code / workspace. Callers should treat errors as
+	// non-fatal (the CR may not exist or the cluster may be unreachable).
+	GetApplication(ctx context.Context, widgetID string) (*Application, error)
 }
 
 type Application struct {

@@ -49,6 +49,22 @@ func (s *scheduler) Schedule(ctx context.Context, app *Application) (string, err
 	return string(updatedOperation.UID), err
 }
 
+func (s *scheduler) GetApplication(ctx context.Context, widgetID string) (*Application, error) {
+	getApp, err := s.client.Get(ctx, widgetID, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	return &Application{
+		ApplicationID: getApp.Spec.ApplicationID,
+		WidgetID:      getApp.Spec.WidgetID,
+		SourceCode:    getApp.Spec.SourceCode,
+		Workspace:     getApp.Spec.Workspace,
+		NodeVersion:   getApp.Spec.NodeVersion,
+		ReplicasCount: getApp.Spec.ReplicasCount,
+	}, nil
+}
+
 func toK8SOperation(op *Application) *v1alpha1.Application {
 	result := &v1alpha1.Application{
 		ObjectMeta: metav1.ObjectMeta{

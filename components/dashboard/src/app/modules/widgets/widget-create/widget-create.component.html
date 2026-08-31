@@ -1,6 +1,6 @@
 <app-content-header
     class="widget-create__content-header"
-    title="Widget create"
+    [title]="editId ? 'Widget edit' : 'Widget create'"
 ></app-content-header>
 
 <mat-stepper
@@ -275,7 +275,7 @@
                 </div>
                 <button mat-flat-button color="primary" (click)="onSaveClick()">
                     <mat-icon>save</mat-icon>
-                    Save Widget
+                    {{ editId ? 'Update Widget' : 'Save Widget' }}
                 </button>
             </div>
         </div>

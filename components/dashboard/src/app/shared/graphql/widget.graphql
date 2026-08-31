@@ -19,6 +19,12 @@ query GetAllWidgets {
     }
 }
 
+query GetWidget($id: ID!) {
+    widget(id: $id) {
+        ...WidgetInfo
+    }
+}
+
 query GetWidgetsPage($first: Int, $after: PageCursor) {
     widgetsPage(first: $first, after: $after) {
         data {
@@ -35,6 +41,12 @@ query GetWidgetsPage($first: Int, $after: PageCursor) {
 
 mutation CreateWidget($input: WidgetInput!) {
     createWidget(input: $input) {
+        ...WidgetInfo
+    }
+}
+
+mutation UpdateWidget($id: ID!, $input: WidgetInput!) {
+    updateWidget(id: $id, input: $input) {
         ...WidgetInfo
     }
 }

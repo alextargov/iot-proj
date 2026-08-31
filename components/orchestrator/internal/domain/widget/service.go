@@ -14,6 +14,7 @@ import (
 
 type WidgetRepository interface {
 	Create(ctx context.Context, item model.Widget) error
+	Update(ctx context.Context, item model.Widget) error
 	Get(ctx context.Context, id, tnt string) (*model.Widget, error)
 	ListByIDs(ctx context.Context, tenant string, ids []string) ([]*model.Widget, error)
 	ListAll(ctx context.Context, tenantID string) ([]*model.Widget, error)
@@ -93,6 +94,35 @@ func (s *service) Create(ctx context.Context, widget model.WidgetInput) (string,
 	}
 
 	return id, nil
+}
+
+// Update modifies an existing widget's mutable fields and device associations.
+// code/workspace live on the Application CR (scheduled by the resolver), not in
+// the DB, so they are not touched here.
+func (s *service) Update(ctx context.Context, id string, widget model.WidgetInput) error {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "while loading tenant")
+	}
+
+	existing, err := s.widgetRepo.Get(ctx, id, tnt)
+	if err != nil {
+		return errors.Wrapf(err, "while getting widget %s", id)
+	}
+
+	widgetModel := widget.ToWidget(id)
+	widgetModel.TenantID = tnt
+	widgetModel.CreatedAt = existing.CreatedAt
+
+	if err = s.widgetRepo.Update(ctx, widgetModel); err != nil {
+		return errors.Wrapf(err, "while updating widget %s", id)
+	}
+
+	if err = s.widgetRepo.SetDeviceIDs(ctx, id, widget.DeviceIDs); err != nil {
+		return errors.Wrapf(err, "while updating widget device associations")
+	}
+
+	return nil
 }
 
 // Clone creates a copy of an existing widget (including its device

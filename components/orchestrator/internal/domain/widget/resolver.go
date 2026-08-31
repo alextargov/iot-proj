@@ -21,6 +21,7 @@ type WidgetSvc interface {
 	ListAll(ctx context.Context) ([]*model.Widget, error)
 	ListPage(ctx context.Context, pageSize int, cursor string) ([]*model.Widget, *pagination.Page, int, error)
 	Create(ctx context.Context, widget model.WidgetInput) (string, error)
+	Update(ctx context.Context, id string, widget model.WidgetInput) error
 	Clone(ctx context.Context, id string) (string, error)
 	Delete(ctx context.Context, id string) error
 	GetByID(ctx context.Context, id string) (*model.Widget, error)
@@ -141,7 +142,20 @@ func (r *Resolver) Widget(ctx context.Context, id string) (*graphql.Widget, erro
 		return nil, err
 	}
 
-	return r.widgetConverter.ToGraphQL(widget), nil
+	result := r.widgetConverter.ToGraphQL(widget)
+
+	// code/workspace are not persisted in the DB — they live on the Application
+	// CR. Populate them for the single-widget view (e.g. the edit form) on a
+	// best-effort basis; a missing CR or an unreachable cluster must not fail
+	// the query.
+	if app, appErr := r.scheduler.GetApplication(ctx, id); appErr != nil {
+		logger.C(ctx).Warnf("could not load Application CR for widget %s: %v", id, appErr)
+	} else if app != nil {
+		result.Code = app.SourceCode
+		result.Workspace = app.Workspace
+	}
+
+	return result, nil
 }
 
 func (r *Resolver) CreateWidget(ctx context.Context, input graphql.WidgetInput) (*graphql.Widget, error) {
@@ -177,7 +191,9 @@ func (r *Resolver) CreateWidget(ctx context.Context, input graphql.WidgetInput) 
 	}
 
 	if _, err = r.scheduler.Schedule(ctx, application); err != nil {
-		return nil, err
+		logger.C(ctx).Errorf("error while scheduling Application for widget %s: %v", id, err)
+		// The widget was created successfully; the Application CR will be
+		// reconciled once the cluster is reachable.
 	}
 
 	if r.cronScheduler != nil && widget.Schedule != nil && widget.Status == model.DeviceStatusActive {
@@ -188,6 +204,60 @@ func (r *Resolver) CreateWidget(ctx context.Context, input graphql.WidgetInput) 
 	}
 
 	return r.widgetConverter.ToGraphQL(widget), nil
+}
+
+func (r *Resolver) UpdateWidget(ctx context.Context, id string, input graphql.WidgetInput) (*graphql.Widget, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	convertedIn := r.widgetConverter.InputFromGraphQL(input)
+
+	if err = r.widgetSvc.Update(ctx, id, convertedIn); err != nil {
+		return nil, err
+	}
+
+	widget, err := r.widgetSvc.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	application := &k8s.Application{
+		WidgetID:   id,
+		SourceCode: convertedIn.Code,
+		Workspace:  convertedIn.Workspace,
+	}
+
+	if _, err = r.scheduler.Schedule(ctx, application); err != nil {
+		logger.C(ctx).Errorf("error while scheduling Application for updated widget %s: %v", id, err)
+		// The widget was updated successfully; the Application CR will be
+		// reconciled once the cluster is reachable.
+	}
+
+	// Refresh the cron job so schedule/status changes take effect.
+	if r.cronScheduler != nil {
+		r.cronScheduler.RemoveJob(ctx, id)
+		if widget.Schedule != nil && widget.Status == model.DeviceStatusActive {
+			if err := r.cronScheduler.AddJob(ctx, widget); err != nil {
+				logger.C(ctx).Errorf("error while adding a cron scheduler job: %v", err)
+			}
+		}
+	}
+
+	result := r.widgetConverter.ToGraphQL(widget)
+	result.Code = convertedIn.Code
+	result.Workspace = convertedIn.Workspace
+
+	return result, nil
 }
 
 func (r *Resolver) CloneWidget(ctx context.Context, id string) (*graphql.Widget, error) {
@@ -214,14 +284,29 @@ func (r *Resolver) CloneWidget(ctx context.Context, id string) (*graphql.Widget,
 		return nil, err
 	}
 
+	// code/workspace are not stored in the DB, so read them from the source
+	// widget's Application CR to carry them onto the clone. Best-effort: if the
+	// CR is missing or the cluster is unreachable, clone with empty source
+	// rather than failing.
+	sourceCode := widget.Code
+	workspace := widget.Workspace
+	if app, appErr := r.scheduler.GetApplication(ctx, id); appErr != nil {
+		logger.C(ctx).Warnf("could not load source Application CR for widget %s: %v", id, appErr)
+	} else if app != nil {
+		sourceCode = app.SourceCode
+		workspace = app.Workspace
+	}
+
 	application := &k8s.Application{
 		WidgetID:   newID,
-		SourceCode: widget.Code,
-		Workspace:  widget.Workspace,
+		SourceCode: sourceCode,
+		Workspace:  workspace,
 	}
 
 	if _, err = r.scheduler.Schedule(ctx, application); err != nil {
-		return nil, err
+		logger.C(ctx).Errorf("error while scheduling Application for cloned widget %s: %v", newID, err)
+		// The widget was cloned successfully; the Application CR will be
+		// reconciled once the cluster is reachable.
 	}
 
 	if r.cronScheduler != nil && widget.Schedule != nil && widget.Status == model.DeviceStatusActive {

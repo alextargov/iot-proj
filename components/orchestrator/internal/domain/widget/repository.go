@@ -42,6 +42,7 @@ type repository struct {
 	lister          repo.Lister
 	listerGlobal    repo.ListerGlobal
 	updater         repo.UpdaterGlobal
+	contentUpdater  repo.UpdaterGlobal
 	conv            EntityConverter
 }
 
@@ -54,6 +55,7 @@ func NewRepository(converter EntityConverter) *repository {
 		lister:          repo.NewListerWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
 		listerGlobal:    repo.NewListerGlobal(resource.Widget, tableName, tableColumns),
 		updater:         repo.NewUpdaterGlobal(resource.Widget, tableName, []string{"last_executed_at"}, []string{"id"}),
+		contentUpdater:  repo.NewUpdaterGlobal(resource.Widget, tableName, []string{"name", "description", "status", "schedule", "updated_at"}, []string{"id"}),
 		conv:            converter,
 	}
 }
@@ -72,6 +74,22 @@ func (r *repository) Create(ctx context.Context, item model.Widget) error {
 
 	logger.C(ctx).Debugf("Persisting Widget entity with id %s to db", item.ID)
 	return r.creator.Create(ctx, entity)
+}
+
+// Update updates the mutable content fields of a widget (name, description,
+// status, schedule). code/workspace are not DB columns - they live on the
+// Application CR.
+func (r *repository) Update(ctx context.Context, item model.Widget) error {
+	entity, err := r.conv.ToEntity(item)
+	if err != nil {
+		return err
+	}
+
+	now := time.Now()
+	entity.UpdatedAt = &now
+
+	logger.C(ctx).Debugf("Updating Widget entity with id %s in db", item.ID)
+	return r.contentUpdater.UpdateSingleGlobal(ctx, entity)
 }
 
 // SetDeviceIDs sets the device associations for a widget (replaces existing)

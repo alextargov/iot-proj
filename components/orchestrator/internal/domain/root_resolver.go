@@ -452,6 +452,10 @@ func (r *mutationResolver) CreateWidget(ctx context.Context, in graphql.WidgetIn
 	return r.widget.CreateWidget(ctx, in)
 }
 
+func (r *mutationResolver) UpdateWidget(ctx context.Context, id string, in graphql.WidgetInput) (*graphql.Widget, error) {
+	return r.widget.UpdateWidget(ctx, id, in)
+}
+
 func (r *mutationResolver) CloneWidget(ctx context.Context, id string) (*graphql.Widget, error) {
 	return r.widget.CloneWidget(ctx, id)
 }

@@ -713,6 +713,7 @@ type Mutation {
     setOperation(op: OperationType!, data: Any): Boolean! @hasRole(minimum: OPERATOR)
     deleteDevice(id: String!): String! @hasRole(minimum: OPERATOR)
     createWidget(input: WidgetInput!): Widget! @hasRole(minimum: OPERATOR)
+    updateWidget(id: ID!, input: WidgetInput!): Widget! @hasRole(minimum: OPERATOR)
     cloneWidget(id: ID!): Widget! @hasRole(minimum: OPERATOR)
     deleteWidget(id: ID!): String! @hasRole(minimum: OPERATOR)
     createDataModel(input: DataModelInput!): DataModel! @hasRole(minimum: OPERATOR)

@@ -529,6 +529,7 @@ export type Mutation = {
   updateIntegration: Integration;
   updateOrganizationMemberRole: Organization;
   updateUserRole: User;
+  updateWidget: Widget;
   updateWidgetPositions: Scalars['Boolean']['output'];
 };
 
@@ -764,6 +765,12 @@ export type MutationUpdateOrganizationMemberRoleArgs = {
 export type MutationUpdateUserRoleArgs = {
   role: Role;
   userId: Scalars['ID']['input'];
+};
+
+
+export type MutationUpdateWidgetArgs = {
+  id: Scalars['ID']['input'];
+  input: WidgetInput;
 };
 
 
@@ -1746,6 +1753,13 @@ export type GetAllWidgetsQueryVariables = Exact<{ [key: string]: never; }>;
 
 export type GetAllWidgetsQuery = { __typename?: 'Query', widgets: Array<{ __typename?: 'Widget', id: string, name: string, description?: string | null, status: WidgetStatus, tenantId: string, code: string, workspace: string, deviceIds?: Array<string> | null, schedule?: string | null, lastExecutedAt?: any | null, createdAt?: any | null, updatedAt?: any | null } | null> };
 
+export type GetWidgetQueryVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type GetWidgetQuery = { __typename?: 'Query', widget?: { __typename?: 'Widget', id: string, name: string, description?: string | null, status: WidgetStatus, tenantId: string, code: string, workspace: string, deviceIds?: Array<string> | null, schedule?: string | null, lastExecutedAt?: any | null, createdAt?: any | null, updatedAt?: any | null } | null };
+
 export type GetWidgetsPageQueryVariables = Exact<{
   first?: InputMaybe<Scalars['Int']['input']>;
   after?: InputMaybe<Scalars['PageCursor']['input']>;
@@ -1760,6 +1774,14 @@ export type CreateWidgetMutationVariables = Exact<{
 
 
 export type CreateWidgetMutation = { __typename?: 'Mutation', createWidget: { __typename?: 'Widget', id: string, name: string, description?: string | null, status: WidgetStatus, tenantId: string, code: string, workspace: string, deviceIds?: Array<string> | null, schedule?: string | null, lastExecutedAt?: any | null, createdAt?: any | null, updatedAt?: any | null } };
+
+export type UpdateWidgetMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  input: WidgetInput;
+}>;
+
+
+export type UpdateWidgetMutation = { __typename?: 'Mutation', updateWidget: { __typename?: 'Widget', id: string, name: string, description?: string | null, status: WidgetStatus, tenantId: string, code: string, workspace: string, deviceIds?: Array<string> | null, schedule?: string | null, lastExecutedAt?: any | null, createdAt?: any | null, updatedAt?: any | null } };
 
 export type CloneWidgetMutationVariables = Exact<{
   id: Scalars['ID']['input'];
@@ -3348,6 +3370,24 @@ export const GetAllWidgetsDocument = gql`
       super(apollo);
     }
   }
+export const GetWidgetDocument = gql`
+    query GetWidget($id: ID!) {
+  widget(id: $id) {
+    ...WidgetInfo
+  }
+}
+    ${WidgetInfoFragmentDoc}`;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class GetWidgetGQL extends Apollo.Query<GetWidgetQuery, GetWidgetQueryVariables> {
+    document = GetWidgetDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
 export const GetWidgetsPageDocument = gql`
     query GetWidgetsPage($first: Int, $after: PageCursor) {
   widgetsPage(first: $first, after: $after) {
@@ -3387,6 +3427,24 @@ export const CreateWidgetDocument = gql`
   })
   export class CreateWidgetGQL extends Apollo.Mutation<CreateWidgetMutation, CreateWidgetMutationVariables> {
     document = CreateWidgetDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const UpdateWidgetDocument = gql`
+    mutation UpdateWidget($id: ID!, $input: WidgetInput!) {
+  updateWidget(id: $id, input: $input) {
+    ...WidgetInfo
+  }
+}
+    ${WidgetInfoFragmentDoc}`;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class UpdateWidgetGQL extends Apollo.Mutation<UpdateWidgetMutation, UpdateWidgetMutationVariables> {
+    document = UpdateWidgetDocument;
     
     constructor(apollo: Apollo.Apollo) {
       super(apollo);

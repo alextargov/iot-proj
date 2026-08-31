@@ -14,6 +14,10 @@ const routes: Routes = [
         component: WidgetCreateComponent,
     },
     {
+        path: ':id/edit',
+        component: WidgetCreateComponent,
+    },
+    {
         path: ':id',
         component: WidgetDetailsComponent,
     },
