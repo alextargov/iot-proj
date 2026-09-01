@@ -1,0 +1,12 @@
+@if (connection.status | async; as state) {
+    <div
+        class="conn-status"
+        [class.conn-status--connected]="state === 'connected'"
+        [class.conn-status--connecting]="state === 'connecting'"
+        [class.conn-status--disconnected]="state === 'disconnected'"
+        [matTooltip]="tooltip(state)"
+    >
+        <span class="conn-status__dot"></span>
+        <span class="conn-status__label">{{ label(state) }}</span>
+    </div>
+}

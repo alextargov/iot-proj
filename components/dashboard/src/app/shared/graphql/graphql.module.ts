@@ -1,5 +1,6 @@
 import { provideHttpClient, withInterceptorsFromDi, HttpHeaders } from '@angular/common/http';
 import { NgModule, inject, NgZone } from '@angular/core';
+import { Router } from '@angular/router';
 import {
     ApolloLink,
     InMemoryCache,
@@ -14,21 +15,84 @@ import { HttpLink } from 'apollo-angular/http';
 import { createClient } from 'graphql-ws';
 import { environment } from 'src/environments/environment';
 import { AuthService } from '../services/auth/auth.service';
+import { ToastrService } from '../services/toastr/toastr.service';
+import { ConnectionStatusService } from '../services/connection-status/connection-status.service';
 
-const errorLink = onError(({ graphQLErrors, networkError }: any) => {
-    if (graphQLErrors) {
-        graphQLErrors.forEach(({ message, path }: any) => {
-            console.error(`[GraphQL Error]: Message: ${message}, Path: ${path}`);
-        });
+// Operations whose errors are handled inline by callers (e.g. login shows its
+// own message); skip the global toast for these to avoid duplicate feedback.
+const SILENT_OPERATIONS = new Set(['Login', 'Register']);
+
+const isAuthError = (err: {
+    extensions?: Record<string, unknown> | null;
+    message?: string;
+}): boolean => {
+    const code = (err.extensions?.['code'] as string | undefined)?.toUpperCase();
+    if (code === 'UNAUTHENTICATED' || code === 'UNAUTHORIZED') {
+        return true;
     }
+    const msg = (err.message ?? '').toLowerCase();
+    return msg.includes('unauthenticated') || msg.includes('unauthorized');
+};
 
-    if (networkError) {
-        console.error(`[Network Error]: ${networkError.message}`);
-        if (networkError.status === 401 || networkError.statusCode === 401) {
-            console.warn('Authentication failed - token may be expired. Please log in again.');
+const createErrorLink = (
+    authService: AuthService,
+    toast: ToastrService,
+    router: Router,
+    ngZone: NgZone
+) =>
+    onError(({ graphQLErrors, networkError, operation }: any) => {
+        const opName: string = operation?.operationName ?? '';
+        const silent = SILENT_OPERATIONS.has(opName);
+
+        const redirectToLogin = () => {
+            authService.logout();
+            ngZone.run(() => {
+                toast.showError('Your session has expired. Please log in again.');
+                router.navigate(['/login']);
+            });
+        };
+
+        if (graphQLErrors?.length) {
+            let authFailure = false;
+            for (const err of graphQLErrors) {
+                console.error(
+                    `[GraphQL Error]: ${err.message} (op: ${opName}, path: ${err.path})`
+                );
+                if (isAuthError(err)) {
+                    authFailure = true;
+                }
+            }
+            if (authFailure) {
+                redirectToLogin();
+                return;
+            }
+            if (!silent) {
+                const first = graphQLErrors[0];
+                ngZone.run(() =>
+                    toast.showError(first.message || 'Something went wrong')
+                );
+            }
         }
-    }
-});
+
+        if (networkError) {
+            console.error(`[Network Error]: ${networkError.message}`);
+            const status =
+                (networkError as any).status ??
+                (networkError as any).statusCode ??
+                undefined;
+            if (status === 401 || status === 403) {
+                redirectToLogin();
+                return;
+            }
+            if (!silent) {
+                ngZone.run(() =>
+                    toast.showError(
+                        'Cannot reach the server. Check your connection and try again.'
+                    )
+                );
+            }
+        }
+    });
 
 // Dynamic auth context - fetches token on EACH request
 const createAuthLink = (authService: AuthService) =>
@@ -46,7 +110,12 @@ const createAuthLink = (authService: AuthService) =>
     });
 
 // Create WebSocket link for subscriptions
-const createWsLink = (authService: AuthService) => {
+const createWsLink = (
+    authService: AuthService,
+    connection: ConnectionStatusService,
+    ngZone: NgZone
+) => {
+    const notify = (fn: () => void) => ngZone.run(fn);
     return new GraphQLWsLink(
         createClient({
             url: environment.wsUrl,
@@ -56,6 +125,12 @@ const createWsLink = (authService: AuthService) => {
             },
             retryAttempts: 5,
             shouldRetry: () => true,
+            on: {
+                connecting: () => notify(() => connection.setConnecting()),
+                connected: () => notify(() => connection.setConnected()),
+                closed: () => notify(() => connection.setDisconnected()),
+                error: () => notify(() => connection.setDisconnected()),
+            },
         })
     );
 };
@@ -63,6 +138,9 @@ const createWsLink = (authService: AuthService) => {
 export function createDefaultApollo(
     httpLink: HttpLink,
     authService: AuthService,
+    toast: ToastrService,
+    router: Router,
+    connection: ConnectionStatusService,
     ngZone: NgZone
 ) {
     const cache = new InMemoryCache({});
@@ -76,8 +154,11 @@ export function createDefaultApollo(
     // Auth link that fetches token dynamically on each request
     const authLink = createAuthLink(authService);
 
-    // WebSocket link for subscriptions
-    const wsLink = createWsLink(authService);
+    // Global error handling: toasts + 401 redirect
+    const errorLink = createErrorLink(authService, toast, router, ngZone);
+
+    // WebSocket link for subscriptions (tracks connection status)
+    const wsLink = createWsLink(authService, connection, ngZone);
 
     // HTTP link with auth and error handling
     const httpLinkChain = ApolloLink.from([authLink, errorLink, http]);
@@ -116,8 +197,18 @@ export function createDefaultApollo(
         provideApollo(() => {
             const httpLink = inject(HttpLink);
             const authService = inject(AuthService);
+            const toast = inject(ToastrService);
+            const router = inject(Router);
+            const connection = inject(ConnectionStatusService);
             const ngZone = inject(NgZone);
-            return createDefaultApollo(httpLink, authService, ngZone);
+            return createDefaultApollo(
+                httpLink,
+                authService,
+                toast,
+                router,
+                connection,
+                ngZone
+            );
         }),
     ],
 })

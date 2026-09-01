@@ -9,6 +9,7 @@
                     }
                 </div>
                 @if (isLoggedIn) {
+                    <app-connection-status class="app__conn-status"></app-connection-status>
                     <button mat-icon-button class="app__logout-btn" (click)="onLogoutClick()" matTooltip="Logout">
                         <mat-icon>logout</mat-icon>
                     </button>

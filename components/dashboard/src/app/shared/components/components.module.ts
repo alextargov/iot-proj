@@ -17,6 +17,7 @@ import { ConfirmDialogComponent } from './confirm-dialog/confirm-dialog.componen
 import { EmptyStateComponent } from './empty-state/empty-state.component';
 import { LoadingStateComponent } from './loading-state/loading-state.component';
 import { ErrorStateComponent } from './error-state/error-state.component';
+import { ConnectionStatusComponent } from './connection-status/connection-status.component';
 
 @NgModule({
     imports: [
@@ -41,6 +42,7 @@ import { ErrorStateComponent } from './error-state/error-state.component';
         EmptyStateComponent,
         LoadingStateComponent,
         ErrorStateComponent,
+        ConnectionStatusComponent,
     ],
     exports: [
         CommonModule,
@@ -55,6 +57,7 @@ import { ErrorStateComponent } from './error-state/error-state.component';
         EmptyStateComponent,
         LoadingStateComponent,
         ErrorStateComponent,
+        ConnectionStatusComponent,
     ],
 })
 export class ComponentsModule {}
