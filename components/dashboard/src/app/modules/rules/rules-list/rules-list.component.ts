@@ -3,6 +3,8 @@ import { Router } from '@angular/router';
 import { RuleService } from '../../../shared/services/rule/rule.service';
 import { AuthService } from '../../../shared/services/auth/auth.service';
 import { AutomationRuleInfoFragment } from '../../../shared/graphql/generated';
+import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/confirm-dialog.service';
+import { ToastrService } from '../../../shared/services/toastr/toastr.service';
 
 @Component({
     selector: 'app-rules-list',
@@ -27,7 +29,9 @@ export class RulesListComponent implements OnInit {
         private ruleService: RuleService,
         private router: Router,
         private authService: AuthService,
-        private cdr: ChangeDetectorRef
+        private cdr: ChangeDetectorRef,
+        private confirm: ConfirmDialogService,
+        private toast: ToastrService
     ) {}
 
     public get canWrite(): boolean {
@@ -71,14 +75,25 @@ export class RulesListComponent implements OnInit {
     }
 
     deleteRule(rule: AutomationRuleInfoFragment): void {
-        if (confirm(`Delete automation rule "${rule.name}"?`)) {
-            this.ruleService.deleteRule(rule.id).subscribe({
-                next: () => {
-                    this.rules = this.rules.filter((r) => r.id !== rule.id);
-                    this.cdr.detectChanges();
-                },
+        this.confirm
+            .confirmDelete(rule.name, {
+                title: 'Delete automation rule?',
+                message: `"${rule.name}" and its conditions and actions will be permanently removed.`,
+            })
+            .subscribe((confirmed) => {
+                if (!confirmed) {
+                    return;
+                }
+                this.ruleService.deleteRule(rule.id).subscribe({
+                    next: () => {
+                        this.rules = this.rules.filter((r) => r.id !== rule.id);
+                        this.toast.showSuccess('Automation rule deleted');
+                        this.cdr.detectChanges();
+                    },
+                    error: () =>
+                        this.toast.showError('Failed to delete rule'),
+                });
             });
-        }
     }
 
     formatConditions(rule: AutomationRuleInfoFragment): string {

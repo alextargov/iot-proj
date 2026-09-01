@@ -3,6 +3,7 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { DatamodelService } from '../../../shared/services/datamodel/datamodel.service';
 import { DataModelInfoFragment, DataModelVersionInfoFragment } from '../../../shared/graphql/generated';
 import { ToastrService } from '../../../shared/services/toastr/toastr.service';
+import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/confirm-dialog.service';
 
 export interface DataModelHistoryDialogData {
     dataModel: DataModelInfoFragment;
@@ -25,7 +26,8 @@ export class DataModelHistoryDialogComponent implements OnInit {
         @Inject(MAT_DIALOG_DATA) public data: DataModelHistoryDialogData,
         private dialogRef: MatDialogRef<DataModelHistoryDialogComponent>,
         private datamodelService: DatamodelService,
-        private toast: ToastrService
+        private toast: ToastrService,
+        private confirm: ConfirmDialogService
     ) {}
 
     public ngOnInit(): void {
@@ -58,18 +60,31 @@ export class DataModelHistoryDialogComponent implements OnInit {
     }
 
     public onRestoreClick(version: DataModelVersionInfoFragment): void {
-        if (confirm(`Restore to version ${version.versionNumber}? This will create a new version with the schema from v${version.versionNumber}.`)) {
-            this.datamodelService.rollbackToVersion(this.data.dataModel.id, version.versionNumber).subscribe({
-                next: () => {
-                    this.toast.showSuccess(`Restored to version ${version.versionNumber}`);
-                    this.dialogRef.close(true); // Signal refresh needed
-                },
-                error: (err) => {
-                    console.error('Error restoring version:', err);
-                    this.toast.showError('Failed to restore version');
-                },
+        this.confirm
+            .open({
+                title: `Restore to version ${version.versionNumber}?`,
+                message: `This will create a new version with the schema from v${version.versionNumber}. Current data is not lost — it stays in history.`,
+                confirmText: 'Restore',
+            })
+            .subscribe((confirmed) => {
+                if (!confirmed) {
+                    return;
+                }
+                this.datamodelService
+                    .rollbackToVersion(this.data.dataModel.id, version.versionNumber)
+                    .subscribe({
+                        next: () => {
+                            this.toast.showSuccess(
+                                `Restored to version ${version.versionNumber}`
+                            );
+                            this.dialogRef.close(true); // Signal refresh needed
+                        },
+                        error: (err) => {
+                            console.error('Error restoring version:', err);
+                            this.toast.showError('Failed to restore version');
+                        },
+                    });
             });
-        }
     }
 
     public onBackClick(): void {

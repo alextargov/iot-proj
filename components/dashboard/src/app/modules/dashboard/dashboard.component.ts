@@ -26,6 +26,7 @@ import {
     WidgetConfigDialogResult,
 } from './components/widget-config-dialog/widget-config-dialog.component';
 import { ToastrService } from '../../shared/services/toastr/toastr.service';
+import { ConfirmDialogService } from '../../shared/components/confirm-dialog/confirm-dialog.service';
 
 interface Safe extends GridsterConfig {
     draggable: Draggable;
@@ -63,7 +64,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
         private readonly route: ActivatedRoute,
         private readonly cdr: ChangeDetectorRef,
         private readonly dialog: MatDialog,
-        private readonly toast: ToastrService
+        private readonly toast: ToastrService,
+        private readonly confirm: ConfirmDialogService
     ) {}
 
     ngOnInit(): void {
@@ -270,18 +272,32 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     removeWidget(item: DashboardGridsterItem): void {
         if (!item.widget) return;
+        const widgetId = item.widget.id;
 
-        this.dashboardLayoutService.deleteWidget(item.widget.id).subscribe({
-            next: () => {
-                this.dashboard.splice(this.dashboard.indexOf(item), 1);
-                this.toast.showSuccess('Widget removed');
-                this.cdr.markForCheck();
-            },
-            error: (err) => {
-                console.error('Failed to delete widget:', err);
-                this.toast.showError('Failed to remove widget');
-            },
-        });
+        this.confirm
+            .open({
+                title: 'Remove widget from dashboard?',
+                message:
+                    'This removes the widget from this dashboard layout. The widget itself is not deleted and can be added back later.',
+                confirmText: 'Remove',
+                confirmColor: 'warn',
+            })
+            .subscribe((confirmed) => {
+                if (!confirmed) {
+                    return;
+                }
+                this.dashboardLayoutService.deleteWidget(widgetId).subscribe({
+                    next: () => {
+                        this.dashboard.splice(this.dashboard.indexOf(item), 1);
+                        this.toast.showSuccess('Widget removed');
+                        this.cdr.markForCheck();
+                    },
+                    error: (err) => {
+                        console.error('Failed to delete widget:', err);
+                        this.toast.showError('Failed to remove widget');
+                    },
+                });
+            });
     }
 
     public onLockButtonClick(): void {

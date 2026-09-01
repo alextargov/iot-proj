@@ -4,6 +4,8 @@ import {
     OrganizationInfoFragment,
     Role,
 } from '../../shared/graphql/generated';
+import { ConfirmDialogService } from '../../shared/components/confirm-dialog/confirm-dialog.service';
+import { ToastrService } from '../../shared/services/toastr/toastr.service';
 
 @Component({
     selector: 'app-admin',
@@ -26,7 +28,9 @@ export class AdminComponent implements OnInit {
 
     constructor(
         private admin: AdminService,
-        private cdr: ChangeDetectorRef
+        private cdr: ChangeDetectorRef,
+        private confirm: ConfirmDialogService,
+        private toast: ToastrService
     ) {}
 
     ngOnInit(): void {
@@ -92,12 +96,27 @@ export class AdminComponent implements OnInit {
     }
 
     deleteOrg(org: OrganizationInfoFragment): void {
-        if (confirm(`Delete organization "${org.name}"?`)) {
-            this.admin.deleteOrganization(org.id).subscribe(() => {
-                this.organizations = this.organizations.filter((o) => o.id !== org.id);
-                this.cdr.detectChanges();
+        this.confirm
+            .confirmDelete(org.name, {
+                title: 'Delete organization?',
+                message: `"${org.name}" and its membership assignments will be permanently removed.`,
+            })
+            .subscribe((confirmed) => {
+                if (!confirmed) {
+                    return;
+                }
+                this.admin.deleteOrganization(org.id).subscribe({
+                    next: () => {
+                        this.organizations = this.organizations.filter(
+                            (o) => o.id !== org.id
+                        );
+                        this.toast.showSuccess('Organization deleted');
+                        this.cdr.detectChanges();
+                    },
+                    error: () =>
+                        this.toast.showError('Failed to delete organization'),
+                });
             });
-        }
     }
 
     addMember(org: OrganizationInfoFragment): void {
@@ -125,12 +144,28 @@ export class AdminComponent implements OnInit {
     }
 
     removeMember(org: OrganizationInfoFragment, userId: string): void {
-        this.admin.removeMember(org.id, userId).subscribe((updated) => {
-            if (updated) {
-                this.replaceOrg(updated);
-                this.cdr.detectChanges();
-            }
-        });
+        this.confirm
+            .open({
+                title: 'Remove member?',
+                message: 'This user will lose access to the organization.',
+                confirmText: 'Remove',
+                confirmColor: 'warn',
+            })
+            .subscribe((confirmed) => {
+                if (!confirmed) {
+                    return;
+                }
+                this.admin.removeMember(org.id, userId).subscribe({
+                    next: (updated) => {
+                        if (updated) {
+                            this.replaceOrg(updated);
+                            this.toast.showSuccess('Member removed');
+                            this.cdr.detectChanges();
+                        }
+                    },
+                    error: () => this.toast.showError('Failed to remove member'),
+                });
+            });
     }
 
     private replaceOrg(updated: OrganizationInfoFragment): void {

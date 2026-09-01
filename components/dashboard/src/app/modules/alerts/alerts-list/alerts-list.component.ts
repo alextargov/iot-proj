@@ -5,6 +5,8 @@ import {
     AlertRule,
     AlertSeverity,
 } from '../../../shared/services/alert/alert.service';
+import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/confirm-dialog.service';
+import { ToastrService } from '../../../shared/services/toastr/toastr.service';
 
 @Component({
     selector: 'app-alerts-list',
@@ -29,7 +31,9 @@ export class AlertsListComponent implements OnInit {
     constructor(
         private alertService: AlertService,
         private router: Router,
-        private cdr: ChangeDetectorRef
+        private cdr: ChangeDetectorRef,
+        private confirm: ConfirmDialogService,
+        private toast: ToastrService
     ) {}
 
     ngOnInit(): void {
@@ -67,7 +71,6 @@ export class AlertsListComponent implements OnInit {
     }
 
     viewEvents(alert: AlertRule): void {
-        console.log(alert.device)
         this.router.navigate(['/alerts', alert.id, alert.device.id, 'events']);
     }
 
@@ -77,24 +80,39 @@ export class AlertsListComponent implements OnInit {
             .subscribe({
                 next: () => {
                     alert.enabled = !alert.enabled;
+                    this.cdr.detectChanges();
                 },
                 error: (err) => {
                     console.error('Failed to toggle alert:', err);
+                    this.toast.showError('Failed to update alert');
                 },
             });
     }
 
     deleteAlert(alert: AlertRule): void {
-        if (confirm(`Are you sure you want to delete alert "${alert.name}"?`)) {
-            this.alertService.deleteAlertRule(alert.id).subscribe({
-                next: () => {
-                    this.alerts = this.alerts.filter((a) => a.id !== alert.id);
-                },
-                error: (err) => {
-                    console.error('Failed to delete alert:', err);
-                },
+        this.confirm
+            .confirmDelete(alert.name, {
+                title: 'Delete alert rule?',
+                message: `"${alert.name}" and its conditions will be permanently removed. You will stop receiving notifications from it.`,
+            })
+            .subscribe((confirmed) => {
+                if (!confirmed) {
+                    return;
+                }
+                this.alertService.deleteAlertRule(alert.id).subscribe({
+                    next: () => {
+                        this.alerts = this.alerts.filter(
+                            (a) => a.id !== alert.id
+                        );
+                        this.toast.showSuccess('Alert rule deleted');
+                        this.cdr.detectChanges();
+                    },
+                    error: (err) => {
+                        console.error('Failed to delete alert:', err);
+                        this.toast.showError('Failed to delete alert');
+                    },
+                });
             });
-        }
     }
 
     getSeverityColor(severity: AlertSeverity): string {

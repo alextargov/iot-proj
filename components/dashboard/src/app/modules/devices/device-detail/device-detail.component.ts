@@ -3,6 +3,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import {finalize, Subject, takeUntil} from 'rxjs';
 import { DeviceService, DeviceCertificate } from '../../../shared/services/device/device.service';
 import { AuthService } from '../../../shared/services/auth/auth.service';
+import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/confirm-dialog.service';
+import { ToastrService } from '../../../shared/services/toastr/toastr.service';
 import {
     DeviceInfoFragment,
     DeviceStatus,
@@ -60,7 +62,9 @@ export class DeviceDetailComponent implements OnInit, OnDestroy {
         private router: Router,
         private deviceService: DeviceService,
         private authService: AuthService,
-        private cdr: ChangeDetectorRef
+        private cdr: ChangeDetectorRef,
+        private confirm: ConfirmDialogService,
+        private toast: ToastrService
     ) {}
 
     ngOnInit(): void {
@@ -145,22 +149,39 @@ export class DeviceDetailComponent implements OnInit, OnDestroy {
         if (!this.deviceId || this.isCertBusy) {
             return;
         }
-        this.isCertBusy = true;
-        this.deviceService
-            .revokeDeviceCertificate(this.deviceId)
-            .pipe(
-                takeUntil(this.destroy$),
-                finalize(() => {
-                    this.isCertBusy = false;
-                    this.cdr.detectChanges();
-                })
-            )
-            .subscribe({
-                next: () => {
-                    this.issuedCertificate = null;
-                    this.loadDevice();
-                },
-                error: (err) => console.error('Failed to revoke certificate:', err),
+        this.confirm
+            .open({
+                title: 'Revoke device certificate?',
+                message:
+                    'The device will immediately lose the ability to authenticate with this certificate. This cannot be undone — you will need to issue a new certificate to restore access.',
+                confirmText: 'Revoke',
+                confirmColor: 'warn',
+            })
+            .subscribe((confirmed) => {
+                if (!confirmed) {
+                    return;
+                }
+                this.isCertBusy = true;
+                this.deviceService
+                    .revokeDeviceCertificate(this.deviceId)
+                    .pipe(
+                        takeUntil(this.destroy$),
+                        finalize(() => {
+                            this.isCertBusy = false;
+                            this.cdr.detectChanges();
+                        })
+                    )
+                    .subscribe({
+                        next: () => {
+                            this.issuedCertificate = null;
+                            this.toast.showSuccess('Certificate revoked');
+                            this.loadDevice();
+                        },
+                        error: (err) => {
+                            console.error('Failed to revoke certificate:', err);
+                            this.toast.showError('Failed to revoke certificate');
+                        },
+                    });
             });
     }
 

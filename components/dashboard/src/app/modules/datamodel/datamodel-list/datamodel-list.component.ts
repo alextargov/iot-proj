@@ -94,7 +94,6 @@ export class DatamodelListComponent implements OnInit {
         ).subscribe({
             next: (dataModels) => {
                 this.dataSource = dataModels;
-                console.log(dataModels)
                 this.cdr.detectChanges();
             }
         });
@@ -140,10 +139,11 @@ export class DatamodelListComponent implements OnInit {
                             this.dataSource = this.dataSource.filter(
                                 (item) => item.id !== deletedDataModelId
                             );
+                            this.toast.showSuccess('Data model deleted');
                         },
                         error: (err) => {
                             console.error('Error deleting data model:', err);
-                            alert(
+                            this.toast.showError(
                                 'Failed to delete data model. Please try again later.'
                             );
                         },
