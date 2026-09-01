@@ -10,6 +10,7 @@ enum SchemaTypeEnum {
 
 export interface SchemaField {
     key?: string; // UI only
+    keyError?: string; // UI only — validation message for the key input
     type: SchemaTypeEnum;
     description?: string;
     required?: boolean;
@@ -87,13 +88,46 @@ export class SchemaNodeEditorComponent implements OnInit {
     }
 
     onKeyChange(oldKey: string, newKey: string): void {
-        if (oldKey === newKey || !newKey.trim()) return;
-        if (this.field.properties && this.field.properties[oldKey]) {
-            const existing = this.field.properties[oldKey];
-            existing.key = newKey;
-            this.field.properties[newKey] = existing;
-            delete this.field.properties[oldKey];
+        const props = this.field.properties;
+        if (!props) return;
+
+        // Locate the entry being edited. Prefer oldKey, but fall back to
+        // identity so a stale oldKey (after a prior rename) still resolves.
+        let currentKey = props[oldKey] ? oldKey : undefined;
+        if (!currentKey) {
+            currentKey = Object.keys(props).find((k) => props[k].key === newKey);
         }
+        if (!currentKey) return;
+        const existing = props[currentKey];
+
+        const trimmed = (newKey ?? '').trim();
+
+        // Empty key — flag but don't drop the entry.
+        if (!trimmed) {
+            existing.keyError = 'Key is required';
+            return;
+        }
+
+        // Duplicate key among siblings — flag and keep the entry under its
+        // current key so nothing is silently overwritten.
+        const clashes = Object.keys(props).some(
+            (k) => k !== currentKey && k === trimmed
+        );
+        if (clashes) {
+            existing.keyError = `"${trimmed}" is already used`;
+            return;
+        }
+
+        existing.keyError = undefined;
+
+        if (currentKey === trimmed) {
+            existing.key = trimmed;
+            return;
+        }
+
+        existing.key = trimmed;
+        props[trimmed] = existing;
+        delete props[currentKey];
     }
 
     onTypeChange(): void {

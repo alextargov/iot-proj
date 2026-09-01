@@ -1,14 +1,17 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import {
+    AbstractControl,
     FormArray,
     FormBuilder,
     FormGroup,
+    ValidationErrors,
     Validators,
 } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { RuleService } from '../../../shared/services/rule/rule.service';
 import { DeviceService } from '../../../shared/services/device/device.service';
 import { IntegrationService } from '../../../shared/services/integration/integration.service';
+import { MetricsService } from '../../../shared/services/metrics/metrics.service';
 import {
     RuleActionType,
     RuleConditionOperator,
@@ -22,6 +25,22 @@ import {
 import { ToastrService } from '../../../shared/services/toastr/toastr.service';
 import { HasUnsavedChanges } from '../../../core/guards/unsaved-changes.guard';
 
+/** Validates that a control's value is well-formed JSON (empty is allowed). */
+export function jsonValidator(
+    control: AbstractControl
+): ValidationErrors | null {
+    const value = control.value;
+    if (value === null || value === undefined || value === '') {
+        return null;
+    }
+    try {
+        JSON.parse(value);
+        return null;
+    } catch {
+        return { json: true };
+    }
+}
+
 @Component({
     selector: 'app-rule-form',
     templateUrl: './rule-form.component.html',
@@ -32,6 +51,7 @@ export class RuleFormComponent implements OnInit, HasUnsavedChanges {
     form!: FormGroup;
     devices: DeviceInfoFragment[] = [];
     integrations: IntegrationInfoFragment[] = [];
+    metricNames: string[] = [];
     editingId: string | null = null;
     saving = false;
     private submitted = false;
@@ -50,6 +70,7 @@ export class RuleFormComponent implements OnInit, HasUnsavedChanges {
         private ruleService: RuleService,
         private deviceService: DeviceService,
         private integrationService: IntegrationService,
+        private metricsService: MetricsService,
         private route: ActivatedRoute,
         private router: Router,
         private cdr: ChangeDetectorRef,
@@ -84,6 +105,35 @@ export class RuleFormComponent implements OnInit, HasUnsavedChanges {
         if (this.editingId) {
             this.loadRule(this.editingId);
         }
+
+        // Populate metric-name suggestions whenever the target device changes.
+        const deviceCtrl = this.form.get('deviceId');
+        if (deviceCtrl) {
+            deviceCtrl.valueChanges.subscribe((id: string) =>
+                this.loadMetricNames(id)
+            );
+            if (deviceCtrl.value) {
+                this.loadMetricNames(deviceCtrl.value);
+            }
+        }
+    }
+
+    private loadMetricNames(deviceId: string): void {
+        if (!deviceId) {
+            this.metricNames = [];
+            return;
+        }
+        this.metricsService.getMetricsSeries(deviceId).subscribe({
+            next: (series) => {
+                this.metricNames = Array.from(
+                    new Set(series.map((s) => s.metricName))
+                ).sort();
+                this.cdr.detectChanges();
+            },
+            error: () => {
+                this.metricNames = [];
+            },
+        });
     }
 
     // ---- Condition groups ----
@@ -138,7 +188,7 @@ export class RuleFormComponent implements OnInit, HasUnsavedChanges {
             targetDeviceId: [''],
             operation: [OperationType.TurnOn],
             notificationType: ['email'],
-            notificationConfig: ['{"recipients":[""]}'],
+            notificationConfig: ['{"recipients":[""]}', jsonValidator],
             integrationId: [''],
             delaySeconds: [5],
         });
@@ -160,6 +210,87 @@ export class RuleFormComponent implements OnInit, HasUnsavedChanges {
         const ctrl = this.actions.at(i);
         this.actions.removeAt(i);
         this.actions.insert(target, ctrl);
+    }
+
+    // ---- Plain-English summary ----
+
+    private operatorPhrase(op: string): string {
+        switch (op) {
+            case RuleConditionOperator.Gt:
+                return 'is above';
+            case RuleConditionOperator.Lt:
+                return 'is below';
+            case RuleConditionOperator.Gte:
+                return 'is at least';
+            case RuleConditionOperator.Lte:
+                return 'is at most';
+            case RuleConditionOperator.Eq:
+                return 'equals';
+            case RuleConditionOperator.Ne:
+                return 'is not';
+            default:
+                return op;
+        }
+    }
+
+    private actionPhrase(a: any): string {
+        switch (a.type) {
+            case RuleActionType.DeviceOperation: {
+                const op = a.operation === OperationType.TurnOff ? 'turn off' : 'turn on';
+                const target = a.targetDeviceId
+                    ? this.devices.find((d) => d.id === a.targetDeviceId)?.name ??
+                      'the target device'
+                    : 'the device';
+                return `${op} ${target}`;
+            }
+            case RuleActionType.Notification:
+                return `send a ${a.notificationType || 'notification'}`;
+            case RuleActionType.Delay:
+                return `wait ${a.delaySeconds ?? 0}s`;
+            case RuleActionType.Integration: {
+                const name = this.integrations.find(
+                    (i) => i.id === a.integrationId
+                )?.name;
+                return name ? `call the "${name}" integration` : 'call an integration';
+            }
+            default:
+                return String(a.type);
+        }
+    }
+
+    /** Human-readable one-liner describing what the rule does. */
+    get summary(): string {
+        if (!this.form) {
+            return '';
+        }
+        const raw = this.form.getRawValue();
+        const deviceName =
+            this.devices.find((d) => d.id === raw.deviceId)?.name ?? 'a device';
+
+        const groupPhrases: string[] = (raw.groups ?? [])
+            .map((g: any) =>
+                (g.conditions ?? [])
+                    .filter((c: any) => c.metricName)
+                    .map(
+                        (c: any) =>
+                            `${c.metricName} ${this.operatorPhrase(c.operator)} ${c.threshold}`
+                    )
+                    .join(' AND ')
+            )
+            .filter((p: string) => p.length > 0);
+
+        const when = groupPhrases.length
+            ? groupPhrases.map((p: string) => `(${p})`).join(' OR ')
+            : 'a condition is met';
+
+        const actionPhrases: string[] = (raw.actions ?? []).map((a: any) =>
+            this.actionPhrase(a)
+        );
+        const then = actionPhrases.length
+            ? actionPhrases.join(', then ')
+            : 'do nothing yet';
+
+        return `When ${deviceName}'s ${when}, ${then}.`;
     }
 
     // ---- Load / save ----
@@ -198,7 +329,10 @@ export class RuleFormComponent implements OnInit, HasUnsavedChanges {
                         targetDeviceId: [a.targetDeviceId ?? ''],
                         operation: [a.operation ?? OperationType.TurnOn],
                         notificationType: [a.notificationType ?? 'email'],
-                        notificationConfig: [a.notificationConfig ?? '{}'],
+                        notificationConfig: [
+                            a.notificationConfig ?? '{}',
+                            jsonValidator,
+                        ],
                         integrationId: [a.integrationId ?? ''],
                         delaySeconds: [a.delaySeconds ?? 5],
                     })

@@ -28,11 +28,11 @@
         }
 
         &--selected {
-            border-color: #1976d2;
+            border-color: var(--app-accent);
             background-color: #e3f2fd;
 
             .template-picker__card-icon {
-                color: #1976d2;
+                color: var(--app-accent);
             }
         }
 

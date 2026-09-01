@@ -6,9 +6,13 @@
                 <mat-label>Key</mat-label>
                 <input
                     matInput
+                    [disabled]="isReadOnly"
                     [(ngModel)]="field.key"
                     (ngModelChange)="onKeyChange(oldKey, $event)"
                 />
+                @if (field.keyError) {
+                    <mat-error>{{ field.keyError }}</mat-error>
+                }
             </mat-form-field>
         }
 
@@ -43,7 +47,7 @@
 
         <!-- Delete icon (non-root only) -->
         @if (!isReadOnly && depth > 0) {
-            <button mat-icon-button color="warn" (click)="remove.emit()">
+            <button mat-icon-button color="warn" (click)="remove.emit()" matTooltip="Remove field" aria-label="Remove schema field">
                 <mat-icon>delete</mat-icon>
             </button>
         }
@@ -64,7 +68,7 @@
                 ></app-schema-node-editor>
             }
             @if (!isReadOnly) {
-                <button mat-icon-button color="primary" (click)="addProperty()">
+                <button mat-icon-button color="primary" (click)="addProperty()" matTooltip="Add property" aria-label="Add schema property">
                     <mat-icon>add</mat-icon>
                 </button>
             }

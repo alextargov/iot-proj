@@ -12,90 +12,124 @@
         </button>
     </div>
 
-    <div *ngIf="loading" class="loading">
-        <mat-spinner diameter="40"></mat-spinner>
-    </div>
+    @if (loading) {
+        <app-loading-state message="Loading rules…"></app-loading-state>
+    } @else if (loadError) {
+        <app-error-state
+            title="Couldn't load rules"
+            message="There was a problem fetching your automation rules."
+            [retry]="load.bind(this)"
+        ></app-error-state>
+    } @else if (dataSource.data.length === 0) {
+        <app-empty-state
+            icon="rule"
+            title="No automation rules yet"
+            message="Create a rule to react automatically when device metrics cross a threshold."
+            [actionText]="canWrite ? 'Create Rule' : undefined"
+            actionIcon="add"
+            [action]="createRule.bind(this)"
+        ></app-empty-state>
+    } @else {
+        <mat-form-field appearance="outline" class="rules-search">
+            <mat-label>Search rules</mat-label>
+            <mat-icon matPrefix>search</mat-icon>
+            <input
+                matInput
+                (keyup)="applyFilter($event)"
+                placeholder="Rule or device name"
+                aria-label="Search rules"
+            />
+        </mat-form-field>
 
-    <div *ngIf="!loading && rules.length === 0" class="empty">
-        <mat-icon>rule</mat-icon>
-        <p>No automation rules yet.</p>
-    </div>
+        <table
+            mat-table
+            [dataSource]="dataSource"
+            matSort
+            class="rules-table"
+        >
+            <ng-container matColumnDef="name">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Name</th>
+                <td mat-cell *matCellDef="let rule">
+                    <div class="rule-name">{{ rule.name }}</div>
+                    <div class="rule-desc" *ngIf="rule.description">
+                        {{ rule.description }}
+                    </div>
+                </td>
+            </ng-container>
 
-    <table
-        mat-table
-        [dataSource]="rules"
-        *ngIf="!loading && rules.length > 0"
-        class="rules-table"
-    >
-        <ng-container matColumnDef="name">
-            <th mat-header-cell *matHeaderCellDef>Name</th>
-            <td mat-cell *matCellDef="let rule">
-                <div class="rule-name">{{ rule.name }}</div>
-                <div class="rule-desc" *ngIf="rule.description">
-                    {{ rule.description }}
-                </div>
-            </td>
-        </ng-container>
+            <ng-container matColumnDef="device">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Device</th>
+                <td mat-cell *matCellDef="let rule">{{ rule.device?.name }}</td>
+            </ng-container>
 
-        <ng-container matColumnDef="device">
-            <th mat-header-cell *matHeaderCellDef>Device</th>
-            <td mat-cell *matCellDef="let rule">{{ rule.device?.name }}</td>
-        </ng-container>
+            <ng-container matColumnDef="conditions">
+                <th mat-header-cell *matHeaderCellDef>When</th>
+                <td mat-cell *matCellDef="let rule" class="conditions-cell">
+                    {{ formatConditions(rule) }}
+                </td>
+            </ng-container>
 
-        <ng-container matColumnDef="conditions">
-            <th mat-header-cell *matHeaderCellDef>When</th>
-            <td mat-cell *matCellDef="let rule" class="conditions-cell">
-                {{ formatConditions(rule) }}
-            </td>
-        </ng-container>
+            <ng-container matColumnDef="actions_count">
+                <th mat-header-cell *matHeaderCellDef>Then</th>
+                <td mat-cell *matCellDef="let rule">{{ formatActions(rule) }}</td>
+            </ng-container>
 
-        <ng-container matColumnDef="actions_count">
-            <th mat-header-cell *matHeaderCellDef>Then</th>
-            <td mat-cell *matCellDef="let rule">{{ formatActions(rule) }}</td>
-        </ng-container>
+            <ng-container matColumnDef="enabled">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Enabled</th>
+                <td mat-cell *matCellDef="let rule">
+                    <mat-slide-toggle
+                        [checked]="rule.enabled"
+                        [disabled]="!canWrite"
+                        (change)="toggleEnabled(rule)"
+                    ></mat-slide-toggle>
+                </td>
+            </ng-container>
 
-        <ng-container matColumnDef="enabled">
-            <th mat-header-cell *matHeaderCellDef>Enabled</th>
-            <td mat-cell *matCellDef="let rule">
-                <mat-slide-toggle
-                    [checked]="rule.enabled"
-                    [disabled]="!canWrite"
-                    (change)="toggleEnabled(rule)"
-                ></mat-slide-toggle>
-            </td>
-        </ng-container>
+            <ng-container matColumnDef="lastTriggered">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Last Triggered</th>
+                <td mat-cell *matCellDef="let rule">
+                    {{ rule.lastTriggeredAt ? (rule.lastTriggeredAt | date: 'short') : 'Never' }}
+                </td>
+            </ng-container>
 
-        <ng-container matColumnDef="lastTriggered">
-            <th mat-header-cell *matHeaderCellDef>Last Triggered</th>
-            <td mat-cell *matCellDef="let rule">
-                {{ rule.lastTriggeredAt ? (rule.lastTriggeredAt | date: 'short') : 'Never' }}
-            </td>
-        </ng-container>
+            <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef></th>
+                <td mat-cell *matCellDef="let rule">
+                    <button
+                        mat-icon-button
+                        *ngIf="canWrite"
+                        (click)="editRule(rule)"
+                        matTooltip="Edit"
+                    >
+                        <mat-icon>edit</mat-icon>
+                    </button>
+                    <button
+                        mat-icon-button
+                        *ngIf="canWrite"
+                        color="warn"
+                        (click)="deleteRule(rule)"
+                        matTooltip="Delete"
+                    >
+                        <mat-icon>delete</mat-icon>
+                    </button>
+                </td>
+            </ng-container>
 
-        <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef></th>
-            <td mat-cell *matCellDef="let rule">
-                <button
-                    mat-icon-button
-                    *ngIf="canWrite"
-                    (click)="editRule(rule)"
-                    matTooltip="Edit"
-                >
-                    <mat-icon>edit</mat-icon>
-                </button>
-                <button
-                    mat-icon-button
-                    *ngIf="canWrite"
-                    color="warn"
-                    (click)="deleteRule(rule)"
-                    matTooltip="Delete"
-                >
-                    <mat-icon>delete</mat-icon>
-                </button>
-            </td>
-        </ng-container>
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
 
-        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
-    </table>
+            <tr class="mat-row" *matNoDataRow>
+                <td class="mat-cell" [attr.colspan]="displayedColumns.length">
+                    No rules match your search.
+                </td>
+            </tr>
+        </table>
+
+        <mat-paginator
+            [pageSizeOptions]="[10, 25, 50]"
+            [pageSize]="10"
+            showFirstLastButtons
+            aria-label="Select page of rules"
+        ></mat-paginator>
+    }
 </div>
