@@ -43,12 +43,22 @@
         }
     </div>
 
-    <table class="device-list__table" mat-table [dataSource]="dataSource">
+    @if (loading) {
+        <app-loading-state message="Loading devices…"></app-loading-state>
+    } @else if (loadError) {
+        <app-error-state
+            title="Couldn't load devices"
+            message="There was a problem fetching your devices."
+            [retry]="reload.bind(this)"
+        ></app-error-state>
+    } @else {
+    <table class="device-list__table" mat-table [dataSource]="dataSource" matSort>
         <!-- Name Column -->
         <ng-container matColumnDef="name">
             <th
                 class="device-list__table-header device-list__table-header-name"
                 mat-header-cell
+                mat-sort-header
                 *matHeaderCellDef
             >
                 Name
@@ -62,11 +72,12 @@
             </td>
         </ng-container>
 
-        <!-- Name Column -->
+        <!-- Description Column -->
         <ng-container matColumnDef="description">
             <th
                 class="device-list__table-header device-list__table-header-description"
                 mat-header-cell
+                mat-sort-header
                 *matHeaderCellDef
             >
                 Description
@@ -122,6 +133,7 @@
             <th
                 class="device-list__table-header device-list__table-header-status"
                 mat-header-cell
+                mat-sort-header
                 *matHeaderCellDef
             >
                 Status
@@ -156,38 +168,60 @@
                 *matCellDef="let element"
             >
                 <div class="device-list__table-definition-actions">
-                    <mat-icon
+                    <button
+                        mat-icon-button
                         class="device-list__table-definition-actions-duplicate"
                         matTooltip="Duplicate"
+                        [attr.aria-label]="'Duplicate ' + element.name"
                         (click)="$event.stopPropagation(); onDuplicate(element)"
-                        >content_copy</mat-icon
                     >
-                    <mat-icon
+                        <mat-icon>content_copy</mat-icon>
+                    </button>
+                    <button
+                        mat-icon-button
                         class="device-list__table-definition-actions-export"
                         matTooltip="Export"
+                        [attr.aria-label]="'Export ' + element.name"
                         (click)="$event.stopPropagation(); onExport(element)"
-                        >download</mat-icon
                     >
+                        <mat-icon>download</mat-icon>
+                    </button>
                     @if (canWrite) {
-                        <mat-icon
+                        <button
+                            mat-icon-button
                             class="device-list__table-definition-actions-edit"
                             matTooltip="Edit"
+                            [attr.aria-label]="'Edit ' + element.name"
                             (click)="$event.stopPropagation(); onEdit(element)"
-                            >edit</mat-icon
                         >
-                        <mat-icon
+                            <mat-icon>edit</mat-icon>
+                        </button>
+                        <button
+                            mat-icon-button
                             class="device-list__table-definition-actions-delete"
                             matTooltip="Delete"
+                            [attr.aria-label]="'Delete ' + element.name"
                             (click)="$event.stopPropagation(); onDelete(element)"
-                            >delete</mat-icon
                         >
+                            <mat-icon>delete</mat-icon>
+                        </button>
                     }
                 </div>
             </td>
         </ng-container>
 
         <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns" (click)="onRowClick(row)" class="device-list__clickable-row"></tr>
+        <tr
+            mat-row
+            *matRowDef="let row; columns: displayedColumns"
+            (click)="onRowClick(row)"
+            (keydown.enter)="onRowClick(row)"
+            (keydown.space)="$event.preventDefault(); onRowClick(row)"
+            tabindex="0"
+            role="button"
+            [attr.aria-label]="'View details for ' + row.name"
+            class="device-list__clickable-row"
+        ></tr>
 
         <tr class="mat-row" *matNoDataRow>
             <td class="mat-cell device-list__empty" [attr.colspan]="displayedColumns.length">
@@ -216,4 +250,5 @@
         aria-label="Select a page"
     >
     </mat-paginator>
+    }
 </div>

@@ -70,6 +70,41 @@
                 </mat-card-content>
             </mat-card>
 
+            <!-- Device Operations Card -->
+            @if (canSendOperations) {
+                <mat-card class="device-detail__ops-card">
+                    <mat-card-header>
+                        <mat-card-title>
+                            <mat-icon>bolt</mat-icon>
+                            Operations
+                        </mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <p class="device-detail__ops-hint">
+                            Send commands to the device using its configured authentication.
+                        </p>
+                        <div class="device-detail__ops-actions">
+                            @if (device.host?.turnOnEndpoint) {
+                                <button mat-flat-button color="primary"
+                                        [disabled]="pendingOperation !== null"
+                                        (click)="sendOperation(operationType.TurnOn)">
+                                    <mat-icon>power_settings_new</mat-icon>
+                                    {{ pendingOperation === operationType.TurnOn ? 'Turning on…' : 'Turn On' }}
+                                </button>
+                            }
+                            @if (device.host?.turnOffEndpoint) {
+                                <button mat-stroked-button
+                                        [disabled]="pendingOperation !== null"
+                                        (click)="sendOperation(operationType.TurnOff)">
+                                    <mat-icon>power_off</mat-icon>
+                                    {{ pendingOperation === operationType.TurnOff ? 'Turning off…' : 'Turn Off' }}
+                                </button>
+                            }
+                        </div>
+                    </mat-card-content>
+                </mat-card>
+            }
+
             <!-- Device Certificate Card -->
             <mat-card class="device-detail__cert-card">
                 <mat-card-header>
@@ -141,6 +176,12 @@
                 </mat-card-content>
             </mat-card>
         </div>
+    } @else if (loadError) {
+        <app-error-state
+            title="Couldn't load device"
+            message="Something went wrong while loading this device. Please try again."
+            [retry]="loadDevice.bind(this)"
+        ></app-error-state>
     } @else {
         <div class="device-detail__not-found">
             <mat-icon>error_outline</mat-icon>

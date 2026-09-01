@@ -114,10 +114,10 @@
                             <mat-expansion-panel [hideToggle]="true" #mep1="matExpansionPanel">
                                 <mat-expansion-panel-header>
                                     @if (mep1.expanded) {
-                                        <mat-icon (click)="mep1.expanded = !mep1.expanded">expand_less</mat-icon>
+                                        <mat-icon aria-hidden="true">expand_less</mat-icon>
                                     }
                                     @if (!mep1.expanded) {
-                                        <mat-icon (click)="mep1.expanded = !mep1.expanded">expand_more</mat-icon>
+                                        <mat-icon aria-hidden="true">expand_more</mat-icon>
                                     }
                                     <mat-panel-title>
                                         <div matTooltip="Communication: Service to Device">
@@ -211,10 +211,10 @@
                             >
                                 <mat-expansion-panel-header>
                                     @if (mep2.expanded) {
-                                        <mat-icon (click)="mep2.expanded = !mep2.expanded">expand_less</mat-icon>
+                                        <mat-icon aria-hidden="true">expand_less</mat-icon>
                                     }
                                     @if (!mep2.expanded) {
-                                        <mat-icon (click)="mep2.expanded = !mep2.expanded">expand_more</mat-icon>
+                                        <mat-icon aria-hidden="true">expand_more</mat-icon>
                                     }
                                     <mat-panel-title>
                                         <div matTooltip="Communication: Device to Service">

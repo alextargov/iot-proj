@@ -12,6 +12,8 @@ import {
     GetDeviceGQL,
     OnDeviceStatusChangedGQL,
     DeviceStatus as GqlDeviceStatus,
+    DeviceInfoFragmentDoc,
+    OperationType,
 } from '../../graphql/generated';
 import { DeviceInput } from '../../graphql/generated';
 import { FetchResult } from '@apollo/client/core';
@@ -41,6 +43,19 @@ const RevokeDeviceCertificateDocument = gql`
         revokeDeviceCertificate(deviceId: $deviceId)
     }
 `;
+
+const SetDeviceOperationDocument = gql`
+    mutation SetDeviceOperation($id: ID!, $op: OperationType!) {
+        setDeviceOperation(id: $id, op: $op) {
+            ...DeviceInfo
+        }
+    }
+    ${DeviceInfoFragmentDoc}
+`;
+
+interface SetDeviceOperationMutation {
+    setDeviceOperation: DeviceInfoFragment;
+}
 
 export interface DeviceCertificate {
     certificate: string;
@@ -307,6 +322,23 @@ export class DeviceService {
                 variables: { deviceId },
             })
             .pipe(map((res) => res.data?.revokeDeviceCertificate ?? false));
+    }
+
+    /**
+     * Send an operation (e.g. TURN_ON / TURN_OFF) to a device. The server
+     * relays the command to the device using its configured authentication and
+     * returns the updated device.
+     */
+    public setDeviceOperation(
+        id: string,
+        op: OperationType
+    ): Observable<DeviceInfoFragment | null> {
+        return this.apollo
+            .mutate<SetDeviceOperationMutation>({
+                mutation: SetDeviceOperationDocument,
+                variables: { id, op },
+            })
+            .pipe(map((res) => res.data?.setDeviceOperation ?? null));
     }
 
     public testDeviceConnection(url: string): Observable<boolean> {

@@ -2,9 +2,10 @@
 
 import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { MatPaginator } from '@angular/material/paginator';
+import { MatSort } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
 import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { finalize, takeUntil } from 'rxjs/operators';
 import { DeviceService } from 'src/app/shared/services/device/device.service';
 import { ContentHeaderButton } from '../../../shared/components/content-header/content-header.component';
 import { Router } from '@angular/router';
@@ -43,10 +44,12 @@ export class DevicesListComponent implements OnInit, AfterViewInit, OnDestroy {
     public buttons: ContentHeaderButton[] = [];
 
     @ViewChild(MatPaginator) public paginator: MatPaginator;
+    @ViewChild(MatSort) public sort: MatSort;
     @ViewChild('fileInput') public fileInput!: ElementRef<HTMLInputElement>;
 
     public ngAfterViewInit() {
         this.dataSource.paginator = this.paginator;
+        this.dataSource.sort = this.sort;
     }
 
     constructor(
@@ -102,19 +105,7 @@ export class DevicesListComponent implements OnInit, AfterViewInit, OnDestroy {
             return true;
         };
 
-        this.loading = true;
-        this.loadError = false;
-        this.deviceService.getAllDevices().subscribe({
-            next: (deviceList) => {
-                this.dataSource.data = deviceList;
-                this.loading = false;
-            },
-            error: () => {
-                this.loading = false;
-                this.loadError = true;
-                this.toast.showError('Failed to load devices');
-            },
-        });
+        this.loadDevices();
 
         this.deviceService.getDeviceTags().subscribe((tags) => {
             this.availableTags = tags;
@@ -143,6 +134,36 @@ export class DevicesListComponent implements OnInit, AfterViewInit, OnDestroy {
     public ngOnDestroy(): void {
         this.destroy$.next();
         this.destroy$.complete();
+    }
+
+    private loadDevices(): void {
+        this.loading = true;
+        this.loadError = false;
+        this.deviceService
+            .getAllDevices()
+            .pipe(
+                takeUntil(this.destroy$),
+                finalize(() => {
+                    // Guarantee the spinner is dismissed once the request
+                    // settles (next, error, or completion) so the list can
+                    // never hang on the loading state.
+                    this.loading = false;
+                })
+            )
+            .subscribe({
+                next: (deviceList) => {
+                    this.dataSource.data = deviceList;
+                },
+                error: () => {
+                    this.loadError = true;
+                    this.toast.showError('Failed to load devices');
+                },
+            });
+    }
+
+    /** Retry entry point for the error state. */
+    public reload(): void {
+        this.loadDevices();
     }
 
     private applyFilters(): void {

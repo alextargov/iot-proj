@@ -35,6 +35,17 @@ export class DeviceAuthFormComponent implements OnInit {
   ];
   public authPolicy = AuthPolicy;
 
+  /** Per-field secret visibility toggles (all masked by default). */
+  public secretVisible: {
+    basicPassword: boolean;
+    oauthClientSecret: boolean;
+    bearerToken: boolean;
+  } = {
+    basicPassword: false,
+    oauthClientSecret: false,
+    bearerToken: false,
+  };
+
   constructor(private fb: UntypedFormBuilder) {}
 
   ngOnInit(): void {
