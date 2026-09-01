@@ -33,7 +33,7 @@
         width: 100%;
 
         tr:hover {
-            background: whitesmoke;
+            background: var(--app-surface-2);
             cursor: pointer;
         }
 
@@ -45,22 +45,19 @@
         &-definition {
             &-actions {
                 display: flex;
-                gap: 0.5rem;
+                align-items: center;
+                gap: 0.25rem;
 
-                mat-icon {
-                    cursor: pointer;
+                &-duplicate:hover mat-icon {
+                    color: var(--app-accent);
                 }
 
-                &-duplicate:hover {
-                    color: #1976d2;
+                &-edit:hover mat-icon {
+                    color: var(--app-accent);
                 }
 
-                &-edit:hover {
-                    color: blue;
-                }
-
-                &-delete:hover {
-                    color: red;
+                &-delete:hover mat-icon {
+                    color: var(--app-danger);
                 }
             }
         }
@@ -97,7 +94,7 @@
         align-items: center;
         gap: 0.25rem;
         font-size: 0.875rem;
-        color: #1976d2;
+        color: var(--app-accent);
 
         mat-icon {
             font-size: 1rem;

@@ -25,6 +25,7 @@ export class GaugeWidgetComponent implements OnInit, OnDestroy, OnChanges {
     gaugeColor: string = '#4caf50';
     loading: boolean = true;
     error: string | null = null;
+    hasData: boolean = false;
 
     private destroy$ = new Subject<void>();
 
@@ -89,6 +90,9 @@ export class GaugeWidgetComponent implements OnInit, OnDestroy, OnChanges {
                         this.currentValue = result.value;
                         this.displayValue = this.currentValue.toFixed(this.decimals);
                         this.updateGaugeColor();
+                        this.hasData = true;
+                    } else {
+                        this.hasData = false;
                     }
                     this.loading = false;
                     this.error = null;

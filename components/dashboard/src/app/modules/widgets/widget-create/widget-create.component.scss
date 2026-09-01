@@ -130,7 +130,7 @@
             color: rgba(0, 0, 0, 0.87);
 
             mat-icon {
-                color: #1976d2;
+                color: var(--app-accent);
             }
         }
 
@@ -159,12 +159,12 @@
         }
 
         &--selected {
-            border-color: #1976d2;
+            border-color: var(--app-accent);
             background-color: rgba(25, 118, 210, 0.04);
 
             .widget-create__template-icon {
-                background-color: #1976d2;
-                color: white;
+                background-color: var(--app-accent);
+                color: #fff;
             }
         }
 
@@ -214,7 +214,7 @@
     }
 
     &__template-check {
-        color: #1976d2;
+        color: var(--app-accent);
         flex-shrink: 0;
     }
 
@@ -234,7 +234,7 @@
             color: rgba(0, 0, 0, 0.87);
 
             mat-icon {
-                color: #1976d2;
+                color: var(--app-accent);
             }
         }
 

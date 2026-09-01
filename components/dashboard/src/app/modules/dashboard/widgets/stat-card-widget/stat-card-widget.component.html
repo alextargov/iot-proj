@@ -8,6 +8,11 @@
             <mat-icon>error</mat-icon>
             <span>{{ error }}</span>
         </div>
+    } @else if (!hasData) {
+        <div class="no-data">
+            <mat-icon>analytics</mat-icon>
+            <span>No data yet</span>
+        </div>
     } @else {
         <div class="stat-container">
             <div class="stat-value">

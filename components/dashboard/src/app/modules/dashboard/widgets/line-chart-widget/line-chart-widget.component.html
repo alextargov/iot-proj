@@ -8,6 +8,11 @@
             <mat-icon>error</mat-icon>
             <span>{{ error }}</span>
         </div>
+    } @else if (!hasData) {
+        <div class="no-data">
+            <mat-icon>show_chart</mat-icon>
+            <span>No data for this period</span>
+        </div>
     } @else {
         <div class="chart-container">
             <canvas baseChart

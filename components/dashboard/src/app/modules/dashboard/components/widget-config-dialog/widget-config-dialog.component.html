@@ -7,6 +7,15 @@
         <div class="loading">
             <mat-spinner diameter="40"></mat-spinner>
         </div>
+    } @else if (devicesError) {
+        <div class="dialog-error">
+            <mat-icon color="warn">error_outline</mat-icon>
+            <p>Couldn't load devices. Please try again.</p>
+            <button mat-stroked-button (click)="retryLoadDevices()">
+                <mat-icon>refresh</mat-icon>
+                Retry
+            </button>
+        </div>
     } @else {
         <form [formGroup]="form" class="widget-form">
             <!-- Widget Type Selection (only for create mode) -->
@@ -33,6 +42,9 @@
             <mat-form-field appearance="outline" class="full-width">
                 <mat-label>Title</mat-label>
                 <input matInput formControlName="title" placeholder="Widget title">
+                @if (form.get('title')?.hasError('required')) {
+                    <mat-error>Title is required</mat-error>
+                }
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="full-width">
@@ -42,6 +54,9 @@
                         <mat-option [value]="device.id">{{ device.name }}</mat-option>
                     }
                 </mat-select>
+                @if (form.get('deviceId')?.hasError('required')) {
+                    <mat-error>Select a device</mat-error>
+                }
             </mat-form-field>
 
             <!-- Gauge Config -->
@@ -71,7 +86,10 @@
 
                     <mat-form-field appearance="outline">
                         <mat-label>Decimals</mat-label>
-                        <input matInput type="number" formControlName="decimals" min="0" max="5">
+                        <input matInput type="number" formControlName="decimals" min="0" max="6">
+                        @if (form.get('decimals')?.hasError('min') || form.get('decimals')?.hasError('max')) {
+                            <mat-error>Enter 0–6</mat-error>
+                        }
                     </mat-form-field>
                 </div>
             }
@@ -142,7 +160,10 @@
 
                     <mat-form-field appearance="outline">
                         <mat-label>Decimals</mat-label>
-                        <input matInput type="number" formControlName="decimals" min="0" max="5">
+                        <input matInput type="number" formControlName="decimals" min="0" max="6">
+                        @if (form.get('decimals')?.hasError('min') || form.get('decimals')?.hasError('max')) {
+                            <mat-error>Enter 0–6</mat-error>
+                        }
                     </mat-form-field>
                 </div>
             }
@@ -167,6 +188,9 @@
                     <mat-form-field appearance="outline">
                         <mat-label>Max Rows</mat-label>
                         <input matInput type="number" formControlName="limit" min="1" max="100">
+                        @if (form.get('limit')?.hasError('min') || form.get('limit')?.hasError('max')) {
+                            <mat-error>Enter 1–100</mat-error>
+                        }
                     </mat-form-field>
                 </div>
             }

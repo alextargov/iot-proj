@@ -1,15 +1,35 @@
 <div class="widget-delete__content">
-    <h1 mat-dialog-title>Delete widget "{{ widget.name }}"</h1>
-    <div mat-dialog-content>Are you sure you want to delete the widget.</div>
-    <div mat-dialog-actions>
-        <button mat-button mat-dialog-close (click)="close()">Close</button>
+    <h1 mat-dialog-title>Delete widget "{{ widget.name }}"?</h1>
+    <div mat-dialog-content>
+        <p class="widget-delete__warning">
+            <mat-icon color="warn">warning</mat-icon>
+            This permanently deletes <strong>{{ widget.name }}</strong>, including
+            its logic and schedule. This action cannot be undone.
+        </p>
+
+        <p class="widget-delete__prompt">
+            Type <strong>{{ widget.name }}</strong> to confirm:
+        </p>
+        <mat-form-field appearance="outline" class="widget-delete__field">
+            <input
+                matInput
+                [(ngModel)]="confirmName"
+                (keyup.enter)="delete()"
+                placeholder="Widget name"
+                aria-label="Type the widget name to confirm deletion"
+                autocomplete="off"
+            />
+        </mat-form-field>
+    </div>
+    <div mat-dialog-actions align="end">
+        <button mat-button (click)="close()">Cancel</button>
         <button
-            mat-dialog-close
             mat-raised-button
             color="warn"
+            [disabled]="!nameMatches"
             (click)="delete()"
         >
-            Delete
+            Delete widget
         </button>
     </div>
 </div>

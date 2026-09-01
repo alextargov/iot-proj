@@ -28,6 +28,7 @@ export class WidgetConfigDialogComponent implements OnInit {
     form: FormGroup;
     devices: DeviceInfoFragment[] = [];
     loading: boolean = true;
+    devicesError = false;
 
     widgetTypes = [
         { value: DashboardWidgetType.Gauge, label: 'Gauge', icon: 'speed' },
@@ -80,7 +81,7 @@ export class WidgetConfigDialogComponent implements OnInit {
             minValue: [this.data.config?.minValue ?? 0],
             maxValue: [this.data.config?.maxValue ?? 100],
             unit: [this.data.config?.unit || ''],
-            decimals: [this.data.config?.decimals ?? 1],
+            decimals: [this.data.config?.decimals ?? 1, [Validators.min(0), Validators.max(6)]],
             // Chart/Table specific
             timeRange: [this.data.config?.timeRange || 'hour'],
             // Stat card specific
@@ -89,11 +90,13 @@ export class WidgetConfigDialogComponent implements OnInit {
             size: [this.data.config?.size || 'medium'],
             showLabel: [this.data.config?.showLabel !== false],
             // Table specific
-            limit: [this.data.config?.limit ?? 10],
+            limit: [this.data.config?.limit ?? 10, [Validators.min(1), Validators.max(100)]],
         });
     }
 
     private loadDevices(): void {
+        this.loading = true;
+        this.devicesError = false;
         this.deviceService.getAllDevices()
             .pipe(finalize(() => {
                 this.loading = false;
@@ -104,10 +107,17 @@ export class WidgetConfigDialogComponent implements OnInit {
                     this.devices = devices;
                     this.loading = false;
                 },
-                error: () => {
+                error: (err) => {
+                    console.error('Failed to load devices:', err);
+                    this.devicesError = true;
                     this.loading = false;
                 },
             });
+    }
+
+    /** Retry device loading after a failure. */
+    public retryLoadDevices(): void {
+        this.loadDevices();
     }
 
     get selectedWidgetType(): DashboardWidgetType {

@@ -10,6 +10,7 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 })
 export class WidgetDeleteComponent {
     public widget: WidgetInfoFragment;
+    public confirmName = '';
 
     constructor(
         private dialogRef: MatDialogRef<WidgetDeleteComponent>,
@@ -18,7 +19,15 @@ export class WidgetDeleteComponent {
         this.widget = data.widget;
     }
 
+    /** True once the typed name exactly matches the widget name. */
+    public get nameMatches(): boolean {
+        return this.confirmName.trim() === this.widget.name;
+    }
+
     delete() {
+        if (!this.nameMatches) {
+            return;
+        }
         this.dialogRef.close(this.widget.id);
     }
 

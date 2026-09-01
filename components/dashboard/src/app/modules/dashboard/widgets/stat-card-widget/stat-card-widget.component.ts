@@ -24,6 +24,7 @@ export class StatCardWidgetComponent implements OnInit, OnDestroy, OnChanges {
     metricLabel: string = '';
     loading: boolean = true;
     error: string | null = null;
+    hasData: boolean = false;
 
     private destroy$ = new Subject<void>();
 
@@ -92,6 +93,9 @@ export class StatCardWidgetComponent implements OnInit, OnDestroy, OnChanges {
                         this.currentValue = this.getValueByAggregation(result);
                         this.displayValue = this.formatValue(this.currentValue, this.decimals);
                         this.metricLabel = this.metricName;
+                        this.hasData = true;
+                    } else {
+                        this.hasData = false;
                     }
                     this.loading = false;
                     this.error = null;

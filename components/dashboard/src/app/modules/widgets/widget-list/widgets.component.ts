@@ -3,16 +3,17 @@ import { Router } from '@angular/router';
 import { ContentHeaderButton } from 'src/app/shared/components/content-header/content-header.component';
 import { MatTableDataSource } from '@angular/material/table';
 import {
-    DeviceInfoFragment,
     WidgetInfoFragment,
     WidgetStatus,
 } from '../../../shared/graphql/generated';
 import { MatPaginator } from '@angular/material/paginator';
+import { MatSort } from '@angular/material/sort';
 import { MatDialog } from '@angular/material/dialog';
 import { WidgetService } from '../../../shared/services/widget/widget.service';
 import { WidgetDeleteComponent } from '../widget-delete/widget-delete.component';
 import { formatSchedule } from '../../../shared/constants/schedule-presets';
 import { ToastrService } from '../../../shared/services/toastr/toastr.service';
+import { AuthService } from '../../../shared/services/auth/auth.service';
 
 interface StatusConfig {
     icon: string;
@@ -42,20 +43,25 @@ export class WidgetsComponent implements OnInit {
 
     public formatSchedule = formatSchedule;
 
-    public buttons: ContentHeaderButton[] = [
-        {
-            text: 'Import',
-            icon: 'upload',
-            action: this.onImportClick.bind(this),
-            color: '',
-        },
-        {
-            text: 'Create widget',
-            icon: 'add',
-            action: this.onAddClick.bind(this),
-            color: 'primary',
-        },
-    ];
+    public get buttons(): ContentHeaderButton[] {
+        if (!this.canWrite) {
+            return [];
+        }
+        return [
+            {
+                text: 'Import',
+                icon: 'upload',
+                action: this.onImportClick.bind(this),
+                color: '',
+            },
+            {
+                text: 'Create widget',
+                icon: 'add',
+                action: this.onAddClick.bind(this),
+                color: 'primary',
+            },
+        ];
+    }
 
     private readonly statusConfigs: Record<string, StatusConfig> = {
         [WidgetStatus.Active]: {
@@ -73,18 +79,26 @@ export class WidgetsComponent implements OnInit {
     };
 
     @ViewChild(MatPaginator) public paginator: MatPaginator;
+    @ViewChild(MatSort) public sort: MatSort;
     @ViewChild('fileInput') public fileInput!: ElementRef<HTMLInputElement>;
 
     public ngAfterViewInit() {
         this.dataSource.paginator = this.paginator;
+        this.dataSource.sort = this.sort;
     }
 
     constructor(
         private widgetService: WidgetService,
         private router: Router,
         private dialog: MatDialog,
-        private toast: ToastrService
+        private toast: ToastrService,
+        private authService: AuthService
     ) {}
+
+    /** Whether the current user may create/edit/delete widgets (OPERATOR+). */
+    public get canWrite(): boolean {
+        return this.authService.hasRole('OPERATOR');
+    }
 
     public ngOnInit(): void {
         this.dataSource.filterPredicate = (data: WidgetInfoFragment, filter: string) => {
@@ -138,7 +152,7 @@ export class WidgetsComponent implements OnInit {
         await this.router.navigate(['widgets/create']);
     }
 
-    public onDelete(widget: DeviceInfoFragment): void {
+    public onDelete(widget: WidgetInfoFragment): void {
         const dialogRef = this.dialog.open(WidgetDeleteComponent, {
             data: {
                 widget,

@@ -8,6 +8,11 @@
             <mat-icon>error</mat-icon>
             <span>{{ error }}</span>
         </div>
+    } @else if (!hasData) {
+        <div class="no-data">
+            <mat-icon>speed</mat-icon>
+            <span>No data yet</span>
+        </div>
     } @else {
         <div class="gauge-container">
             <svg viewBox="0 0 100 100" class="gauge-svg">

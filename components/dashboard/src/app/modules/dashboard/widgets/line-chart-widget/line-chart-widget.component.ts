@@ -28,6 +28,13 @@ export class LineChartWidgetComponent implements OnInit, OnDestroy, OnChanges {
         datasets: [],
     };
 
+    /** True when at least one dataset has plotted points. */
+    get hasData(): boolean {
+        return this.chartData.datasets.some(
+            (d) => (d.data as unknown[])?.length > 0
+        );
+    }
+
     chartOptions: ChartConfiguration<'line'>['options'] = {
         responsive: true,
         maintainAspectRatio: false,
