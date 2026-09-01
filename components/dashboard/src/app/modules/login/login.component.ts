@@ -13,6 +13,8 @@ import { Router } from '@angular/router';
 })
 export class LoginComponent {
     loginForm: FormGroup;
+    public loading = false;
+    public hidePassword = true;
 
     constructor(
         private fb: FormBuilder,
@@ -28,10 +30,11 @@ export class LoginComponent {
     }
 
     onSubmit() {
-        if (this.loginForm.invalid) {
+        if (this.loginForm.invalid || this.loading) {
             return;
         }
 
+        this.loading = true;
         this.authService
             .loginUser(
                 this.loginForm.get('username').value,
@@ -39,13 +42,20 @@ export class LoginComponent {
             )
             .subscribe({
                 next: () => {
+                    this.loading = false;
                     this.eventBusService.emit('onLoginChange', {});
                     this.router.navigate(['/dashboard']);
                 },
-                error: () => {
-                    this.toast.showError(
-                        'An error has occurred while logging in!.'
-                    );
+                error: (err) => {
+                    this.loading = false;
+                    const status = err?.networkError?.status ?? err?.status;
+                    if (status === 401 || status === 403) {
+                        this.toast.showError('Invalid username or password');
+                    } else {
+                        this.toast.showError(
+                            'Could not sign in. Please try again.'
+                        );
+                    }
                 },
             });
     }

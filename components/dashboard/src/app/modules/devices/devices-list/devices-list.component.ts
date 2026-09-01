@@ -33,6 +33,10 @@ export class DevicesListComponent implements OnInit, AfterViewInit, OnDestroy {
     activeTagFilter: string | null = null;
     /** All distinct tags in use across the tenant's devices (server-sourced). */
     public availableTags: string[] = [];
+    /** Human-readable search term for the empty-results message. */
+    public searchTerm = '';
+    public loading = true;
+    public loadError = false;
     private searchFilter: string = '';
     private destroy$ = new Subject<void>();
 
@@ -98,8 +102,18 @@ export class DevicesListComponent implements OnInit, AfterViewInit, OnDestroy {
             return true;
         };
 
-        this.deviceService.getAllDevices().subscribe((deviceList) => {
-            this.dataSource.data = deviceList;
+        this.loading = true;
+        this.loadError = false;
+        this.deviceService.getAllDevices().subscribe({
+            next: (deviceList) => {
+                this.dataSource.data = deviceList;
+                this.loading = false;
+            },
+            error: () => {
+                this.loading = false;
+                this.loadError = true;
+                this.toast.showError('Failed to load devices');
+            },
         });
 
         this.deviceService.getDeviceTags().subscribe((tags) => {
@@ -143,7 +157,9 @@ export class DevicesListComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     public applyFilter(event: Event): void {
-        this.searchFilter = (event.target as HTMLInputElement).value.trim().toLowerCase();
+        const raw = (event.target as HTMLInputElement).value.trim();
+        this.searchTerm = raw;
+        this.searchFilter = raw.toLowerCase();
         this.applyFilters();
     }
 
@@ -154,20 +170,13 @@ export class DevicesListComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     /**
-     * Selects a tag from the dropdown. Fetches the matching devices from the
-     * server so filtering covers the whole tenant, not just loaded rows.
+     * Selects a tag from the dropdown. Uses the same client-side combined
+     * predicate as the text search so the two filters compose instead of one
+     * clobbering the other.
      */
     public selectTagFilter(tag: string | null): void {
         this.activeTagFilter = tag;
-        if (!tag) {
-            this.deviceService.getAllDevices().subscribe((deviceList) => {
-                this.dataSource.data = deviceList;
-            });
-            return;
-        }
-        this.deviceService.getDevicesByTags([tag]).subscribe((deviceList) => {
-            this.dataSource.data = deviceList;
-        });
+        this.applyFilters();
     }
 
     public clearTagFilter(): void {
@@ -180,11 +189,7 @@ export class DevicesListComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     public async onAddClick(): Promise<void> {
-        try {
-            await this.router.navigate(['devices/create']);
-        } catch (e) {
-            console.log(e);
-        }
+        await this.router.navigate(['devices/create']);
     }
 
     public onDelete(device: DeviceInfoFragment): void {
@@ -196,24 +201,30 @@ export class DevicesListComponent implements OnInit, AfterViewInit, OnDestroy {
 
         dialogRef.afterClosed().subscribe((deviceToDelete) => {
             if (deviceToDelete) {
-                this.deviceService
-                    .deleteDevice(deviceToDelete)
-                    .subscribe((res) => {
+                this.deviceService.deleteDevice(deviceToDelete).subscribe({
+                    next: () => {
                         this.dataSource.data = this.dataSource.data.filter(
                             (device) => device.id !== deviceToDelete
                         );
-                    });
+                        this.toast.showSuccess('Device deleted');
+                    },
+                    error: () => this.toast.showError('Failed to delete device'),
+                });
             }
         });
     }
 
     public onDuplicate(device: DeviceInfoFragment): void {
-        this.deviceService.cloneDevice(device.id).subscribe((cloned) => {
-            if (cloned) {
-                this.deviceService.getAllDevices().subscribe((deviceList) => {
-                    this.dataSource.data = deviceList;
-                });
-            }
+        this.deviceService.cloneDevice(device.id).subscribe({
+            next: (cloned) => {
+                if (cloned) {
+                    this.deviceService.getAllDevices().subscribe((deviceList) => {
+                        this.dataSource.data = deviceList;
+                    });
+                    this.toast.showSuccess(`Device "${device.name}" duplicated`);
+                }
+            },
+            error: () => this.toast.showError('Failed to duplicate device'),
         });
     }
 
@@ -320,6 +331,10 @@ export class DevicesListComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     public onRowClick(device: DeviceInfoFragment): void {
+        this.router.navigate(['devices', device.id]);
+    }
+
+    public onEdit(device: DeviceInfoFragment): void {
         this.router.navigate(['devices', device.id]);
     }
 }

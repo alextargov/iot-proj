@@ -380,7 +380,6 @@ export class WidgetCreateComponent implements OnInit {
 
     onCode(code: string) {
         this.workspaceCode = code;
-        console.log(code);
     }
 
     removeDevice(keyword) {
@@ -397,23 +396,25 @@ export class WidgetCreateComponent implements OnInit {
         const model = this.convertToModel();
         if (this.editId) {
             this.widgetService.update(this.editId, model).subscribe({
-                next: (data) => {
-                    console.log('success', data);
+                next: () => {
                     this.toast.showSuccess('Successfully updated widget');
+                    this.router.navigate(['widgets']);
                 },
-                error: (err) => {
-                    console.error('Error updating widget:', err);
+                error: () => {
                     this.toast.showError('Failed to update widget');
                 },
             });
         } else {
-            this.widgetService.create(model).subscribe((data) => {
-                console.log('success', data);
-                this.toast.showSuccess('Successfully created widget');
+            this.widgetService.create(model).subscribe({
+                next: () => {
+                    this.toast.showSuccess('Successfully created widget');
+                    this.router.navigate(['widgets']);
+                },
+                error: () => {
+                    this.toast.showError('Failed to create widget');
+                },
             });
         }
-
-        await this.router.navigate(['widgets']);
     }
 
     private convertToModel(): WidgetInput {
@@ -460,7 +461,6 @@ export class WidgetCreateComponent implements OnInit {
         this.buildBlocklyToolbox();
 
         setTimeout(() => {
-            console.log(this.blocklyComponent);
             this.blocklyComponent.resize();
 
             // Restore workspace from duplicate data if available

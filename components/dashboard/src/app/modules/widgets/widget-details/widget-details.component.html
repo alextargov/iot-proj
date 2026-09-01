@@ -1,1 +1,130 @@
-<p>widget-details works!</p>
+<app-content-header [title]="widget?.name || 'Widget'"></app-content-header>
+
+<div class="widget-details">
+    @if (loading) {
+        <app-loading-state message="Loading widget…"></app-loading-state>
+    } @else if (loadError || !widget) {
+        <app-error-state
+            title="Widget not found"
+            message="This widget could not be loaded. It may have been deleted."
+            retryText="Back to widgets"
+            [retry]="onBack.bind(this)"
+        ></app-error-state>
+    } @else {
+        <div class="widget-details__toolbar">
+            <button mat-stroked-button (click)="onBack()">
+                <mat-icon>arrow_back</mat-icon>
+                Back
+            </button>
+            <span class="widget-details__spacer"></span>
+            @if (canWrite) {
+                <button mat-stroked-button color="primary" (click)="onEdit()">
+                    <mat-icon>edit</mat-icon>
+                    Edit
+                </button>
+                <button mat-stroked-button color="warn" (click)="onDelete()">
+                    <mat-icon>delete</mat-icon>
+                    Delete
+                </button>
+            }
+        </div>
+
+        <div class="widget-details__grid">
+            <mat-card class="widget-details__card">
+                <mat-card-header>
+                    <mat-card-title>Overview</mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                    <dl class="widget-details__meta">
+                        <dt>Status</dt>
+                        <dd>
+                            <span
+                                class="widget-details__status"
+                                [class.widget-details__status--active]="
+                                    widget.status === 'ACTIVE'
+                                "
+                            >
+                                {{ widget.status }}
+                            </span>
+                        </dd>
+
+                        <dt>Description</dt>
+                        <dd>{{ widget.description || '—' }}</dd>
+
+                        <dt>Schedule</dt>
+                        <dd>
+                            @if (widget.schedule) {
+                                <code>{{ widget.schedule }}</code>
+                            } @else {
+                                Not scheduled
+                            }
+                        </dd>
+
+                        <dt>Last executed</dt>
+                        <dd>
+                            {{
+                                widget.lastExecutedAt
+                                    ? (widget.lastExecutedAt | date: 'medium')
+                                    : 'Never'
+                            }}
+                        </dd>
+
+                        <dt>Created</dt>
+                        <dd>{{ widget.createdAt | date: 'medium' }}</dd>
+
+                        <dt>Updated</dt>
+                        <dd>{{ widget.updatedAt | date: 'medium' }}</dd>
+                    </dl>
+                </mat-card-content>
+            </mat-card>
+
+            <mat-card class="widget-details__card">
+                <mat-card-header>
+                    <mat-card-title>
+                        Linked devices ({{ linkedDevices.length }})
+                    </mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                    @if (linkedDevices.length) {
+                        <mat-nav-list>
+                            @for (d of linkedDevices; track d.id) {
+                                <a mat-list-item (click)="onDeviceClick(d.id)">
+                                    <mat-icon matListItemIcon>developer_board</mat-icon>
+                                    <span matListItemTitle>{{ d.name }}</span>
+                                </a>
+                            }
+                        </mat-nav-list>
+                    } @else {
+                        <app-empty-state
+                            icon="developer_board"
+                            title="No linked devices"
+                            message="This widget is not linked to any devices."
+                        ></app-empty-state>
+                    }
+                </mat-card-content>
+            </mat-card>
+        </div>
+
+        <mat-card class="widget-details__card">
+            <mat-card-header>
+                <mat-card-title>Generated code</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+                <pre class="widget-details__code"><code>{{ widget.code || '// No code generated' }}</code></pre>
+            </mat-card-content>
+        </mat-card>
+
+        <mat-card class="widget-details__card">
+            <mat-card-header>
+                <mat-card-title>Execution logs</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+                <app-empty-state
+                    icon="receipt_long"
+                    title="Execution logs coming soon"
+                    message="Live logs from deployed widget containers require the backend log API (tracked as feature #3). This panel will stream run history once that lands."
+                ></app-empty-state>
+            </mat-card-content>
+        </mat-card>
+    }
+</div>

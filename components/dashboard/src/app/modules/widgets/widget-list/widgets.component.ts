@@ -37,6 +37,8 @@ export class WidgetsComponent implements OnInit {
         'actions',
     ];
     dataSource = new MatTableDataSource<WidgetInfoFragment>();
+    public loading = true;
+    public loadError = false;
 
     public formatSchedule = formatSchedule;
 
@@ -93,10 +95,22 @@ export class WidgetsComponent implements OnInit {
             );
         };
 
-        this.widgetService.getAll().subscribe((widgetList) => {
-            console.log('ngOnInit');
+        this.loadWidgets();
+    }
 
-            this.dataSource.data = widgetList;
+    public loadWidgets(): void {
+        this.loading = true;
+        this.loadError = false;
+        this.widgetService.getAll().subscribe({
+            next: (widgetList) => {
+                this.dataSource.data = widgetList;
+                this.loading = false;
+            },
+            error: () => {
+                this.loading = false;
+                this.loadError = true;
+                this.toast.showError('Failed to load widgets');
+            },
         });
     }
 
@@ -121,11 +135,7 @@ export class WidgetsComponent implements OnInit {
     }
 
     public async onAddClick(): Promise<void> {
-        try {
-            await this.router.navigate(['widgets/create']);
-        } catch (e) {
-            console.log(e);
-        }
+        await this.router.navigate(['widgets/create']);
     }
 
     public onDelete(widget: DeviceInfoFragment): void {
@@ -137,31 +147,35 @@ export class WidgetsComponent implements OnInit {
 
         dialogRef.afterClosed().subscribe((widgetToDelete) => {
             if (widgetToDelete) {
-                this.widgetService.delete(widgetToDelete).subscribe((res) => {
-                    this.dataSource.data = this.dataSource.data.filter(
-                        (widget) => widget.id !== widgetToDelete
-                    );
+                this.widgetService.delete(widgetToDelete).subscribe({
+                    next: () => {
+                        this.dataSource.data = this.dataSource.data.filter(
+                            (widget) => widget.id !== widgetToDelete
+                        );
+                        this.toast.showSuccess('Widget deleted');
+                    },
+                    error: () => this.toast.showError('Failed to delete widget'),
                 });
             }
         });
     }
 
     public onDuplicate(widget: WidgetInfoFragment): void {
-        this.widgetService.clone(widget.id).subscribe((cloned) => {
-            if (cloned) {
-                this.widgetService.getAll().subscribe((widgetList) => {
-                    this.dataSource.data = widgetList;
-                });
-            }
+        this.widgetService.clone(widget.id).subscribe({
+            next: (cloned) => {
+                if (cloned) {
+                    this.widgetService.getAll().subscribe((widgetList) => {
+                        this.dataSource.data = widgetList;
+                    });
+                    this.toast.showSuccess(`Widget "${widget.name}" duplicated`);
+                }
+            },
+            error: () => this.toast.showError('Failed to duplicate widget'),
         });
     }
 
     public async onEdit(widget: WidgetInfoFragment): Promise<void> {
-        try {
-            await this.router.navigate(['widgets', widget.id, 'edit']);
-        } catch (e) {
-            console.log(e);
-        }
+        await this.router.navigate(['widgets', widget.id, 'edit']);
     }
 
     public onExport(widget: WidgetInfoFragment): void {

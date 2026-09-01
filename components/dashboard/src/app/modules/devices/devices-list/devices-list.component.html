@@ -172,7 +172,7 @@
                         <mat-icon
                             class="device-list__table-definition-actions-edit"
                             matTooltip="Edit"
-                            (click)="$event.stopPropagation()"
+                            (click)="$event.stopPropagation(); onEdit(element)"
                             >edit</mat-icon
                         >
                         <mat-icon
@@ -194,7 +194,7 @@
                 @if (dataSource.filter) {
                     <div class="device-list__empty-content">
                         <mat-icon>search_off</mat-icon>
-                        <span>No devices match "{{ dataSource.filter }}"</span>
+                        <span>No devices match your filters</span>
                     </div>
                 } @else {
                     <div class="device-list__empty-content">
