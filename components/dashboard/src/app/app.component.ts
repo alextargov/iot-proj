@@ -9,6 +9,8 @@ import { EventBusService } from './shared/services/eventbus/eventbus.service';
 import { DashboardLayoutService } from './shared/services/dashboard-layout/dashboard-layout.service';
 import { DashboardLayoutInfoFragment } from './shared/graphql/generated';
 import { ThemeService, ThemeMode } from './shared/services/theme/theme.service';
+import { ConfirmDialogService } from './shared/components/confirm-dialog/confirm-dialog.service';
+import { ToastrService } from './shared/services/toastr/toastr.service';
 
 @UntilDestroy()
 @Component({
@@ -38,7 +40,9 @@ export class AppComponent {
         private observer: BreakpointObserver,
         private router: Router,
         private dialog: MatDialog,
-        private themeService: ThemeService
+        private themeService: ThemeService,
+        private confirm: ConfirmDialogService,
+        private toast: ToastrService
     ) {}
 
     public get theme(): ThemeMode {
@@ -134,8 +138,12 @@ export class AppComponent {
                 next: (layout) => {
                     this.dashboardLayouts = [...this.dashboardLayouts, layout];
                     this.navigateToDashboard(layout.id);
+                    this.toast.showSuccess('Dashboard created');
                 },
-                error: (err) => console.error('Failed to create dashboard:', err),
+                error: (err) => {
+                    console.error('Failed to create dashboard:', err);
+                    this.toast.showError('Failed to create dashboard');
+                },
             });
     }
 
@@ -147,8 +155,12 @@ export class AppComponent {
                     ...l,
                     isDefault: l.id === layout.id,
                 }));
+                this.toast.showSuccess(`"${layout.name}" is now the default dashboard`);
             },
-            error: (err) => console.error('Failed to set default:', err),
+            error: (err) => {
+                console.error('Failed to set default:', err);
+                this.toast.showError('Failed to set default dashboard');
+            },
         });
     }
 
@@ -158,18 +170,32 @@ export class AppComponent {
             return;
         }
 
-        this.dashboardLayoutService.deleteLayout(layout.id).subscribe({
-            next: () => {
-                this.dashboardLayouts = this.dashboardLayouts.filter((l) => l.id !== layout.id);
-                if (this.currentDashboardId === layout.id) {
-                    const nextLayout = this.dashboardLayouts[0];
-                    if (nextLayout) {
-                        this.navigateToDashboard(nextLayout.id);
-                    }
+        this.confirm
+            .confirmDelete(layout.name, {
+                title: 'Delete dashboard?',
+                message: `This permanently deletes "${layout.name}" and its widget layout. This action cannot be undone.`,
+            })
+            .subscribe((confirmed) => {
+                if (!confirmed) {
+                    return;
                 }
-            },
-            error: (err) => console.error('Failed to delete dashboard:', err),
-        });
+                this.dashboardLayoutService.deleteLayout(layout.id).subscribe({
+                    next: () => {
+                        this.dashboardLayouts = this.dashboardLayouts.filter((l) => l.id !== layout.id);
+                        if (this.currentDashboardId === layout.id) {
+                            const nextLayout = this.dashboardLayouts[0];
+                            if (nextLayout) {
+                                this.navigateToDashboard(nextLayout.id);
+                            }
+                        }
+                        this.toast.showSuccess('Dashboard deleted');
+                    },
+                    error: (err) => {
+                        console.error('Failed to delete dashboard:', err);
+                        this.toast.showError('Failed to delete dashboard');
+                    },
+                });
+            });
     }
 
     ngAfterViewInit(): void {
