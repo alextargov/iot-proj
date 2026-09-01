@@ -12,6 +12,23 @@
             }
         </div>
         <div class="dashboard__toolbar-right">
+            @if (saveState === 'saving') {
+                <span class="dashboard__save-status dashboard__save-status--saving">
+                    <mat-spinner diameter="16"></mat-spinner>
+                    Saving…
+                </span>
+            } @else if (saveState === 'saved') {
+                <span class="dashboard__save-status dashboard__save-status--saved">
+                    <mat-icon>check</mat-icon>
+                    Saved
+                </span>
+            } @else if (saveState === 'error') {
+                <span class="dashboard__save-status dashboard__save-status--error">
+                    <mat-icon>error_outline</mat-icon>
+                    Save failed
+                </span>
+            }
+
             <button mat-stroked-button (click)="openAddWidgetDialog()" [disabled]="!currentLayout">
                 <mat-icon>add</mat-icon>
                 Add Widget
@@ -31,6 +48,12 @@
                 <mat-spinner diameter="40"></mat-spinner>
                 <span>Loading dashboard...</span>
             </div>
+        } @else if (loadError) {
+            <app-error-state
+                title="Couldn't load dashboard"
+                message="Something went wrong while loading this dashboard. Please try again."
+                [retry]="reloadLayout.bind(this)"
+            ></app-error-state>
         } @else if (!currentLayout) {
             <div class="dashboard__empty">
                 <mat-icon>dashboard</mat-icon>
@@ -51,7 +74,7 @@
                             <div class="widget-header" [class.drag-handler]="!isLocked">
                                 <span class="widget-title">{{ item.widget?.title }}</span>
                                 @if (!isLocked) {
-                                    <button mat-icon-button class="widget-remove" (click)="removeWidget(item)">
+                                    <button mat-icon-button class="widget-remove" (click)="removeWidget(item)" matTooltip="Remove widget" [attr.aria-label]="'Remove widget ' + (item.widget?.title || '')">
                                         <mat-icon>close</mat-icon>
                                     </button>
                                 }

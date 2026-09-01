@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, FormGroup, ValidationErrors, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { IntegrationService } from '../../../shared/services/integration/integration.service';
 import {
@@ -8,6 +8,36 @@ import {
 } from '../../../shared/graphql/generated';
 import { ToastrService } from '../../../shared/services/toastr/toastr.service';
 import { HasUnsavedChanges } from '../../../core/guards/unsaved-changes.guard';
+
+/** Validates that a control's value is a valid URL (http/https) when non-empty. */
+function urlValidator(control: AbstractControl): ValidationErrors | null {
+    const value = (control.value ?? '').trim();
+    if (!value) {
+        return null;
+    }
+    try {
+        const url = new URL(value);
+        return url.protocol === 'http:' || url.protocol === 'https:'
+            ? null
+            : { url: true };
+    } catch {
+        return { url: true };
+    }
+}
+
+/** Validates that a control's value is parseable JSON when non-empty. */
+function jsonValidator(control: AbstractControl): ValidationErrors | null {
+    const value = (control.value ?? '').trim();
+    if (!value) {
+        return null;
+    }
+    try {
+        JSON.parse(value);
+        return null;
+    } catch {
+        return { json: true };
+    }
+}
 
 @Component({
     selector: 'app-integration-form',
@@ -19,6 +49,9 @@ export class IntegrationFormComponent implements OnInit, HasUnsavedChanges {
     form!: FormGroup;
     editingId: string | null = null;
     saving = false;
+    testing = false;
+    testResult: 'ok' | 'fail' | null = null;
+    lastTestedAt: Date | null = null;
     private submitted = false;
     readonly types = Object.values(IntegrationType);
 
@@ -38,9 +71,9 @@ export class IntegrationFormComponent implements OnInit, HasUnsavedChanges {
         this.form = this.fb.group({
             name: ['', Validators.required],
             type: [IntegrationType.Webhook, Validators.required],
-            endpoint: ['', Validators.required],
+            endpoint: ['', [Validators.required, urlValidator]],
             authToken: [''],
-            config: [''],
+            config: ['', jsonValidator],
             enabled: [true],
         });
 
@@ -115,5 +148,35 @@ export class IntegrationFormComponent implements OnInit, HasUnsavedChanges {
 
     cancel(): void {
         this.router.navigate(['/integrations']);
+    }
+
+    /**
+     * Tests the saved integration. Only available in edit mode — `test` runs
+     * against the persisted record, not the unsaved form values.
+     */
+    testConnection(): void {
+        if (!this.editingId) {
+            return;
+        }
+        this.testing = true;
+        this.testResult = null;
+        this.service.test(this.editingId).subscribe({
+            next: (ok) => {
+                this.testing = false;
+                this.testResult = ok ? 'ok' : 'fail';
+                this.lastTestedAt = new Date();
+                if (ok) {
+                    this.toast.showSuccess('Connection test succeeded');
+                } else {
+                    this.toast.showWarning('Connection test failed');
+                }
+            },
+            error: () => {
+                this.testing = false;
+                this.testResult = 'fail';
+                this.lastTestedAt = new Date();
+                this.toast.showError('Connection test could not run');
+            },
+        });
     }
 }

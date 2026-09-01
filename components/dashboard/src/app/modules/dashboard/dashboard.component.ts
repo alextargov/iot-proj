@@ -53,9 +53,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
     public currentLayout: DashboardLayoutInfoFragment | null = null;
     public refreshInterval: number = 30000;
     public isLayoutsLoading = false;
+    public loadError = false;
+    /** Feedback for the debounced position auto-save. */
+    public saveState: 'idle' | 'saving' | 'saved' | 'error' = 'idle';
 
     private destroy$ = new Subject<void>();
     private positionChange$ = new Subject<void>();
+    private lastLayoutId: string | null = null;
 
     readonly DashboardWidgetType = DashboardWidgetType;
 
@@ -78,6 +82,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
         // Handle query param for direct navigation to specific dashboard
         this.route.queryParams.pipe(takeUntil(this.destroy$)).subscribe((params) => {
+            this.lastLayoutId = params['id'] ?? null;
             if (params['id']) {
                 this.loadLayout(params['id']);
             } else {
@@ -91,8 +96,18 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.destroy$.complete();
     }
 
+    /** Re-run the current load (used by the error-state retry button). */
+    public reloadLayout(): void {
+        if (this.lastLayoutId) {
+            this.loadLayout(this.lastLayoutId);
+        } else {
+            this.loadDefaultLayout();
+        }
+    }
+
     private loadLayout(layoutId: string): void {
         this.isLayoutsLoading = true;
+        this.loadError = false;
         this.dashboardLayoutService.getLayout(layoutId).subscribe({
             next: (layout) => {
                 this.isLayoutsLoading = false;
@@ -104,6 +119,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
             error: (err) => {
                 console.error('Failed to load layout:', err);
                 this.isLayoutsLoading = false;
+                this.loadError = true;
                 this.cdr.markForCheck();
             },
         });
@@ -111,6 +127,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     private loadDefaultLayout(): void {
         this.isLayoutsLoading = true;
+        this.loadError = false;
         this.dashboardLayoutService.getDefaultLayout().subscribe({
             next: (layout) => {
                 this.isLayoutsLoading = false;
@@ -122,6 +139,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
             error: (err) => {
                 console.error('Failed to load default layout:', err);
                 this.isLayoutsLoading = false;
+                this.loadError = true;
                 this.cdr.markForCheck();
             },
         });
@@ -253,13 +271,20 @@ export class DashboardComponent implements OnInit, OnDestroy {
                 gridRows: item.rows,
             }));
 
+        this.saveState = 'saving';
+        this.cdr.markForCheck();
         this.dashboardLayoutService
             .updateWidgetPositions(this.currentLayout.id, positions)
             .subscribe({
-                next: () => {},
+                next: () => {
+                    this.saveState = 'saved';
+                    this.cdr.markForCheck();
+                },
                 error: (err) => {
                     console.error('Failed to save widget positions:', err);
+                    this.saveState = 'error';
                     this.toast.showError('Failed to save layout');
+                    this.cdr.markForCheck();
                 },
             });
     }

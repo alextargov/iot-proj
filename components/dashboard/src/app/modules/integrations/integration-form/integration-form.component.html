@@ -7,6 +7,9 @@
                 <mat-form-field appearance="outline" class="full">
                     <mat-label>Name</mat-label>
                     <input matInput formControlName="name" />
+                    <mat-error *ngIf="form.get('name')?.hasError('required')">
+                        Name is required
+                    </mat-error>
                 </mat-form-field>
 
                 <mat-form-field appearance="outline" class="full">
@@ -19,6 +22,12 @@
                 <mat-form-field appearance="outline" class="full">
                     <mat-label>Endpoint URL</mat-label>
                     <input matInput formControlName="endpoint" placeholder="https://..." />
+                    <mat-error *ngIf="form.get('endpoint')?.hasError('required')">
+                        Endpoint URL is required
+                    </mat-error>
+                    <mat-error *ngIf="form.get('endpoint')?.hasError('url')">
+                        Enter a valid http(s) URL
+                    </mat-error>
                 </mat-form-field>
 
                 <mat-form-field appearance="outline" class="full">
@@ -30,17 +39,44 @@
                 <mat-form-field appearance="outline" class="full">
                     <mat-label>Config (JSON, optional)</mat-label>
                     <textarea matInput formControlName="config" rows="3"></textarea>
+                    <mat-error *ngIf="form.get('config')?.hasError('json')">
+                        Config must be valid JSON
+                    </mat-error>
                 </mat-form-field>
 
                 <mat-slide-toggle formControlName="enabled" *ngIf="editingId">
                     Enabled
                 </mat-slide-toggle>
+
+                <div class="test-connection" *ngIf="editingId">
+                    <button
+                        mat-stroked-button
+                        type="button"
+                        (click)="testConnection()"
+                        [disabled]="testing"
+                    >
+                        <mat-icon>{{ testing ? 'hourglass_empty' : 'network_check' }}</mat-icon>
+                        {{ testing ? 'Testing…' : 'Test connection' }}
+                    </button>
+                    <span
+                        *ngIf="testResult && !testing"
+                        class="test-connection__result"
+                        [class.test-connection__result--ok]="testResult === 'ok'"
+                        [class.test-connection__result--fail]="testResult === 'fail'"
+                    >
+                        <mat-icon>{{ testResult === 'ok' ? 'check_circle' : 'error' }}</mat-icon>
+                        {{ testResult === 'ok' ? 'Reachable' : 'Failed' }}
+                        <span class="test-connection__time" *ngIf="lastTestedAt">
+                            · {{ lastTestedAt | date: 'shortTime' }}
+                        </span>
+                    </span>
+                </div>
             </mat-card-content>
         </mat-card>
 
         <div class="form-actions">
             <button mat-button type="button" (click)="cancel()">Cancel</button>
-            <button mat-raised-button color="primary" type="submit" [disabled]="saving">
+            <button mat-raised-button color="primary" type="submit" [disabled]="saving || form.invalid">
                 {{ editingId ? 'Save' : 'Create' }}
             </button>
         </div>

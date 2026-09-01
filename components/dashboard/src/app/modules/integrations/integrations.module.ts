@@ -12,7 +12,10 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatPaginatorModule } from '@angular/material/paginator';
+import { MatSortModule } from '@angular/material/sort';
 
+import { SharedModule } from '../../shared/shared.module';
 import { IntegrationsRoutingModule } from './integrations-routing.module';
 import { IntegrationsListComponent } from './integrations-list/integrations-list.component';
 import { IntegrationFormComponent } from './integration-form/integration-form.component';
@@ -22,6 +25,7 @@ import { IntegrationFormComponent } from './integration-form/integration-form.co
     imports: [
         CommonModule,
         ReactiveFormsModule,
+        SharedModule,
         IntegrationsRoutingModule,
         MatCardModule,
         MatButtonModule,
@@ -33,6 +37,8 @@ import { IntegrationFormComponent } from './integration-form/integration-form.co
         MatInputModule,
         MatSelectModule,
         MatTooltipModule,
+        MatPaginatorModule,
+        MatSortModule,
     ],
 })
 export class IntegrationsModule {}
