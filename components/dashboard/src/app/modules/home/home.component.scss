@@ -59,7 +59,7 @@
     &__card {
         &-icon {
             background-color: #e3f2fd;
-            color: #1976d2;
+            color: var(--app-accent);
             display: flex;
             align-items: center;
             justify-content: center;

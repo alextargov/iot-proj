@@ -1,26 +1,56 @@
 <div class="profile-container">
     <h1>My Profile</h1>
 
-    <mat-card *ngIf="!loading && me">
-        <mat-card-content>
-            <div class="row">
-                <span class="label">Username</span>
-                <span class="value">{{ me.username }}</span>
-            </div>
-            <div class="row">
-                <span class="label">Role</span>
-                <span class="value role-badge">{{ me.role }}</span>
-            </div>
-            <div class="row">
-                <span class="label">User ID</span>
-                <span class="value mono">{{ me.id }}</span>
-            </div>
-            <div class="row" *ngIf="me.createdAt">
-                <span class="label">Member since</span>
-                <span class="value">{{ me.createdAt | date: 'medium' }}</span>
-            </div>
-        </mat-card-content>
-    </mat-card>
+    @if (loading) {
+        <app-loading-state message="Loading your profile…"></app-loading-state>
+    } @else if (loadError) {
+        <app-error-state
+            title="Couldn't load your profile"
+            message="There was a problem reaching the server."
+            [retry]="load.bind(this)"
+        ></app-error-state>
+    } @else if (me) {
+        <mat-card>
+            <mat-card-content>
+                <div class="row">
+                    <span class="label">Username</span>
+                    <span class="value">{{ me.username }}</span>
+                </div>
+                <div class="row">
+                    <span class="label">Role</span>
+                    <span class="value role-badge">{{ me.role }}</span>
+                </div>
+                <div class="row">
+                    <span class="label">User ID</span>
+                    <span class="value mono">{{ me.id }}</span>
+                </div>
+                <div class="row" *ngIf="me.createdAt">
+                    <span class="label">Member since</span>
+                    <span class="value">{{ me.createdAt | date: 'medium' }}</span>
+                </div>
+            </mat-card-content>
+        </mat-card>
 
-    <p *ngIf="!loading && !me">Not signed in.</p>
+        <mat-card class="profile-preferences">
+            <mat-card-header>
+                <mat-card-title>Preferences</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+                <div class="row">
+                    <span class="label">Dark mode</span>
+                    <mat-slide-toggle
+                        [checked]="darkMode"
+                        (change)="onDarkModeToggle($event.checked)"
+                        aria-label="Toggle dark mode"
+                    ></mat-slide-toggle>
+                </div>
+            </mat-card-content>
+        </mat-card>
+    } @else {
+        <app-empty-state
+            icon="lock"
+            title="Not signed in"
+            message="Sign in to view your profile."
+        ></app-empty-state>
+    }
 </div>
