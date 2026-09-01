@@ -19,6 +19,8 @@ import {
     DeviceInfoFragment,
     IntegrationInfoFragment,
 } from '../../../shared/graphql/generated';
+import { ToastrService } from '../../../shared/services/toastr/toastr.service';
+import { HasUnsavedChanges } from '../../../core/guards/unsaved-changes.guard';
 
 @Component({
     selector: 'app-rule-form',
@@ -26,12 +28,13 @@ import {
     styleUrls: ['./rule-form.component.scss'],
     standalone: false,
 })
-export class RuleFormComponent implements OnInit {
+export class RuleFormComponent implements OnInit, HasUnsavedChanges {
     form!: FormGroup;
     devices: DeviceInfoFragment[] = [];
     integrations: IntegrationInfoFragment[] = [];
     editingId: string | null = null;
     saving = false;
+    private submitted = false;
 
     readonly operators = Object.values(RuleConditionOperator);
     readonly actionTypes = Object.values(RuleActionType);
@@ -49,8 +52,13 @@ export class RuleFormComponent implements OnInit {
         private integrationService: IntegrationService,
         private route: ActivatedRoute,
         private router: Router,
-        private cdr: ChangeDetectorRef
+        private cdr: ChangeDetectorRef,
+        private toast: ToastrService
     ) {}
+
+    public hasUnsavedChanges(): boolean {
+        return this.form?.dirty && !this.submitted;
+    }
 
     ngOnInit(): void {
         this.form = this.fb.group({
@@ -254,8 +262,15 @@ export class RuleFormComponent implements OnInit {
                     actions,
                 })
                 .subscribe({
-                    next: () => this.router.navigate(['/rules']),
-                    error: () => (this.saving = false),
+                    next: () => {
+                        this.submitted = true;
+                        this.toast.showSuccess('Rule updated');
+                        this.router.navigate(['/rules']);
+                    },
+                    error: () => {
+                        this.saving = false;
+                        this.toast.showError('Failed to update rule');
+                    },
                 });
         } else {
             const input: CreateAutomationRuleInput = {
@@ -267,8 +282,15 @@ export class RuleFormComponent implements OnInit {
                 actions,
             };
             this.ruleService.createRule(input).subscribe({
-                next: () => this.router.navigate(['/rules']),
-                error: () => (this.saving = false),
+                next: () => {
+                    this.submitted = true;
+                    this.toast.showSuccess('Rule created');
+                    this.router.navigate(['/rules']);
+                },
+                error: () => {
+                    this.saving = false;
+                    this.toast.showError('Failed to create rule');
+                },
             });
         }
     }

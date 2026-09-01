@@ -9,6 +9,8 @@ import { Router } from '@angular/router';
 import { DatamodelService } from '../../../shared/services/datamodel/datamodel.service';
 import { JsonSchemaService } from '../../../shared/services/jsonschema/jsonschema.service';
 import { SchemaTemplate } from '../schema-templates';
+import { ToastrService } from '../../../shared/services/toastr/toastr.service';
+import { HasUnsavedChanges } from '../../../core/guards/unsaved-changes.guard';
 
 export enum SchemaTypeEnum {
     Object = 'object',
@@ -39,13 +41,14 @@ interface SchemaField {
     templateUrl: './datamodel-create.component.html',
     styleUrls: ['./datamodel-create.component.scss'],
 })
-export class DatamodelCreateComponent implements OnInit {
+export class DatamodelCreateComponent implements OnInit, HasUnsavedChanges {
     private defaultSchema =
         '{\n  "type": "object",\n  "properties": {\n    "temperature": { "type": "number" },\n    "humidity": { "type": "number" },\n    "deviceId": { "type": "string" }\n  },\n  "required": ["temperature", "humidity"]\n}';
 
     public mode: 'ui' | 'code' = 'code';
     public selectedMode: Mode = Mode.CODE;
     public templateUsed: SchemaTemplate | null = null;
+    private submitted = false;
 
     public datamodelFormGroup: UntypedFormGroup;
     public editorOptions = {
@@ -77,8 +80,13 @@ export class DatamodelCreateComponent implements OnInit {
         private fb: UntypedFormBuilder,
         private router: Router,
         private dataModelService: DatamodelService,
-        private jsonSchemaService: JsonSchemaService
+        private jsonSchemaService: JsonSchemaService,
+        private toast: ToastrService
     ) {}
+
+    public hasUnsavedChanges(): boolean {
+        return this.datamodelFormGroup?.dirty && !this.submitted;
+    }
 
     public ngOnInit(): void {
         // Check for template from navigation state
@@ -123,8 +131,16 @@ export class DatamodelCreateComponent implements OnInit {
         };
         this.dataModelService
             .createDataModel(dataModelInput)
-            .subscribe((result) => {
-                this.router.navigate(['/datamodel']);
+            .subscribe({
+                next: () => {
+                    this.submitted = true;
+                    this.toast.showSuccess('Data model created');
+                    this.router.navigate(['/datamodel']);
+                },
+                error: (err) => {
+                    console.error('Failed to create data model:', err);
+                    this.toast.showError('Failed to create data model');
+                },
             });
     }
 

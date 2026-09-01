@@ -43,6 +43,7 @@ import {
 } from 'src/app/shared/graphql/generated';
 import { ToastrService } from '../../../shared/services/toastr/toastr.service';
 import { WidgetService } from '../../../shared/services/widget/widget.service';
+import { HasUnsavedChanges } from '../../../core/guards/unsaved-changes.guard';
 import { Router, ActivatedRoute } from '@angular/router';
 import {
     WIDGET_TEMPLATES,
@@ -66,7 +67,7 @@ import {
         },
     ],
 })
-export class WidgetCreateComponent implements OnInit {
+export class WidgetCreateComponent implements OnInit, HasUnsavedChanges {
     public readonly NAME_MAX_LENGTH = 64;
     public readonly DESCRIPTION_MAX_LENGTH = 256;
     public readonly separatorKeysCodes: number[] = [ENTER, COMMA];
@@ -158,6 +159,7 @@ export class WidgetCreateComponent implements OnInit {
     public label: Label = new Label('ExampleLabel', 'TestLabel');
     public workspaceXML: string;
     public workspaceCode: string;
+    private submitted = false;
     private duplicateWorkspace: string | null = null;
     public editId: string | null = null;
     private prefillDeviceIds: string[] = [];
@@ -392,11 +394,16 @@ export class WidgetCreateComponent implements OnInit {
         this.deviceInput.nativeElement.value = '';
     }
 
+    public hasUnsavedChanges(): boolean {
+        return this.detailsFormGroup?.dirty && !this.submitted;
+    }
+
     public async onSaveClick(): Promise<void> {
         const model = this.convertToModel();
         if (this.editId) {
             this.widgetService.update(this.editId, model).subscribe({
                 next: () => {
+                    this.submitted = true;
                     this.toast.showSuccess('Successfully updated widget');
                     this.router.navigate(['widgets']);
                 },
@@ -407,6 +414,7 @@ export class WidgetCreateComponent implements OnInit {
         } else {
             this.widgetService.create(model).subscribe({
                 next: () => {
+                    this.submitted = true;
                     this.toast.showSuccess('Successfully created widget');
                     this.router.navigate(['widgets']);
                 },

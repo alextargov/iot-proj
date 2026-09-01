@@ -6,6 +6,8 @@ import {
     IntegrationType,
     CreateIntegrationInput,
 } from '../../../shared/graphql/generated';
+import { ToastrService } from '../../../shared/services/toastr/toastr.service';
+import { HasUnsavedChanges } from '../../../core/guards/unsaved-changes.guard';
 
 @Component({
     selector: 'app-integration-form',
@@ -13,18 +15,24 @@ import {
     styleUrls: ['./integration-form.component.scss'],
     standalone: false,
 })
-export class IntegrationFormComponent implements OnInit {
+export class IntegrationFormComponent implements OnInit, HasUnsavedChanges {
     form!: FormGroup;
     editingId: string | null = null;
     saving = false;
+    private submitted = false;
     readonly types = Object.values(IntegrationType);
 
     constructor(
         private fb: FormBuilder,
         private service: IntegrationService,
         private route: ActivatedRoute,
-        private router: Router
+        private router: Router,
+        private toast: ToastrService
     ) {}
+
+    public hasUnsavedChanges(): boolean {
+        return this.form?.dirty && !this.submitted;
+    }
 
     ngOnInit(): void {
         this.form = this.fb.group({
@@ -73,8 +81,15 @@ export class IntegrationFormComponent implements OnInit {
                     enabled: raw.enabled,
                 })
                 .subscribe({
-                    next: () => this.router.navigate(['/integrations']),
-                    error: () => (this.saving = false),
+                    next: () => {
+                        this.submitted = true;
+                        this.toast.showSuccess('Integration updated');
+                        this.router.navigate(['/integrations']);
+                    },
+                    error: () => {
+                        this.saving = false;
+                        this.toast.showError('Failed to update integration');
+                    },
                 });
         } else {
             const input: CreateIntegrationInput = {
@@ -85,8 +100,15 @@ export class IntegrationFormComponent implements OnInit {
                 config: raw.config || undefined,
             };
             this.service.create(input).subscribe({
-                next: () => this.router.navigate(['/integrations']),
-                error: () => (this.saving = false),
+                next: () => {
+                    this.submitted = true;
+                    this.toast.showSuccess('Integration created');
+                    this.router.navigate(['/integrations']);
+                },
+                error: () => {
+                    this.saving = false;
+                    this.toast.showError('Failed to create integration');
+                },
             });
         }
     }

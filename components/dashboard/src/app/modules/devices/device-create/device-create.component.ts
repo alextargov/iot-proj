@@ -29,6 +29,7 @@ import {DatamodelService} from "../../../shared/services/datamodel/datamodel.ser
 import {Mode, SchemaTypeEnum} from "../../datamodel/datamodel-create/datamodel-create.component";
 import {SchemaField} from "../../../shared/components/schema-node-editor/schema-node-editor.component";
 import {MatAutocompleteSelectedEvent} from "@angular/material/autocomplete";
+import { HasUnsavedChanges } from '../../../core/guards/unsaved-changes.guard';
 
 @Component({
     standalone: false,
@@ -36,10 +37,13 @@ import {MatAutocompleteSelectedEvent} from "@angular/material/autocomplete";
     templateUrl: './device-create.component.html',
     styleUrls: ['./device-create.component.scss'],
 })
-export class DeviceCreateComponent implements OnInit, AfterViewInit {
+export class DeviceCreateComponent
+    implements OnInit, AfterViewInit, HasUnsavedChanges
+{
     public deviceCreateMetadataFormGroup: UntypedFormGroup;
     public deviceCreateAuthorizationFormGroup: UntypedFormGroup;
     public deviceCreateOutputFormGroup: UntypedFormGroup;
+    private submitted = false;
     public readonly authorizationPolicies: AuthPolicy[] = [
         AuthPolicy.None,
         AuthPolicy.Basic,
@@ -169,28 +173,45 @@ export class DeviceCreateComponent implements OnInit, AfterViewInit {
         }
     }
 
+    public hasUnsavedChanges(): boolean {
+        if (this.submitted) {
+            return false;
+        }
+        return (
+            this.deviceCreateMetadataFormGroup?.dirty ||
+            this.deviceCreateAuthorizationFormGroup?.dirty ||
+            this.deviceCreateOutputFormGroup?.dirty
+        );
+    }
+
     public onSaveClick(): void {
         const data = this.convertToModel();
         const shouldGenerateToken = this.deviceCreateAuthorizationFormGroup.get('communicationToServer')?.value;
 
-        this.deviceService.createDevice(data).subscribe((result) => {
-            const device = result.data?.createDevice;
-            console.log('success', device);
-            this.toast.showSuccess('Successfully created device');
+        this.deviceService.createDevice(data).subscribe({
+            next: (result) => {
+                const device = result.data?.createDevice;
+                this.submitted = true;
+                this.toast.showSuccess('Successfully created device');
 
-            // Generate communication token after device creation if "device to server" communication is enabled
-            if (shouldGenerateToken && device?.id) {
-                this.deviceService.generateDeviceToken(device.id).subscribe({
-                    next: (token) => {
-                        this.tokenInput.nativeElement.value = token;
-                        this.toast.showSuccess('Device token generated');
-                    },
-                    error: (err) => {
-                        console.error('Failed to generate token', err);
-                        this.toast.showError('Failed to generate device token');
-                    },
-                });
-            }
+                // Generate communication token after device creation if "device to server" communication is enabled
+                if (shouldGenerateToken && device?.id) {
+                    this.deviceService.generateDeviceToken(device.id).subscribe({
+                        next: (token) => {
+                            this.tokenInput.nativeElement.value = token;
+                            this.toast.showSuccess('Device token generated');
+                        },
+                        error: (err) => {
+                            console.error('Failed to generate token', err);
+                            this.toast.showError('Failed to generate device token');
+                        },
+                    });
+                }
+            },
+            error: (err) => {
+                console.error('Failed to create device', err);
+                this.toast.showError('Failed to create device');
+            },
         });
     }
 

@@ -10,6 +10,8 @@ import {
 } from '../../../shared/services/alert/alert.service';
 import { DeviceService } from '../../../shared/services/device/device.service';
 import { DeviceInfoFragment } from '../../../shared/graphql/generated';
+import { ToastrService } from '../../../shared/services/toastr/toastr.service';
+import { HasUnsavedChanges } from '../../../core/guards/unsaved-changes.guard';
 
 @Component({
     selector: 'app-alert-form',
@@ -17,12 +19,13 @@ import { DeviceInfoFragment } from '../../../shared/graphql/generated';
     styleUrls: ['./alert-form.component.scss'],
     standalone: false,
 })
-export class AlertFormComponent implements OnInit {
+export class AlertFormComponent implements OnInit, HasUnsavedChanges {
     form: FormGroup;
     isEdit = false;
     alertId?: string;
     loading = false;
     saving = false;
+    private submitted = false;
     devices: DeviceInfoFragment[] = [];
 
     severities = Object.values(AlertSeverity);
@@ -34,9 +37,14 @@ export class AlertFormComponent implements OnInit {
         private alertService: AlertService,
         private deviceService: DeviceService,
         private route: ActivatedRoute,
-        private router: Router
+        private router: Router,
+        private toast: ToastrService
     ) {
         this.form = this.createForm();
+    }
+
+    public hasUnsavedChanges(): boolean {
+        return this.form?.dirty && !this.submitted;
     }
 
     ngOnInit(): void {
@@ -251,11 +259,14 @@ export class AlertFormComponent implements OnInit {
             this.alertService.updateAlertRule(this.alertId, input).subscribe({
                 next: () => {
                     this.saving = false;
+                    this.submitted = true;
+                    this.toast.showSuccess('Alert rule updated');
                     this.router.navigate(['/alerts']);
                 },
                 error: (err) => {
                     console.error('Failed to update alert:', err);
                     this.saving = false;
+                    this.toast.showError('Failed to update alert');
                 },
             });
         } else {
@@ -272,11 +283,14 @@ export class AlertFormComponent implements OnInit {
             this.alertService.createAlertRule(input).subscribe({
                 next: () => {
                     this.saving = false;
+                    this.submitted = true;
+                    this.toast.showSuccess('Alert rule created');
                     this.router.navigate(['/alerts']);
                 },
                 error: (err) => {
                     console.error('Failed to create alert:', err);
                     this.saving = false;
+                    this.toast.showError('Failed to create alert');
                 },
             });
         }
