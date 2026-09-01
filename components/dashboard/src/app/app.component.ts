@@ -1,13 +1,14 @@
-import { BreakpointObserver } from '@angular/cdk/layout';
+import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { Component } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
-import { delay, filter } from 'rxjs';
+import { delay, filter, map } from 'rxjs';
 import { MatDialog } from '@angular/material/dialog';
 import { AuthService, Role } from './shared/services/auth/auth.service';
 import { EventBusService } from './shared/services/eventbus/eventbus.service';
 import { DashboardLayoutService } from './shared/services/dashboard-layout/dashboard-layout.service';
 import { DashboardLayoutInfoFragment } from './shared/graphql/generated';
+import { ThemeService, ThemeMode } from './shared/services/theme/theme.service';
 
 @UntilDestroy()
 @Component({
@@ -25,14 +26,38 @@ export class AppComponent {
     public isDashboardsExpanded: boolean = false;
     public currentDashboardId: string | null = null;
 
+    /** True on small viewports — sidebar becomes a slide-in overlay. */
+    public isHandset = false;
+    /** Whether the overlay sidebar is currently open (handset only). */
+    public sidebarOpen = false;
+
     constructor(
         private authService: AuthService,
         private eventBusService: EventBusService,
         private dashboardLayoutService: DashboardLayoutService,
         private observer: BreakpointObserver,
         private router: Router,
-        private dialog: MatDialog
+        private dialog: MatDialog,
+        private themeService: ThemeService
     ) {}
+
+    public get theme(): ThemeMode {
+        return this.themeService.current;
+    }
+
+    public toggleTheme(): void {
+        this.themeService.toggle();
+    }
+
+    public toggleSidebar(): void {
+        this.sidebarOpen = !this.sidebarOpen;
+    }
+
+    public closeSidebarOnHandset(): void {
+        if (this.isHandset) {
+            this.sidebarOpen = false;
+        }
+    }
 
     ngOnInit(): void {
         this.isLoggedIn = this.authService.isLoggedIn();
@@ -149,16 +174,29 @@ export class AppComponent {
 
     ngAfterViewInit(): void {
         this.observer
-            .observe(['(max-width: 800px)'])
-            .pipe(delay(1), untilDestroyed(this))
-            .subscribe(() => {});
+            .observe([Breakpoints.Handset, '(max-width: 800px)'])
+            .pipe(
+                delay(1),
+                map((result) => result.matches),
+                untilDestroyed(this)
+            )
+            .subscribe((isHandset) => {
+                this.isHandset = isHandset;
+                // On desktop the sidebar is always visible; reset overlay state.
+                if (!isHandset) {
+                    this.sidebarOpen = false;
+                }
+            });
 
         this.router.events
             .pipe(
                 untilDestroyed(this),
                 filter((e) => e instanceof NavigationEnd)
             )
-            .subscribe(() => {});
+            .subscribe(() => {
+                // Auto-dismiss the overlay sidebar after navigating on mobile.
+                this.closeSidebarOnHandset();
+            });
     }
 
     public async onLoginClick(): Promise<void> {

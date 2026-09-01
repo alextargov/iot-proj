@@ -1,0 +1,67 @@
+/* Design tokens — single source of truth for colors, spacing and radii.
+ *
+ * Exposed as CSS custom properties so components can reference them and the
+ * whole app re-themes at runtime by flipping `data-theme` on <html>
+ * (see ThemeService). Light is the default; `[data-theme='dark']` overrides.
+ */
+
+:root {
+    // Brand / accent
+    --app-brand: #002b5c;
+    --app-brand-contrast: #ffffff;
+    --app-accent: #1976d2;
+
+    // Surfaces
+    --app-bg: #f0f2f5;
+    --app-surface: #ffffff;
+    --app-surface-2: #f7f9fc;
+    --app-border: rgba(0, 0, 0, 0.12);
+
+    // Text
+    --app-text: rgba(0, 0, 0, 0.87);
+    --app-text-muted: rgba(0, 0, 0, 0.6);
+
+    // Sidebar (kept dark in both themes for brand consistency)
+    --app-sidebar-bg: #002b5c;
+    --app-sidebar-text: #ffffff;
+
+    // Status
+    --app-success: #2e7d32;
+    --app-warn: #f9a825;
+    --app-danger: #c62828;
+
+    // Scrollbar
+    --app-scrollbar-thumb: rgba(0, 0, 0, 0.2);
+    --app-scrollbar-thumb-hover: rgba(0, 0, 0, 0.3);
+
+    // Shape
+    --app-radius: 10px;
+    --app-radius-sm: 6px;
+
+    // Elevation
+    --app-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme='dark'] {
+    --app-brand: #0a2540;
+    --app-brand-contrast: #ffffff;
+    --app-accent: #64b5f6;
+
+    --app-bg: #121417;
+    --app-surface: #1e2227;
+    --app-surface-2: #262b31;
+    --app-border: rgba(255, 255, 255, 0.12);
+
+    --app-text: rgba(255, 255, 255, 0.92);
+    --app-text-muted: rgba(255, 255, 255, 0.65);
+
+    --app-sidebar-bg: #0a1b30;
+    --app-sidebar-text: #ffffff;
+
+    --app-scrollbar-thumb: rgba(255, 255, 255, 0.25);
+    --app-scrollbar-thumb-hover: rgba(255, 255, 255, 0.4);
+
+    --app-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+
+    color-scheme: dark;
+}

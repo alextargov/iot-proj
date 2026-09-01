@@ -207,21 +207,23 @@ mat-divider {
         padding: 16px;
         box-sizing: border-box;
         gap: 16px;
+        position: relative;
     }
 
     &__left-panel {
         width: 240px;
         flex-shrink: 0;
-        background: #002b5c;
-        color: white;
-        border-radius: 10px;
+        background: var(--app-sidebar-bg);
+        color: var(--app-sidebar-text);
+        border-radius: var(--app-radius);
         padding: 16px;
         text-align: center;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        box-shadow: var(--app-shadow);
         display: flex;
         flex-direction: column;
         overflow-y: auto;
         overflow-x: hidden;
+        transition: transform 0.25s ease;
 
         &::-webkit-scrollbar {
             width: 4px;
@@ -234,6 +236,58 @@ mat-divider {
         &::-webkit-scrollbar-thumb {
             background: rgba(255, 255, 255, 0.3);
             border-radius: 2px;
+        }
+    }
+
+    // ---- Responsive (handset) ----
+    &__menu-toggle {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        z-index: 1002;
+        background: var(--app-sidebar-bg);
+        color: var(--app-sidebar-text);
+        box-shadow: var(--app-shadow);
+    }
+
+    &__backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.45);
+        z-index: 1000;
+    }
+
+    &__wrapper--handset {
+        padding: 16px;
+
+        .app__left-panel {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 260px;
+            border-radius: 0;
+            z-index: 1001;
+            transform: translateX(-110%);
+            padding-top: 64px;
+        }
+
+        .app__right-panel {
+            width: 100%;
+        }
+    }
+
+    &__wrapper--sidebar-open .app__left-panel {
+        transform: translateX(0);
+    }
+
+    &__theme-btn {
+        flex-shrink: 0;
+        color: rgba(255, 255, 255, 0.7);
+
+        &:hover {
+            color: #fff;
+            background-color: rgba(255, 255, 255, 0.1);
         }
     }
 

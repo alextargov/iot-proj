@@ -1,5 +1,29 @@
-<div class="app__wrapper">
-    <aside class="app__left-panel">
+<div
+    class="app__wrapper"
+    [class.app__wrapper--handset]="isHandset"
+    [class.app__wrapper--sidebar-open]="sidebarOpen"
+>
+    @if (isHandset) {
+        <button
+            mat-icon-button
+            class="app__menu-toggle"
+            (click)="toggleSidebar()"
+            [attr.aria-label]="sidebarOpen ? 'Close navigation menu' : 'Open navigation menu'"
+            [attr.aria-expanded]="sidebarOpen"
+        >
+            <mat-icon>{{ sidebarOpen ? 'close' : 'menu' }}</mat-icon>
+        </button>
+
+        @if (sidebarOpen) {
+            <div
+                class="app__backdrop"
+                (click)="toggleSidebar()"
+                aria-hidden="true"
+            ></div>
+        }
+    }
+
+    <aside class="app__left-panel" role="navigation" aria-label="Main navigation">
         <div class="app__user-info">
             <div class="app__user-header">
                 <div class="app__user-details">
@@ -10,7 +34,16 @@
                 </div>
                 @if (isLoggedIn) {
                     <app-connection-status class="app__conn-status"></app-connection-status>
-                    <button mat-icon-button class="app__logout-btn" (click)="onLogoutClick()" matTooltip="Logout">
+                    <button
+                        mat-icon-button
+                        class="app__theme-btn"
+                        (click)="toggleTheme()"
+                        [matTooltip]="theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
+                        [attr.aria-label]="theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
+                    >
+                        <mat-icon>{{ theme === 'dark' ? 'light_mode' : 'dark_mode' }}</mat-icon>
+                    </button>
+                    <button mat-icon-button class="app__logout-btn" (click)="onLogoutClick()" matTooltip="Logout" aria-label="Logout">
                         <mat-icon>logout</mat-icon>
                     </button>
                 }

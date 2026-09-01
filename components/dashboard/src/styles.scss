@@ -1,4 +1,6 @@
 /* You can add global styles to this file, and also import other style files */
+@use 'styles/tokens';
+
 html,
 body {
     height: 100%;
@@ -9,7 +11,11 @@ body {
 
 body {
     font-family: Roboto, 'Helvetica Neue', sans-serif;
-    background-color: #f0f2f5;
+    background-color: var(--app-bg);
+    color: var(--app-text);
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease;
 }
 
 // Global scrollbar styling
@@ -23,11 +29,11 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--app-scrollbar-thumb);
     border-radius: 4px;
 
     &:hover {
-        background: rgba(0, 0, 0, 0.3);
+        background: var(--app-scrollbar-thumb-hover);
     }
 }
 
@@ -38,3 +44,41 @@ router-outlet + * {
     flex-direction: column;
     min-height: 0;
 }
+
+/* Dark-mode surface overrides.
+ *
+ * The base Material theme is the prebuilt light "azure-blue". Rather than ship
+ * a second compiled theme, we nudge the common surfaces to our dark tokens so
+ * cards, dialogs, tables, menus and toolbars stay legible in dark mode. This
+ * is intentionally shallow — full Material 3 token theming is tracked as a
+ * later design-system migration.
+ */
+[data-theme='dark'] {
+    .mat-mdc-card,
+    .mat-mdc-dialog-surface,
+    .mat-mdc-menu-panel,
+    .mat-mdc-table,
+    .mat-mdc-paginator,
+    .mat-expansion-panel,
+    .mat-mdc-tab-body-content {
+        background-color: var(--app-surface) !important;
+        color: var(--app-text) !important;
+    }
+
+    .mat-mdc-header-cell,
+    .mat-mdc-cell {
+        color: var(--app-text) !important;
+        border-bottom-color: var(--app-border) !important;
+    }
+
+    .mat-mdc-row:hover .mat-mdc-cell {
+        background-color: var(--app-surface-2) !important;
+    }
+
+    .mat-mdc-card-subtitle,
+    .mat-mdc-form-field-hint,
+    .mdc-list-item__secondary-text {
+        color: var(--app-text-muted) !important;
+    }
+}
+
