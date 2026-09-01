@@ -1,5 +1,12 @@
-import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import {
+    AbstractControl,
+    FormBuilder,
+    FormGroup,
+    FormArray,
+    ValidationErrors,
+    Validators,
+} from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
     AlertService,
@@ -9,9 +16,26 @@ import {
     UpdateAlertRuleInput,
 } from '../../../shared/services/alert/alert.service';
 import { DeviceService } from '../../../shared/services/device/device.service';
+import { MetricsService } from '../../../shared/services/metrics/metrics.service';
 import { DeviceInfoFragment } from '../../../shared/graphql/generated';
 import { ToastrService } from '../../../shared/services/toastr/toastr.service';
 import { HasUnsavedChanges } from '../../../core/guards/unsaved-changes.guard';
+
+/** Validates that a control's value is well-formed JSON (empty is allowed). */
+export function jsonValidator(
+    control: AbstractControl
+): ValidationErrors | null {
+    const value = control.value;
+    if (value === null || value === undefined || value === '') {
+        return null;
+    }
+    try {
+        JSON.parse(value);
+        return null;
+    } catch {
+        return { json: true };
+    }
+}
 
 @Component({
     selector: 'app-alert-form',
@@ -27,6 +51,7 @@ export class AlertFormComponent implements OnInit, HasUnsavedChanges {
     saving = false;
     private submitted = false;
     devices: DeviceInfoFragment[] = [];
+    metricNames: string[] = [];
 
     severities = Object.values(AlertSeverity);
     operators = Object.values(AlertConditionOperator);
@@ -36,8 +61,10 @@ export class AlertFormComponent implements OnInit, HasUnsavedChanges {
         private fb: FormBuilder,
         private alertService: AlertService,
         private deviceService: DeviceService,
+        private metricsService: MetricsService,
         private route: ActivatedRoute,
         private router: Router,
+        private cdr: ChangeDetectorRef,
         private toast: ToastrService
     ) {
         this.form = this.createForm();
@@ -60,6 +87,34 @@ export class AlertFormComponent implements OnInit, HasUnsavedChanges {
                 this.form.patchValue({ deviceId });
             }
         }
+
+        const deviceCtrl = this.form.get('deviceId');
+        if (deviceCtrl) {
+            deviceCtrl.valueChanges.subscribe((id: string) =>
+                this.loadMetricNames(id)
+            );
+            if (deviceCtrl.value) {
+                this.loadMetricNames(deviceCtrl.value);
+            }
+        }
+    }
+
+    private loadMetricNames(deviceId: string): void {
+        if (!deviceId) {
+            this.metricNames = [];
+            return;
+        }
+        this.metricsService.getMetricsSeries(deviceId).subscribe({
+            next: (series) => {
+                this.metricNames = Array.from(
+                    new Set(series.map((s) => s.metricName))
+                ).sort();
+                this.cdr.detectChanges();
+            },
+            error: () => {
+                this.metricNames = [];
+            },
+        });
     }
 
     createForm(): FormGroup {
@@ -91,7 +146,7 @@ export class AlertFormComponent implements OnInit, HasUnsavedChanges {
     createNotification(): FormGroup {
         return this.fb.group({
             type: ['email', Validators.required],
-            config: ['', Validators.required],
+            config: ['', [Validators.required, jsonValidator]],
         });
     }
 
@@ -213,7 +268,7 @@ export class AlertFormComponent implements OnInit, HasUnsavedChanges {
                 this.notifications.push(
                     this.fb.group({
                         type: [notif.type, Validators.required],
-                        config: [notif.config, Validators.required],
+                        config: [notif.config, [Validators.required, jsonValidator]],
                     })
                 );
             });
@@ -222,6 +277,56 @@ export class AlertFormComponent implements OnInit, HasUnsavedChanges {
 
     getOperatorDisplay(operator: AlertConditionOperator): string {
         return this.alertService.getOperatorDisplay(operator);
+    }
+
+    private operatorPhrase(op: AlertConditionOperator): string {
+        switch (op) {
+            case AlertConditionOperator.GT:
+                return 'is above';
+            case AlertConditionOperator.LT:
+                return 'is below';
+            case AlertConditionOperator.GTE:
+                return 'is at least';
+            case AlertConditionOperator.LTE:
+                return 'is at most';
+            case AlertConditionOperator.EQ:
+                return 'equals';
+            default:
+                return this.getOperatorDisplay(op);
+        }
+    }
+
+    /** Human-readable one-liner describing when the alert fires. */
+    get summary(): string {
+        if (!this.form) {
+            return '';
+        }
+        const raw = this.form.value;
+        const deviceName =
+            this.devices.find((d) => d.id === raw.deviceId)?.name ?? 'a device';
+
+        const groupPhrases: string[] = (raw.conditionGroups ?? [])
+            .map((g: any) =>
+                (g.conditions ?? [])
+                    .filter((c: any) => c.metricName)
+                    .map(
+                        (c: any) =>
+                            `${c.metricName} ${this.operatorPhrase(c.operator)} ${c.threshold}`
+                    )
+                    .join(' AND ')
+            )
+            .filter((p: string) => p.length > 0);
+
+        const when = groupPhrases.length
+            ? groupPhrases.map((p: string) => `(${p})`).join(' OR ')
+            : 'a condition is met';
+
+        const count = (raw.notifications ?? []).length;
+        const notify = count
+            ? `send ${count} notification${count > 1 ? 's' : ''}`
+            : 'record an event';
+
+        return `Raise a ${raw.severity ?? ''} alert and ${notify} when ${deviceName}'s ${when}.`;
     }
 
     save(): void {

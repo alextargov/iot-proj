@@ -40,6 +40,52 @@
         }
     }
 
+    .alerts-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 8px;
+
+        .alerts-search {
+            flex: 1 1 280px;
+            max-width: 360px;
+        }
+
+        .severity-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+    }
+
+    // Severity badge styling shared by the table cells and the legend.
+    .severity-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 16px;
+        font-size: 12px;
+        font-weight: 500;
+        text-transform: uppercase;
+
+        &.severity-info {
+            background-color: #e3f2fd;
+            color: var(--app-accent);
+        }
+
+        &.severity-warning {
+            background-color: #fff3e0;
+            color: #f57c00;
+        }
+
+        &.severity-critical {
+            background-color: #ffebee;
+            color: #d32f2f;
+        }
+    }
+
     .alerts-table {
         width: 100%;
 
@@ -51,30 +97,10 @@
                 color: #666;
                 font-size: 12px;
                 margin-top: 4px;
-            }
-        }
-
-        .severity-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 16px;
-            font-size: 12px;
-            font-weight: 500;
-            text-transform: uppercase;
-
-            &.severity-info {
-                background-color: #e3f2fd;
-                color: #1976d2;
-            }
-
-            &.severity-warning {
-                background-color: #fff3e0;
-                color: #f57c00;
-            }
-
-            &.severity-critical {
-                background-color: #ffebee;
-                color: #d32f2f;
+                max-width: 320px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
             }
         }
     }

@@ -1,112 +1,162 @@
 <div class="alerts-list-container">
     <div class="header">
         <h2>Alert Rules</h2>
-        <button mat-raised-button color="primary" (click)="createAlert()">
+        <button
+            *ngIf="canWrite"
+            mat-raised-button
+            color="primary"
+            (click)="createAlert()"
+        >
             <mat-icon>add</mat-icon>
             Create Alert
         </button>
     </div>
+
     @if (alertsLoading) {
-        <div class="loading">
-            <mat-spinner diameter="40"></mat-spinner>
-        </div>
+        <app-loading-state message="Loading alert rules…"></app-loading-state>
+    } @else if (loadError) {
+        <app-error-state
+            title="Couldn't load alerts"
+            message="There was a problem fetching your alert rules."
+            [retry]="loadAlerts.bind(this)"
+        ></app-error-state>
+    } @else if (dataSource.data.length === 0) {
+        <app-empty-state
+            icon="notifications_off"
+            title="No alert rules configured"
+            message="Create an alert to get notified when a device metric crosses a threshold."
+            [actionText]="canWrite ? 'Create your first alert' : undefined"
+            actionIcon="add"
+            [action]="createAlert.bind(this)"
+        ></app-empty-state>
     } @else {
-        @if (!alerts.length) {
-            <div  class="empty-state">
-                <mat-icon>notifications_off</mat-icon>
-                <p>No alert rules configured</p>
-                <button mat-stroked-button color="primary" (click)="createAlert()">
-                    Create your first alert
-                </button>
+        <div class="alerts-toolbar">
+            <mat-form-field appearance="outline" class="alerts-search">
+                <mat-label>Search alerts</mat-label>
+                <mat-icon matPrefix>search</mat-icon>
+                <input
+                    matInput
+                    (keyup)="applyFilter($event)"
+                    placeholder="Name, device or severity"
+                    aria-label="Search alerts"
+                />
+            </mat-form-field>
+
+            <div class="severity-legend" aria-label="Severity legend">
+                <span class="severity-badge severity-critical">Critical</span>
+                <span class="severity-badge severity-warning">Warning</span>
+                <span class="severity-badge severity-info">Info</span>
             </div>
-        } @else {
-            <table
-                mat-table
-                [dataSource]="alerts"
-                class="alerts-table"
-            >
-                <!-- Name Column -->
-                <ng-container matColumnDef="name">
-                    <th mat-header-cell *matHeaderCellDef>Name</th>
-                    <td mat-cell *matCellDef="let alert">
-                        <div class="alert-name">
-                            <span>{{ alert.name }}</span>
-                            <small class="conditions">{{ formatConditions(alert) }}</small>
-                        </div>
-                    </td>
-                </ng-container>
+        </div>
 
-                <!-- Device Column -->
-                <ng-container matColumnDef="device">
-                    <th mat-header-cell *matHeaderCellDef>Device</th>
-                    <td mat-cell *matCellDef="let alert">
-                        {{ alert.device?.name || 'Unknown' }}
-                    </td>
-                </ng-container>
+        <table mat-table [dataSource]="dataSource" matSort class="alerts-table">
+            <!-- Name Column -->
+            <ng-container matColumnDef="name">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Name</th>
+                <td mat-cell *matCellDef="let alert">
+                    <div class="alert-name">
+                        <span>{{ alert.name }}</span>
+                        <small class="conditions" [matTooltip]="formatConditions(alert)">{{
+                            formatConditions(alert)
+                        }}</small>
+                    </div>
+                </td>
+            </ng-container>
 
-                <!-- Severity Column -->
-                <ng-container matColumnDef="severity">
-                    <th mat-header-cell *matHeaderCellDef>Severity</th>
-                    <td mat-cell *matCellDef="let alert">
-                <span
-                    class="severity-badge"
-                    [ngClass]="'severity-' + alert.severity.toLowerCase()"
-                >
-                    {{ alert.severity }}
-                </span>
-                    </td>
-                </ng-container>
+            <!-- Device Column -->
+            <ng-container matColumnDef="device">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Device</th>
+                <td mat-cell *matCellDef="let alert">
+                    {{ alert.device?.name || 'Unknown' }}
+                </td>
+            </ng-container>
 
-                <!-- Enabled Column -->
-                <ng-container matColumnDef="enabled">
-                    <th mat-header-cell *matHeaderCellDef>Status</th>
-                    <td mat-cell *matCellDef="let alert">
-                        <mat-slide-toggle
-                            [checked]="alert.enabled"
-                            (change)="toggleEnabled(alert)"
-                            color="primary"
-                        >
-                            {{ alert.enabled ? 'Enabled' : 'Disabled' }}
-                        </mat-slide-toggle>
-                    </td>
-                </ng-container>
+            <!-- Severity Column -->
+            <ng-container matColumnDef="severity">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Severity</th>
+                <td mat-cell *matCellDef="let alert">
+                    <span
+                        class="severity-badge"
+                        [ngClass]="'severity-' + alert.severity.toLowerCase()"
+                    >
+                        {{ alert.severity }}
+                    </span>
+                </td>
+            </ng-container>
 
-                <!-- Last Triggered Column -->
-                <ng-container matColumnDef="lastTriggered">
-                    <th mat-header-cell *matHeaderCellDef>Last Triggered</th>
-                    <td mat-cell *matCellDef="let alert">
-                        {{
-                            alert.lastTriggeredAt
-                                ? (alert.lastTriggeredAt | date : 'medium')
-                                : 'Never'
-                        }}
-                    </td>
-                </ng-container>
+            <!-- Enabled Column -->
+            <ng-container matColumnDef="enabled">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
+                <td mat-cell *matCellDef="let alert">
+                    <mat-slide-toggle
+                        [checked]="alert.enabled"
+                        [disabled]="!canWrite"
+                        (change)="toggleEnabled(alert)"
+                        color="primary"
+                    >
+                        {{ alert.enabled ? 'Enabled' : 'Disabled' }}
+                    </mat-slide-toggle>
+                </td>
+            </ng-container>
 
-                <!-- Actions Column -->
-                <ng-container matColumnDef="actions">
-                    <th mat-header-cell *matHeaderCellDef>Actions</th>
-                    <td mat-cell *matCellDef="let alert">
-                        <button mat-icon-button (click)="viewEvents(alert)" matTooltip="View Events">
-                            <mat-icon>history</mat-icon>
-                        </button>
-                        <button mat-icon-button (click)="editAlert(alert)" matTooltip="Edit">
-                            <mat-icon>edit</mat-icon>
-                        </button>
-                        <button
-                            mat-icon-button
-                            (click)="deleteAlert(alert)"
-                            matTooltip="Delete"
-                            color="warn"
-                        >
-                            <mat-icon>delete</mat-icon>
-                        </button>
-                    </td>
-                </ng-container>
+            <!-- Last Triggered Column -->
+            <ng-container matColumnDef="lastTriggered">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Last Triggered</th>
+                <td mat-cell *matCellDef="let alert">
+                    {{
+                        alert.lastTriggeredAt
+                            ? (alert.lastTriggeredAt | date: 'medium')
+                            : 'Never'
+                    }}
+                </td>
+            </ng-container>
 
-                <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-                <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
-            </table>
-        }
+            <!-- Actions Column -->
+            <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef>Actions</th>
+                <td mat-cell *matCellDef="let alert">
+                    <button
+                        mat-icon-button
+                        (click)="viewEvents(alert)"
+                        matTooltip="View Events"
+                    >
+                        <mat-icon>history</mat-icon>
+                    </button>
+                    <button
+                        mat-icon-button
+                        *ngIf="canWrite"
+                        (click)="editAlert(alert)"
+                        matTooltip="Edit"
+                    >
+                        <mat-icon>edit</mat-icon>
+                    </button>
+                    <button
+                        mat-icon-button
+                        *ngIf="canWrite"
+                        (click)="deleteAlert(alert)"
+                        matTooltip="Delete"
+                        color="warn"
+                    >
+                        <mat-icon>delete</mat-icon>
+                    </button>
+                </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+
+            <tr class="mat-row" *matNoDataRow>
+                <td class="mat-cell" [attr.colspan]="displayedColumns.length">
+                    No alerts match your search.
+                </td>
+            </tr>
+        </table>
+
+        <mat-paginator
+            [pageSizeOptions]="[10, 25, 50]"
+            [pageSize]="10"
+            showFirstLastButtons
+            aria-label="Select page of alert rules"
+        ></mat-paginator>
     }
 </div>

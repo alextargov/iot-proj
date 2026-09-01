@@ -1,11 +1,15 @@
 <div class="alert-form-container">
     <h2>{{ isEdit ? 'Edit Alert Rule' : 'Create Alert Rule' }}</h2>
 
-    <div *ngIf="loading" class="loading">
-        <mat-spinner diameter="40"></mat-spinner>
-    </div>
+    @if (loading) {
+        <app-loading-state message="Loading alert rule…"></app-loading-state>
+    } @else {
+    <form [formGroup]="form" (ngSubmit)="save()">
+        <div class="alert-summary" role="note">
+            <mat-icon>auto_awesome</mat-icon>
+            <span>{{ summary }}</span>
+        </div>
 
-    <form *ngIf="!loading" [formGroup]="form" (ngSubmit)="save()">
         <!-- Basic Information -->
         <mat-card class="form-section">
             <mat-card-header>
@@ -98,7 +102,16 @@
                                         matInput
                                         formControlName="metricName"
                                         placeholder="e.g., temperature"
+                                        [matAutocomplete]="metricAuto"
                                     />
+                                    <mat-autocomplete #metricAuto="matAutocomplete">
+                                        @for (m of metricNames; track m) {
+                                            <mat-option [value]="m">{{ m }}</mat-option>
+                                        }
+                                    </mat-autocomplete>
+                                    @if (cond.get('metricName')?.hasError('required')) {
+                                        <mat-error>Metric is required.</mat-error>
+                                    }
                                 </mat-form-field>
 
                                 <mat-form-field appearance="outline" class="operator-field">
@@ -198,6 +211,12 @@
                             <mat-hint>
                                 Email: &#123;"recipients": ["email&#64;example.com"]&#125; | Webhook: &#123;"url":"https://..."&#125;
                             </mat-hint>
+                            @if (notif.get('config')?.hasError('required')) {
+                                <mat-error>Configuration is required.</mat-error>
+                            }
+                            @if (notif.get('config')?.hasError('json')) {
+                                <mat-error>Enter valid JSON.</mat-error>
+                            }
                         </mat-form-field>
 
                         <button
@@ -238,4 +257,5 @@
             </button>
         </div>
     </form>
+    }
 </div>

@@ -1,10 +1,21 @@
-import { Component, OnInit, Input, ChangeDetectorRef } from '@angular/core';
+import {
+    Component,
+    OnInit,
+    AfterViewInit,
+    Input,
+    ViewChild,
+    ChangeDetectorRef,
+} from '@angular/core';
+import { MatTableDataSource } from '@angular/material/table';
+import { MatSort } from '@angular/material/sort';
+import { MatPaginator } from '@angular/material/paginator';
 import { Router } from '@angular/router';
 import {
     AlertService,
     AlertRule,
     AlertSeverity,
 } from '../../../shared/services/alert/alert.service';
+import { AuthService } from '../../../shared/services/auth/auth.service';
 import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/confirm-dialog.service';
 import { ToastrService } from '../../../shared/services/toastr/toastr.service';
 
@@ -14,11 +25,15 @@ import { ToastrService } from '../../../shared/services/toastr/toastr.service';
     styleUrls: ['./alerts-list.component.scss'],
     standalone: false,
 })
-export class AlertsListComponent implements OnInit {
+export class AlertsListComponent implements OnInit, AfterViewInit {
     @Input() deviceId?: string;
 
-    public alerts: AlertRule[] = [];
+    @ViewChild(MatSort) sort!: MatSort;
+    @ViewChild(MatPaginator) paginator!: MatPaginator;
+
+    public dataSource = new MatTableDataSource<AlertRule>([]);
     public alertsLoading = true;
+    public loadError = false;
     public displayedColumns: string[] = [
         'name',
         'device',
@@ -31,29 +46,53 @@ export class AlertsListComponent implements OnInit {
     constructor(
         private alertService: AlertService,
         private router: Router,
+        private authService: AuthService,
         private cdr: ChangeDetectorRef,
         private confirm: ConfirmDialogService,
         private toast: ToastrService
     ) {}
 
+    public get canWrite(): boolean {
+        return this.authService.hasRole('OPERATOR');
+    }
+
     ngOnInit(): void {
         this.loadAlerts();
     }
 
+    ngAfterViewInit(): void {
+        this.dataSource.sort = this.sort;
+        this.dataSource.paginator = this.paginator;
+        this.dataSource.filterPredicate = (alert, filter) =>
+            (alert.name ?? '').toLowerCase().includes(filter) ||
+            (alert.device?.name ?? '').toLowerCase().includes(filter) ||
+            (alert.severity ?? '').toLowerCase().includes(filter);
+    }
+
     loadAlerts(): void {
         this.alertsLoading = true;
+        this.loadError = false;
         this.alertService.getAlertRules(this.deviceId).subscribe({
             next: (page) => {
-                this.alerts = page.data;
+                this.dataSource.data = page.data;
                 this.alertsLoading = false;
                 this.cdr.detectChanges();
             },
             error: (err) => {
                 console.error('Failed to load alerts:', err);
                 this.alertsLoading = false;
+                this.loadError = true;
                 this.cdr.detectChanges();
             },
         });
+    }
+
+    applyFilter(event: Event): void {
+        const value = (event.target as HTMLInputElement).value;
+        this.dataSource.filter = value.trim().toLowerCase();
+        if (this.dataSource.paginator) {
+            this.dataSource.paginator.firstPage();
+        }
     }
 
     createAlert(): void {
@@ -80,6 +119,9 @@ export class AlertsListComponent implements OnInit {
             .subscribe({
                 next: () => {
                     alert.enabled = !alert.enabled;
+                    this.toast.showSuccess(
+                        `Alert ${alert.enabled ? 'enabled' : 'disabled'}`
+                    );
                     this.cdr.detectChanges();
                 },
                 error: (err) => {
@@ -101,7 +143,7 @@ export class AlertsListComponent implements OnInit {
                 }
                 this.alertService.deleteAlertRule(alert.id).subscribe({
                     next: () => {
-                        this.alerts = this.alerts.filter(
+                        this.dataSource.data = this.dataSource.data.filter(
                             (a) => a.id !== alert.id
                         );
                         this.toast.showSuccess('Alert rule deleted');

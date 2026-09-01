@@ -1,34 +1,29 @@
 .alert-events-container {
     padding: 16px;
 
-    h2 {
-        margin-bottom: 24px;
-    }
-
-    .loading {
+    .header {
         display: flex;
-        justify-content: center;
-        padding: 40px;
-    }
-
-    .empty-state {
-        display: flex;
-        flex-direction: column;
         align-items: center;
-        padding: 60px 20px;
-        text-align: center;
-        color: #666;
+        justify-content: space-between;
+        margin-bottom: 16px;
 
-        mat-icon {
-            font-size: 64px;
-            width: 64px;
-            height: 64px;
-            margin-bottom: 16px;
-            opacity: 0.5;
+        h2 {
+            margin: 0;
+        }
+    }
+
+    .events-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 8px;
+
+        .status-filter {
+            width: 220px;
         }
 
-        p {
-            font-size: 16px;
+        .spacer {
+            flex: 1 1 auto;
         }
     }
 
@@ -37,6 +32,11 @@
 
         td {
             vertical-align: middle;
+        }
+
+        // Highlight rows for events that are still active (triggered).
+        .event-row--active {
+            background-color: rgba(211, 47, 47, 0.06);
         }
 
         .status-text {
@@ -61,7 +61,7 @@
 
             &.severity-info {
                 background-color: #e3f2fd;
-                color: #1976d2;
+                color: var(--app-accent);
             }
 
             &.severity-warning {
@@ -86,5 +86,9 @@
             color: #666;
             font-style: italic;
         }
+    }
+
+    tr.event-row--active {
+        background-color: rgba(211, 47, 47, 0.06);
     }
 }
