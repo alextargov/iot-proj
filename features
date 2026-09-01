@@ -1,0 +1,31 @@
+Features I can implement:
+
+  Quick Wins
+
+  1. Dashboard home page - Overview cards showing device count, widget count, active/inactive status
+  2. Device status indicators - Real-time connection status badges on device list
+  3. Widget execution logs - View logs from deployed widget containers
+  4. Duplicate device/widget - Clone existing configurations
+  5. Export/Import - JSON export/import for devices, widgets, data models
+
+  Medium Effort
+
+  6. Device groups/tags - Organize devices by location, type, or custom tags
+  7. Widget templates - Pre-built Blockly templates for common automations (e.g., "if temperature > X, send alert")
+  8. Scheduling - Cron-based widget execution scheduling
+  9. Data visualization - Charts/graphs for device data history
+  10. Notifications - Email/webhook alerts when device conditions are met
+
+  Larger Features
+
+  11. Dashboard builder - Drag-and-drop dashboard with device data widgets (gauges, charts, status indicators)
+  12. Device simulator - Mock device for testing without real hardware
+  13. Rule engine - Visual rule builder alternative to Blockly for simpler automations
+  14. Multi-tenant support - User/team workspaces with role-based access
+  15. API integrations - Connect to external services (IFTTT, Home Assistant, cloud providers)
+
+  Backend Enhancements
+
+  16. WebSocket support - Real-time device data streaming
+  17. Data persistence - Store historical device readings in TimescaleDB/InfluxDB
+  18. Device discovery - Auto-discover devices on local network (mDNS/SSDP)

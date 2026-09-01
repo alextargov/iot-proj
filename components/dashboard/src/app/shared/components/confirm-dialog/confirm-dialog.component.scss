@@ -1,0 +1,16 @@
+.confirm-dialog {
+    &__message {
+        margin: 0 0 0.5rem;
+        white-space: pre-line;
+    }
+
+    &__hint {
+        margin: 0.75rem 0 0.25rem;
+        font-size: 0.85rem;
+        opacity: 0.75;
+    }
+
+    &__field {
+        width: 100%;
+    }
+}

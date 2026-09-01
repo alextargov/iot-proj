@@ -13,6 +13,10 @@ import { LoginDialogComponent } from './login/login-dialog.component';
 import { SchemaNodeEditorComponent } from './schema-node-editor/schema-node-editor.component';
 import { CoreModule } from '../../core/core.module';
 import { DeviceStatusPipe, WidgetStatusPipe, StatusConfigPipe } from '../pipes/status.pipe';
+import { ConfirmDialogComponent } from './confirm-dialog/confirm-dialog.component';
+import { EmptyStateComponent } from './empty-state/empty-state.component';
+import { LoadingStateComponent } from './loading-state/loading-state.component';
+import { ErrorStateComponent } from './error-state/error-state.component';
 
 @NgModule({
     imports: [
@@ -33,6 +37,10 @@ import { DeviceStatusPipe, WidgetStatusPipe, StatusConfigPipe } from '../pipes/s
         DeviceStatusPipe,
         WidgetStatusPipe,
         StatusConfigPipe,
+        ConfirmDialogComponent,
+        EmptyStateComponent,
+        LoadingStateComponent,
+        ErrorStateComponent,
     ],
     exports: [
         CommonModule,
@@ -43,6 +51,10 @@ import { DeviceStatusPipe, WidgetStatusPipe, StatusConfigPipe } from '../pipes/s
         DeviceStatusPipe,
         WidgetStatusPipe,
         StatusConfigPipe,
+        ConfirmDialogComponent,
+        EmptyStateComponent,
+        LoadingStateComponent,
+        ErrorStateComponent,
     ],
 })
 export class ComponentsModule {}
