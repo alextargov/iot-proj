@@ -11,6 +11,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { MatPaginatorModule } from '@angular/material/paginator';
+import { MatSortModule } from '@angular/material/sort';
 
 import { AdminRoutingModule } from './admin-routing.module';
 import { AdminComponent } from './admin.component';
@@ -30,6 +32,8 @@ import { AdminComponent } from './admin.component';
         MatFormFieldModule,
         MatInputModule,
         MatSelectModule,
+        MatPaginatorModule,
+        MatSortModule,
     ],
 })
 export class AdminModule {}

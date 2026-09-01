@@ -1,4 +1,7 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, AfterViewInit, ViewChild, ChangeDetectorRef } from '@angular/core';
+import { MatTableDataSource } from '@angular/material/table';
+import { MatPaginator } from '@angular/material/paginator';
+import { MatSort } from '@angular/material/sort';
 import { AdminService, AdminUser } from '../../shared/services/admin/admin.service';
 import {
     OrganizationInfoFragment,
@@ -13,8 +16,11 @@ import { ToastrService } from '../../shared/services/toastr/toastr.service';
     styleUrls: ['./admin.component.scss'],
     standalone: false,
 })
-export class AdminComponent implements OnInit {
-    users: AdminUser[] = [];
+export class AdminComponent implements OnInit, AfterViewInit {
+    @ViewChild(MatPaginator) userPaginator!: MatPaginator;
+    @ViewChild(MatSort) userSort!: MatSort;
+
+    usersDataSource = new MatTableDataSource<AdminUser>([]);
     organizations: OrganizationInfoFragment[] = [];
     loadingUsers = true;
     loadingOrgs = true;
@@ -38,13 +44,18 @@ export class AdminComponent implements OnInit {
         this.loadOrgs();
     }
 
+    ngAfterViewInit(): void {
+        this.usersDataSource.paginator = this.userPaginator;
+        this.usersDataSource.sort = this.userSort;
+    }
+
     // ---- Users ----
 
     loadUsers(): void {
         this.loadingUsers = true;
         this.admin.listUsers().subscribe({
             next: (users) => {
-                this.users = users;
+                this.usersDataSource.data = users;
                 this.loadingUsers = false;
                 this.cdr.detectChanges();
             },
@@ -55,13 +66,46 @@ export class AdminComponent implements OnInit {
         });
     }
 
+    applyUserFilter(event: Event): void {
+        const value = (event.target as HTMLInputElement).value;
+        this.usersDataSource.filter = value.trim().toLowerCase();
+        if (this.usersDataSource.paginator) {
+            this.usersDataSource.paginator.firstPage();
+        }
+    }
+
     changeUserRole(user: AdminUser, role: Role): void {
-        this.admin.updateUserRole(user.id, role).subscribe((updated) => {
-            if (updated) {
-                user.role = updated;
-                this.cdr.detectChanges();
-            }
-        });
+        if (user.role === role) {
+            return;
+        }
+        this.confirm
+            .open({
+                title: 'Change user role?',
+                message: `Change ${user.username}'s role from ${user.role} to ${role}? This takes effect immediately.`,
+                confirmText: 'Change role',
+            })
+            .subscribe((confirmed) => {
+                if (!confirmed) {
+                    // Revert the select's optimistic value.
+                    this.usersDataSource.data = [...this.usersDataSource.data];
+                    this.cdr.detectChanges();
+                    return;
+                }
+                this.admin.updateUserRole(user.id, role).subscribe({
+                    next: (updated) => {
+                        if (updated) {
+                            user.role = updated;
+                            this.toast.showSuccess(`Role updated to ${updated}`);
+                        }
+                        this.cdr.detectChanges();
+                    },
+                    error: () => {
+                        this.toast.showError('Failed to update role');
+                        this.usersDataSource.data = [...this.usersDataSource.data];
+                        this.cdr.detectChanges();
+                    },
+                });
+            });
     }
 
     // ---- Organizations ----
@@ -86,12 +130,16 @@ export class AdminComponent implements OnInit {
         if (!name) {
             return;
         }
-        this.admin.createOrganization(name).subscribe((org) => {
-            if (org) {
-                this.organizations = [org, ...this.organizations];
-                this.newOrgName = '';
-                this.cdr.detectChanges();
-            }
+        this.admin.createOrganization(name).subscribe({
+            next: (org) => {
+                if (org) {
+                    this.organizations = [org, ...this.organizations];
+                    this.newOrgName = '';
+                    this.toast.showSuccess('Organization created');
+                    this.cdr.detectChanges();
+                }
+            },
+            error: () => this.toast.showError('Failed to create organization'),
         });
     }
 
@@ -125,22 +173,44 @@ export class AdminComponent implements OnInit {
         if (!userId) {
             return;
         }
-        this.admin.addMember(org.id, userId, role).subscribe((updated) => {
-            if (updated) {
-                this.replaceOrg(updated);
-                this.memberUserId[org.id] = '';
-                this.cdr.detectChanges();
-            }
+        this.admin.addMember(org.id, userId, role).subscribe({
+            next: (updated) => {
+                if (updated) {
+                    this.replaceOrg(updated);
+                    this.memberUserId[org.id] = '';
+                    this.toast.showSuccess('Member added');
+                    this.cdr.detectChanges();
+                }
+            },
+            error: () => this.toast.showError('Failed to add member. Check the User ID.'),
         });
     }
 
     changeMemberRole(org: OrganizationInfoFragment, userId: string, role: Role): void {
-        this.admin.updateMemberRole(org.id, userId, role).subscribe((updated) => {
-            if (updated) {
-                this.replaceOrg(updated);
-                this.cdr.detectChanges();
-            }
-        });
+        this.confirm
+            .open({
+                title: 'Change member role?',
+                message: `Update this member's role to ${role}? This takes effect immediately.`,
+                confirmText: 'Change role',
+            })
+            .subscribe((confirmed) => {
+                if (!confirmed) {
+                    // Force a re-render so the mat-select reverts.
+                    this.organizations = [...this.organizations];
+                    this.cdr.detectChanges();
+                    return;
+                }
+                this.admin.updateMemberRole(org.id, userId, role).subscribe({
+                    next: (updated) => {
+                        if (updated) {
+                            this.replaceOrg(updated);
+                            this.toast.showSuccess('Member role updated');
+                            this.cdr.detectChanges();
+                        }
+                    },
+                    error: () => this.toast.showError('Failed to update member role'),
+                });
+            });
     }
 
     removeMember(org: OrganizationInfoFragment, userId: string): void {
