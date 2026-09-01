@@ -82,15 +82,17 @@
             </div>
         </div>
     } @else if (viewMode === 'compare' && compareVersion) {
-        <div class="version-compare">
-            <div class="compare-column">
-                <h4>Version {{ compareVersion.versionNumber }}</h4>
-                <pre class="schema-code">{{ formatSchema(compareVersion.schema) }}</pre>
+        <div class="version-compare-diff">
+            <div class="diff-legend">
+                <span class="diff-legend__item diff-legend__item--remove">− v{{ compareVersion.versionNumber }}</span>
+                <span class="diff-legend__item diff-legend__item--add">+ current (v{{ data.dataModel.currentVersion }})</span>
             </div>
-            <div class="compare-column">
-                <h4>Current (v{{ data.dataModel.currentVersion }})</h4>
-                <pre class="schema-code">{{ formatSchema(data.dataModel.schema) }}</pre>
-            </div>
+            <pre class="schema-diff"><code>@for (line of diff; track $index) {<span
+                class="diff-line"
+                [class.diff-line--add]="line.type === 'add'"
+                [class.diff-line--remove]="line.type === 'remove'"
+            >{{ line.type === 'add' ? '+' : line.type === 'remove' ? '−' : ' ' }} {{ line.text }}
+</span>}</code></pre>
         </div>
     }
 </mat-dialog-content>

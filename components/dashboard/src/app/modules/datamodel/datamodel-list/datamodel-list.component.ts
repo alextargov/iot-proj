@@ -1,6 +1,6 @@
 // connect device with the app - like CMP
 
-import {Component, OnInit, ViewChild, ElementRef, ChangeDetectorRef} from '@angular/core';
+import {Component, OnInit, AfterViewInit, ViewChild, ElementRef, ChangeDetectorRef} from '@angular/core';
 import {
     animate,
     state,
@@ -8,6 +8,9 @@ import {
     transition,
     trigger,
 } from '@angular/animations';
+import { MatTableDataSource } from '@angular/material/table';
+import { MatSort } from '@angular/material/sort';
+import { MatPaginator } from '@angular/material/paginator';
 import { ContentHeaderButton } from '../../../shared/components/content-header/content-header.component';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DatamodelService } from '../../../shared/services/datamodel/datamodel.service';
@@ -19,7 +22,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { SchemaTemplate } from '../schema-templates';
 import { ToastrService } from '../../../shared/services/toastr/toastr.service';
 import { DataModelInfoFragment } from '../../../shared/graphql/generated';
-import {catchError, map, of, take} from "rxjs";
+import {catchError, of} from "rxjs";
 
 @Component({
     standalone: false,
@@ -37,11 +40,14 @@ import {catchError, map, of, take} from "rxjs";
         ]),
     ],
 })
-export class DatamodelListComponent implements OnInit {
+export class DatamodelListComponent implements OnInit, AfterViewInit {
     @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
+    @ViewChild(MatSort) sort!: MatSort;
+    @ViewChild(MatPaginator) paginator!: MatPaginator;
 
-    public dataSource: DataModelInfoFragment[] = [];
-    // public columnsToDisplay = ['name', 'description', 'createdAt'];
+    public dataSource = new MatTableDataSource<DataModelInfoFragment>([]);
+    public loading = true;
+    public loadError = false;
     public columnsToDisplay = [
         { key: 'name', displayName: 'Name' },
         { key: 'description', displayName: 'Description' },
@@ -80,23 +86,47 @@ export class DatamodelListComponent implements OnInit {
     ];
 
     public ngOnInit(): void {
+        this.loadDataModels();
+    }
+
+    public ngAfterViewInit(): void {
+        this.dataSource.sort = this.sort;
+        this.dataSource.paginator = this.paginator;
+    }
+
+    private loadDataModels(): void {
+        this.loading = true;
+        this.loadError = false;
         this.datamodelService.listDataModels().pipe(
-            map((dataModels) => {
-                return dataModels.map((model) => ({
-                    ...model,
-                    displayName: `${model.name} (${model.id})`,
-                }));
-            }),
             catchError((error) => {
                 console.error('Error loading data models:', error);
+                this.loadError = true;
                 return of([]);
             })
         ).subscribe({
             next: (dataModels) => {
-                this.dataSource = dataModels;
+                this.dataSource.data = dataModels;
+                this.loading = false;
                 this.cdr.detectChanges();
-            }
+            },
+            error: () => {
+                this.loading = false;
+                this.loadError = true;
+                this.cdr.detectChanges();
+            },
         });
+    }
+
+    public reload(): void {
+        this.loadDataModels();
+    }
+
+    public applyFilter(event: Event): void {
+        const value = (event.target as HTMLInputElement).value;
+        this.dataSource.filter = value.trim().toLowerCase();
+        if (this.dataSource.paginator) {
+            this.dataSource.paginator.firstPage();
+        }
     }
 
     public onAddClick(): void {
@@ -136,7 +166,7 @@ export class DatamodelListComponent implements OnInit {
                     .deleteDataModel(deletedDataModelId)
                     .subscribe({
                         next: () => {
-                            this.dataSource = this.dataSource.filter(
+                            this.dataSource.data = this.dataSource.data.filter(
                                 (item) => item.id !== deletedDataModelId
                             );
                             this.toast.showSuccess('Data model deleted');
@@ -189,7 +219,7 @@ export class DatamodelListComponent implements OnInit {
                 // Reload the data models list to reflect any version changes
                 this.datamodelService.listDataModels().subscribe({
                     next: (dataModels) => {
-                        this.dataSource = dataModels;
+                        this.dataSource.data = dataModels;
                     },
                 });
             }
@@ -218,7 +248,7 @@ export class DatamodelListComponent implements OnInit {
                 }
 
                 // Check for name conflicts
-                const existingNames = this.dataSource.map((dm) => dm.name.toLowerCase());
+                const existingNames = this.dataSource.data.map((dm) => dm.name.toLowerCase());
                 let importName = content.name;
                 if (existingNames.includes(importName.toLowerCase())) {
                     importName = `${content.name} (Imported)`;
@@ -234,7 +264,7 @@ export class DatamodelListComponent implements OnInit {
                     .subscribe({
                         next: (result) => {
                             if (result.data?.createDataModel) {
-                                this.dataSource = [...this.dataSource, result.data.createDataModel as DataModelInfoFragment];
+                                this.dataSource.data = [...this.dataSource.data, result.data.createDataModel as DataModelInfoFragment];
                             }
                             this.toast.showSuccess('Schema imported successfully');
                         },

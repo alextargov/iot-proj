@@ -13,103 +13,141 @@
         (change)="onFileSelected($event)"
     />
 
-    <table
-        mat-table
-        [dataSource]="dataSource"
-        multiTemplateDataRows
-        class="mat-elevation-z8"
-    >
-        <ng-container *ngFor="let column of columnsToDisplay" [matColumnDef]="column.key">
-            <th mat-header-cell *matHeaderCellDef>{{ column.displayName }}</th>
-            <td mat-cell *matCellDef="let element">
-                @if (column.key === 'deviceCount') {
-                    <span class="device-count-badge" [class.device-count-badge--zero]="element[column.key] === 0">
-                        {{ element[column.key] }}
-                    </span>
-                } @else if (column.key === 'currentVersion') {
-                    <span class="version-badge">v{{ element[column.key] }}</span>
-                } @else {
-                    {{ element[column.key] }}
-                }
-            </td>
-        </ng-container>
-        <ng-container matColumnDef="expand">
-            <th mat-header-cell *matHeaderCellDef aria-label="row actions">
-                &nbsp;
-            </th>
-            <td mat-cell *matCellDef="let element">
-                <button
-                    mat-icon-button
-                    aria-label="expand row"
-                    (click)="onToggleClick($event, element)"
-                >
-                    @if (expandedElement !== element) {
-                        <mat-icon>keyboard_arrow_down</mat-icon>
+    @if (loading) {
+        <app-loading-state message="Loading data models…"></app-loading-state>
+    } @else if (loadError) {
+        <app-error-state
+            title="Couldn't load data models"
+            message="There was a problem fetching your data models."
+            [retry]="reload.bind(this)"
+        ></app-error-state>
+    } @else if (dataSource.data.length === 0) {
+        <app-empty-state
+            icon="analytics"
+            title="No data models yet"
+            message="Create a data model to describe the shape of your device data."
+            actionText="Create data model"
+            actionIcon="add"
+            [action]="onAddClick.bind(this)"
+        ></app-empty-state>
+    } @else {
+        <mat-form-field appearance="outline" class="datamodel-list__search">
+            <mat-label>Search data models</mat-label>
+            <mat-icon matPrefix>search</mat-icon>
+            <input
+                matInput
+                (keyup)="applyFilter($event)"
+                placeholder="Name or description"
+                aria-label="Search data models"
+            />
+        </mat-form-field>
+
+        <table
+            mat-table
+            [dataSource]="dataSource"
+            matSort
+            multiTemplateDataRows
+            class="mat-elevation-z8"
+        >
+            <ng-container *ngFor="let column of columnsToDisplay" [matColumnDef]="column.key">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>{{ column.displayName }}</th>
+                <td mat-cell *matCellDef="let element">
+                    @if (column.key === 'deviceCount') {
+                        <span class="device-count-badge" [class.device-count-badge--zero]="element[column.key] === 0">
+                            {{ element[column.key] }}
+                        </span>
+                    } @else if (column.key === 'currentVersion') {
+                        <span class="version-badge">v{{ element[column.key] }}</span>
                     } @else {
-                        <mat-icon>keyboard_arrow_up</mat-icon>
+                        {{ element[column.key] }}
                     }
-                </button>
+                </td>
+            </ng-container>
+            <ng-container matColumnDef="expand">
+                <th mat-header-cell *matHeaderCellDef aria-label="row actions">
+                    &nbsp;
+                </th>
+                <td mat-cell *matCellDef="let element">
+                    <button
+                        mat-icon-button
+                        aria-label="expand row"
+                        (click)="onToggleClick($event, element)"
+                    >
+                        @if (expandedElement !== element) {
+                            <mat-icon>keyboard_arrow_down</mat-icon>
+                        } @else {
+                            <mat-icon>keyboard_arrow_up</mat-icon>
+                        }
+                    </button>
 
-                <button
-                    mat-icon-button
-                    matTooltip="Export"
-                    (click)="onExportClick($event, element)"
-                >
-                    <mat-icon>download</mat-icon>
-                </button>
+                    <button
+                        mat-icon-button
+                        matTooltip="Export"
+                        (click)="onExportClick($event, element)"
+                    >
+                        <mat-icon>download</mat-icon>
+                    </button>
 
-                <button
-                    mat-icon-button
-                    matTooltip="Version History"
-                    (click)="onHistoryClick($event, element)"
-                >
-                    <mat-icon>history</mat-icon>
-                </button>
+                    <button
+                        mat-icon-button
+                        matTooltip="Version History"
+                        (click)="onHistoryClick($event, element)"
+                    >
+                        <mat-icon>history</mat-icon>
+                    </button>
 
-                <button
-                    mat-icon-button
-                    matTooltip="Delete"
-                    (click)="onDeleteClick($event, element)"
-                >
-                    <mat-icon>delete</mat-icon>
-                </button>
-            </td>
-        </ng-container>
+                    <button
+                        mat-icon-button
+                        matTooltip="Delete"
+                        (click)="onDeleteClick($event, element)"
+                    >
+                        <mat-icon>delete</mat-icon>
+                    </button>
+                </td>
+            </ng-container>
 
-        <!-- Expanded Content Column - The detail row is made up of this one column that spans across all columns -->
-        <ng-container matColumnDef="expandedDetail">
-            <td
-                mat-cell
-                *matCellDef="let element"
-                [attr.colspan]="columnsToDisplayWithExpand.length"
-            >
-                <div
-                    class="example-element-detail"
-                    [@detailExpand]="
-                        element === expandedElement ? 'expanded' : 'collapsed'
-                    "
+            <!-- Expanded Content Column - The detail row is made up of this one column that spans across all columns -->
+            <ng-container matColumnDef="expandedDetail">
+                <td
+                    mat-cell
+                    *matCellDef="let element"
+                    [attr.colspan]="columnsToDisplayWithExpand.length"
                 >
-                    <div class="example-element-description">
-                        {{ element.description }}
+                    <div
+                        class="example-element-detail"
+                        [@detailExpand]="
+                            element === expandedElement ? 'expanded' : 'collapsed'
+                        "
+                    >
+                        <div class="example-element-description">
+                            {{ element.description }}
+                        </div>
                     </div>
-                </div>
-            </td>
-        </ng-container>
+                </td>
+            </ng-container>
 
-        <tr mat-header-row *matHeaderRowDef="columnsToDisplayWithExpand"></tr>
-        <tr
-            mat-row
-            *matRowDef="let element; columns: columnsToDisplayWithExpand"
-            class="example-element-row"
-            [class.example-expanded-row]="expandedElement === element"
-            (click)="
-                expandedElement = expandedElement === element ? null : element
-            "
-        ></tr>
-        <tr
-            mat-row
-            *matRowDef="let row; columns: ['expandedDetail']"
-            class="example-detail-row"
-        ></tr>
-    </table>
+            <tr mat-header-row *matHeaderRowDef="columnsToDisplayWithExpand"></tr>
+            <tr
+                mat-row
+                *matRowDef="let element; columns: columnsToDisplayWithExpand"
+                class="example-element-row"
+                [class.example-expanded-row]="expandedElement === element"
+                (click)="
+                    expandedElement = expandedElement === element ? null : element
+                "
+            ></tr>
+            <tr
+                mat-row
+                *matRowDef="let row; columns: ['expandedDetail']"
+                class="example-detail-row"
+            ></tr>
+        </table>
+
+        <mat-paginator
+            [pageSizeOptions]="[10, 25, 50]"
+            [pageSize]="10"
+            showFirstLastButtons
+            aria-label="Select page of data models"
+        ></mat-paginator>
+    }
 </div>

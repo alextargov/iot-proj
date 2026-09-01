@@ -226,16 +226,16 @@ export class DatamodelCreateComponent implements OnInit, HasUnsavedChanges {
             }
 
             monacoInstance.editor.setModelMarkers(model, 'owner', markers);
+            this.toast.showError(
+                'Fix the JSON schema errors before switching to the visual editor.'
+            );
             return;
         }
-        console.log(this.buildSchema(JSON.parse(code)))
         this.root = this.buildSchema(JSON.parse(code));
         this.mode = Mode.UI;
     }
 
     public onCodeToggleClick() {
-        console.log(this.root);
-        console.log(this.buildSchema(this.root));
         const a = JSON.stringify(this.buildSchema(this.root), null, 2); // 2 spaces indentation and newlines
         this.datamodelFormGroup.get('code').setValue(a);
         this.mode = Mode.CODE;
