@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
+import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 import { Observable } from 'rxjs';
 import { map, startWith } from 'rxjs/operators';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
@@ -50,7 +50,7 @@ export class DeviceDatamodelFormComponent implements OnInit {
 
   ngOnInit(): void {
     this.form = this.fb.group({
-      dataModel: [''],
+      dataModel: ['', Validators.required],
     });
 
     this.formReady.emit(this.form);

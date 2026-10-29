@@ -114,28 +114,10 @@
                         Choose a pre-built automation template or start from scratch
                     </p>
 
-                    <div class="widget-create__templates-grid">
-                        @for (template of templates; track template.id) {
-                            <mat-card
-                                class="widget-create__template-card"
-                                [class.widget-create__template-card--selected]="selectedTemplate?.id === template.id"
-                                (click)="selectTemplate(template)"
-                            >
-                                <mat-card-content>
-                                    <div class="widget-create__template-icon">
-                                        <mat-icon>{{ template.icon }}</mat-icon>
-                                    </div>
-                                    <div class="widget-create__template-info">
-                                        <span class="widget-create__template-name">{{ template.name }}</span>
-                                        <span class="widget-create__template-description">{{ template.description }}</span>
-                                    </div>
-                                    @if (selectedTemplate?.id === template.id) {
-                                        <mat-icon class="widget-create__template-check">check_circle</mat-icon>
-                                    }
-                                </mat-card-content>
-                            </mat-card>
-                        }
-                    </div>
+                    <app-widget-template-selector
+                        [selectedTemplate]="selectedTemplate"
+                        (templateSelected)="selectTemplate($event)"
+                    ></app-widget-template-selector>
                 </div>
 
                 <!-- Schedule Section -->
@@ -144,34 +126,10 @@
                         <mat-icon>schedule</mat-icon>
                         Scheduled Execution
                     </h3>
-                    <mat-slide-toggle [(ngModel)]="enableScheduling" [ngModelOptions]="{standalone: true}">
-                        Enable scheduled execution
-                    </mat-slide-toggle>
-
-                    @if (enableScheduling) {
-                        <div class="widget-create__schedule-options">
-                            <mat-form-field appearance="fill" class="widget-create__schedule-preset">
-                                <mat-label>Run frequency</mat-label>
-                                <mat-select (selectionChange)="onPresetChange($event.value)">
-                                    @for (preset of schedulePresets; track preset.value) {
-                                        <mat-option [value]="preset">
-                                            {{ preset.label }}
-                                        </mat-option>
-                                    }
-                                </mat-select>
-                                <mat-hint>{{ selectedPreset?.description || 'Select how often the widget should run' }}</mat-hint>
-                            </mat-form-field>
-
-                            @if (selectedPreset?.value === 'custom') {
-                                <mat-form-field appearance="fill" class="widget-create__schedule-custom">
-                                    <mat-label>Cron expression</mat-label>
-                                    <input matInput [(ngModel)]="customSchedule" [ngModelOptions]="{standalone: true}"
-                                           placeholder="*/5 * * * *">
-                                    <mat-hint>Format: minute hour day month weekday</mat-hint>
-                                </mat-form-field>
-                            }
-                        </div>
-                    }
+                    <app-widget-schedule-form
+                        [initialSchedule]="prefillSchedule"
+                        (scheduleChange)="onScheduleChange($event)"
+                    ></app-widget-schedule-form>
                 </div>
             </div>
 
@@ -255,7 +213,7 @@
                             </div>
                             <div class="widget-create__review-item">
                                 <span class="widget-create__review-label">Schedule:</span>
-                                <span>{{ enableScheduling ? (selectedPreset?.label || 'Not set') : 'Manual (no schedule)' }}</span>
+                                <span>{{ reviewSchedule }}</span>
                             </div>
                         </mat-card-content>
                     </mat-card>
@@ -268,13 +226,22 @@
                         <mat-icon>arrow_back</mat-icon>
                         Back
                     </button>
-                    <button mat-stroked-button color="warn" (click)="stepper.reset()">
+                    <button mat-stroked-button color="warn" (click)="onResetClick(stepper)">
                         <mat-icon>refresh</mat-icon>
                         Reset
                     </button>
                 </div>
-                <button mat-flat-button color="primary" (click)="onSaveClick()">
-                    <mat-icon>save</mat-icon>
+                <button
+                    mat-flat-button
+                    color="primary"
+                    [disabled]="isSaving"
+                    (click)="onSaveClick()"
+                >
+                    @if (isSaving) {
+                        <mat-spinner diameter="20"></mat-spinner>
+                    } @else {
+                        <mat-icon>save</mat-icon>
+                    }
                     {{ editId ? 'Update Widget' : 'Save Widget' }}
                 </button>
             </div>

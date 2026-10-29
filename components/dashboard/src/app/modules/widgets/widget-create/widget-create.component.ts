@@ -45,15 +45,8 @@ import { ToastrService } from '../../../shared/services/toastr/toastr.service';
 import { WidgetService } from '../../../shared/services/widget/widget.service';
 import { HasUnsavedChanges } from '../../../core/guards/unsaved-changes.guard';
 import { Router, ActivatedRoute } from '@angular/router';
-import {
-    WIDGET_TEMPLATES,
-    TEMPLATE_CATEGORIES,
-    WidgetTemplate,
-} from '../../../shared/templates/widget-templates';
-import {
-    SCHEDULE_PRESETS,
-    SchedulePreset,
-} from '../../../shared/constants/schedule-presets';
+import { WidgetTemplate } from '../../../shared/templates/widget-templates';
+import { WidgetScheduleFormComponent } from './components/widget-schedule-form/widget-schedule-form.component';
 
 @Component({
     standalone: false,
@@ -74,15 +67,12 @@ export class WidgetCreateComponent implements OnInit, HasUnsavedChanges {
     public isLoaded = false;
 
     // Template selection
-    public templates = WIDGET_TEMPLATES;
-    public templateCategories = TEMPLATE_CATEGORIES;
     public selectedTemplate: WidgetTemplate | null = null;
 
-    // Schedule selection
-    public schedulePresets = SCHEDULE_PRESETS;
-    public selectedPreset: SchedulePreset | null = null;
-    public customSchedule: string = '';
-    public enableScheduling: boolean = false;
+    // Schedule prefill passed to the schedule sub-form (duplicate/edit).
+    public prefillSchedule?: string;
+    public reviewSchedule = 'Manual (no schedule)';
+    public isSaving = false;
 
     private readonly aggregationOperations: any[] = [
         {
@@ -184,6 +174,9 @@ export class WidgetCreateComponent implements OnInit, HasUnsavedChanges {
 
     private blocklyComponent: BlocklyComponent;
 
+    @ViewChild(WidgetScheduleFormComponent)
+    public scheduleForm?: WidgetScheduleFormComponent;
+
     @ViewChild('blockly', { static: false }) set blockly(
         content: BlocklyComponent
     ) {
@@ -269,15 +262,7 @@ export class WidgetCreateComponent implements OnInit, HasUnsavedChanges {
         }
 
         if (source.schedule) {
-            this.enableScheduling = true;
-            const preset = SCHEDULE_PRESETS.find((p) => p.value === source.schedule);
-            if (preset) {
-                this.selectedPreset = preset;
-            } else {
-                // Custom cron expression
-                this.selectedPreset = SCHEDULE_PRESETS.find((p) => p.value === 'custom') || null;
-                this.customSchedule = source.schedule;
-            }
+            this.prefillSchedule = source.schedule;
         }
     }
 
@@ -399,7 +384,12 @@ export class WidgetCreateComponent implements OnInit, HasUnsavedChanges {
     }
 
     public async onSaveClick(): Promise<void> {
+        if (this.isSaving) {
+            return;
+        }
+
         const model = this.convertToModel();
+        this.isSaving = true;
         if (this.editId) {
             this.widgetService.update(this.editId, model).subscribe({
                 next: () => {
@@ -409,6 +399,7 @@ export class WidgetCreateComponent implements OnInit, HasUnsavedChanges {
                 },
                 error: () => {
                     this.toast.showError('Failed to update widget');
+                    this.isSaving = false;
                 },
             });
         } else {
@@ -420,6 +411,7 @@ export class WidgetCreateComponent implements OnInit, HasUnsavedChanges {
                 },
                 error: () => {
                     this.toast.showError('Failed to create widget');
+                    this.isSaving = false;
                 },
             });
         }
@@ -437,20 +429,22 @@ export class WidgetCreateComponent implements OnInit, HasUnsavedChanges {
             deviceIds: Array.from(this.selectedDevices.values()).map(
                 (device) => device.id
             ),
-            schedule: this.getScheduleValue(),
+            schedule: this.scheduleForm?.getScheduleValue() ?? null,
         };
     }
 
-    private getScheduleValue(): string | null {
-        if (!this.enableScheduling) return null;
-        if (this.selectedPreset?.value === 'custom') {
-            return this.customSchedule || null;
-        }
-        return this.selectedPreset?.value || null;
+    public onScheduleChange(_schedule: string | null): void {
+        // Schedule value is read from the sub-form at save time; this handler
+        // exists so the parent can react to changes if needed in future.
     }
 
-    public onPresetChange(preset: SchedulePreset): void {
-        this.selectedPreset = preset;
+    public onResetClick(stepper: { reset: () => void }): void {
+        // The refactor moved schedule + template state into sub-forms, so Reset
+        // must clear them explicitly rather than relying on stepper.reset().
+        this.scheduleForm?.reset();
+        this.selectedTemplate = null;
+        this.reviewSchedule = 'Manual (no schedule)';
+        stepper.reset();
     }
 
     private _filter(value: string): DeviceInfoFragment[] {
@@ -486,10 +480,6 @@ export class WidgetCreateComponent implements OnInit, HasUnsavedChanges {
         this.selectedTemplate = template;
     }
 
-    public getTemplatesByCategory(categoryId: string): WidgetTemplate[] {
-        return this.templates.filter((t) => t.category === categoryId);
-    }
-
     public workspaceChange(event) {
         if (!event || !event.workspaceId) {
             return;
@@ -500,6 +490,12 @@ export class WidgetCreateComponent implements OnInit, HasUnsavedChanges {
     public onSelectionChange(event: StepperSelectionEvent) {
         if (event.selectedIndex === 1) {
             this.onNavigateToBlockly();
+        }
+        if (event.selectedIndex === 2) {
+            // Snapshot the schedule for the Review step so the template binds
+            // to a stable field rather than calling the sub-form getter in CD.
+            this.reviewSchedule =
+                this.scheduleForm?.getScheduleValue() || 'Manual (no schedule)';
         }
     }
 }

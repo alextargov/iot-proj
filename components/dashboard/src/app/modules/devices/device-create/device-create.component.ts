@@ -1,35 +1,29 @@
 import {
     AfterViewInit,
+    ChangeDetectorRef,
     Component,
-    ElementRef,
     OnInit,
     ViewChild,
 } from '@angular/core';
-import {
-    UntypedFormBuilder,
-    UntypedFormGroup,
-    Validators,
-} from '@angular/forms';
-import { COMMA, ENTER } from '@angular/cdk/keycodes';
-import { MatChipInputEvent } from '@angular/material/chips';
+import { UntypedFormGroup } from '@angular/forms';
 
 import { MatStepper } from '@angular/material/stepper';
+import { StepperSelectionEvent } from '@angular/cdk/stepper';
 import { Router } from '@angular/router';
 import { DeviceService } from '../../../shared/services/device/device.service';
-import { AuthPolicy } from '../../../shared/services/device/device.interface';
 import { ToastrService } from '../../../shared/services/toastr/toastr.service';
 import {
-    CredentialDataInput, DataModelInfoFragment,
+    DataModelInfoFragment,
     DeviceInput,
     DeviceStatus,
 } from '../../../shared/graphql/generated';
-import { map, Observable } from "rxjs";
-import {startWith} from "rxjs/operators";
-import {DatamodelService} from "../../../shared/services/datamodel/datamodel.service";
-import {Mode, SchemaTypeEnum} from "../../datamodel/datamodel-create/datamodel-create.component";
-import {SchemaField} from "../../../shared/components/schema-node-editor/schema-node-editor.component";
-import {MatAutocompleteSelectedEvent} from "@angular/material/autocomplete";
 import { HasUnsavedChanges } from '../../../core/guards/unsaved-changes.guard';
+import {
+    DeviceMetadataFormComponent,
+    DeviceMetadataFormValue,
+} from './components/device-metadata-form/device-metadata-form.component';
+import { DeviceAuthFormComponent } from './components/device-auth-form/device-auth-form.component';
+import { DeviceDatamodelFormComponent } from './components/device-datamodel-form/device-datamodel-form.component';
 
 @Component({
     standalone: false,
@@ -40,137 +34,132 @@ import { HasUnsavedChanges } from '../../../core/guards/unsaved-changes.guard';
 export class DeviceCreateComponent
     implements OnInit, AfterViewInit, HasUnsavedChanges
 {
-    public deviceCreateMetadataFormGroup: UntypedFormGroup;
-    public deviceCreateAuthorizationFormGroup: UntypedFormGroup;
-    public deviceCreateOutputFormGroup: UntypedFormGroup;
+    // Form groups owned by the sub-forms and surfaced here via (formReady) so
+    // the stepper can gate each step via [stepControl].
+    public metadataGroup?: UntypedFormGroup;
+    public authGroup?: UntypedFormGroup;
+    public dataModelGroup?: UntypedFormGroup;
+
     private submitted = false;
-    public readonly authorizationPolicies: AuthPolicy[] = [
-        AuthPolicy.None,
-        AuthPolicy.Basic,
-        AuthPolicy.OAuth,
-        AuthPolicy.Certificate,
-        AuthPolicy.Bearer,
-    ];
-    public selectedAuthorizationPolicy: AuthPolicy = AuthPolicy.None;
-    public authPolicy = AuthPolicy;
-    public filteredDataModels: Observable<DataModelInfoFragment[]>;
-    public dataModels: DataModelInfoFragment[] = [];
+    public isSaving = false;
 
-    // Tags
-    public tags: string[] = [];
-    public readonly separatorKeysCodes: number[] = [ENTER, COMMA];
+    // Prefill data derived from a "duplicate" navigation payload.
+    public initialMetadata?: Partial<DeviceMetadataFormValue>;
+    public initialDataModelId?: string;
 
-    @ViewChild('tokenInput')
-    public tokenInput: ElementRef<HTMLInputElement>;
+    // Snapshot of the sub-form values, refreshed when the Review step is
+    // entered. Binding the Review template to plain fields (rather than calling
+    // sub-form getters every CD cycle) keeps change detection stable.
+    public review: {
+        name: string;
+        description: string;
+        deviceURL: string;
+        tags: string[];
+        authPolicy: string;
+        dataModelName: string;
+    } = {
+        name: '',
+        description: '',
+        deviceURL: '',
+        tags: [],
+        authPolicy: '-',
+        dataModelName: '',
+    };
+
     @ViewChild('deviceStepper')
     public stepper: MatStepper;
 
-    public schema: SchemaField = { type: SchemaTypeEnum.Object, properties: {} };
-    public mode: 'ui' | 'code' = 'code';
-    public selectedMode: Mode = Mode.CODE;
-    public isTestingConnection = false;
-    public editorInstance!: any;
-    public editorOptions = {
-        theme: 'vs-dark',
-        language: 'json',
-        automaticLayout: true,
-        minimap: { enabled: false },
-        fontSize: 14,
-        wordWrap: 'on',
-        formatOnPaste: true,
-        formatOnType: true,
-        scrollBeyondLastLine: false,
-        lineNumbers: 'on',
-        folding: true,
-        tabSize: 2,
-        padding: {
-            top: 10,
-            bottom: 10,
-        },
-        scrollbar: {
-            vertical: 'auto',
-            horizontal: 'auto',
-        },
-    };
-
+    @ViewChild(DeviceMetadataFormComponent)
+    public metadataForm: DeviceMetadataFormComponent;
+    @ViewChild(DeviceAuthFormComponent)
+    public authForm: DeviceAuthFormComponent;
+    @ViewChild(DeviceDatamodelFormComponent)
+    public dataModelForm: DeviceDatamodelFormComponent;
 
     constructor(
-        private fb: UntypedFormBuilder,
         private deviceService: DeviceService,
-        private dataModelService: DatamodelService,
         private toast: ToastrService,
-        private router: Router
-    ) {
-
-    }
+        private router: Router,
+        private cdr: ChangeDetectorRef
+    ) {}
 
     public ngOnInit(): void {
         const duplicateData = history.state?.duplicate;
 
-        // Initialize tags from duplicate data
-        this.tags = duplicateData?.tags ? [...duplicateData.tags] : [];
-
-        this.deviceCreateMetadataFormGroup = this.fb.group({
-            name: [duplicateData?.name || '', [Validators.required, Validators.maxLength(128)]],
-            description: [duplicateData?.description || '', [Validators.required, Validators.maxLength(512)]],
-            deviceURL: [duplicateData?.host?.url || ''],
-            turnOnEndpoint: [duplicateData?.host?.turnOnEndpoint || ''],
-            turnOffEndpoint: [duplicateData?.host?.turnOffEndpoint || ''],
-        });
-        this.deviceCreateAuthorizationFormGroup = this.fb.group({
-            communicationToDevice: [false],
-            communicationToServer: [false],
-            authCredentialsBasicUsername: [''],
-            authCredentialsBasicPassword: [''],
-            authCredentialsOAuthClientID: [''],
-            authCredentialsOAuthClientSecret: [''],
-            authCredentialsCertificateClientID: [''],
-            authCredentialsCertificateClientSecret: [''],
-            authCredentialsCertificateClientCert: [''],
-            authCredentialsBearerToken: [''],
-        });
-        this.deviceCreateOutputFormGroup = this.fb.group({
-            dataModel: '',
-        });
-
-        this.dataModelService.listDataModels().subscribe((data: DataModelInfoFragment[]) => {
-            console.log(data)
-            this.dataModels = data
-
-            this.filteredDataModels = this.deviceCreateOutputFormGroup.get("dataModel").valueChanges.pipe(
-                startWith(''),
-                map(dataModel => (dataModel ? this._filterStates(dataModel) : this.dataModels.slice())),
-            );
-        });
+        if (duplicateData) {
+            this.initialMetadata = {
+                name: duplicateData.name,
+                description: duplicateData.description,
+                deviceURL: duplicateData.host?.url,
+                turnOnEndpoint: duplicateData.host?.turnOnEndpoint,
+                turnOffEndpoint: duplicateData.host?.turnOffEndpoint,
+                tags: duplicateData.tags ? [...duplicateData.tags] : [],
+            };
+            this.initialDataModelId = duplicateData.dataModel?.id;
+        }
     }
 
-    public ngAfterViewInit() {
+    public ngAfterViewInit(): void {
         this.stepper.reset();
     }
 
+    // Sub-forms emit their FormGroup from ngOnInit, which fires during the
+    // parent's change-detection pass; binding it straight to [stepControl]
+    // would throw ExpressionChangedAfterItHasBeenChecked. Defer the assignment
+    // to the next microtask so the binding settles on a stable value.
+    public onMetadataReady(group: UntypedFormGroup): void {
+        Promise.resolve().then(() => {
+            this.metadataGroup = group;
+            this.cdr.markForCheck();
+        });
+    }
+
+    public onAuthReady(group: UntypedFormGroup): void {
+        Promise.resolve().then(() => {
+            this.authGroup = group;
+            this.cdr.markForCheck();
+        });
+    }
+
+    public onDataModelReady(group: UntypedFormGroup): void {
+        Promise.resolve().then(() => {
+            this.dataModelGroup = group;
+            this.cdr.markForCheck();
+        });
+    }
+
+    public onStepChange(event: StepperSelectionEvent): void {
+        // Refresh the Review snapshot when the user lands on the last step.
+        const reviewIndex = this.stepper?.steps?.length
+            ? this.stepper.steps.length - 1
+            : 3;
+        if (event.selectedIndex === reviewIndex) {
+            const metadata = this.metadataForm?.getValue();
+            this.review = {
+                name: metadata?.name || '',
+                description: metadata?.description || '',
+                deviceURL: metadata?.deviceURL || '',
+                tags: this.metadataForm?.getTags() ?? [],
+                authPolicy: this.authForm?.selectedAuthorizationPolicy || '-',
+                dataModelName:
+                    this.dataModelForm?.getSelectedDataModel()?.name || '',
+            };
+        }
+    }
+
     public onResetClick(stepper: MatStepper): void {
-        this.deviceCreateMetadataFormGroup.reset();
-        this.deviceCreateAuthorizationFormGroup.reset();
-        this.deviceCreateOutputFormGroup.reset();
-        this.selectedAuthorizationPolicy = AuthPolicy.None;
-        this.tokenInput.nativeElement.value = '';
-        this.tags = [];
+        this.metadataForm?.reset();
+        this.authForm?.reset();
+        this.dataModelForm?.reset();
+        this.review = {
+            name: '',
+            description: '',
+            deviceURL: '',
+            tags: [],
+            authPolicy: '-',
+            dataModelName: '',
+        };
         stepper.reset();
-    }
-
-    public addTag(event: MatChipInputEvent): void {
-        const value = (event.value || '').trim().toLowerCase();
-        if (value && !this.tags.includes(value)) {
-            this.tags.push(value);
-        }
-        event.chipInput!.clear();
-    }
-
-    public removeTag(tag: string): void {
-        const index = this.tags.indexOf(tag);
-        if (index >= 0) {
-            this.tags.splice(index, 1);
-        }
     }
 
     public hasUnsavedChanges(): boolean {
@@ -178,53 +167,71 @@ export class DeviceCreateComponent
             return false;
         }
         return (
-            this.deviceCreateMetadataFormGroup?.dirty ||
-            this.deviceCreateAuthorizationFormGroup?.dirty ||
-            this.deviceCreateOutputFormGroup?.dirty
+            !!this.metadataGroup?.dirty ||
+            !!this.authGroup?.dirty ||
+            !!this.dataModelGroup?.dirty
         );
     }
 
     public onSaveClick(): void {
-        const data = this.convertToModel();
-        const shouldGenerateToken = this.deviceCreateAuthorizationFormGroup.get('communicationToServer')?.value;
+        if (this.isSaving) {
+            return;
+        }
 
+        // Data model is a required field server-side; the stepper gates it, but
+        // guard here too so Save can never issue an invalid mutation.
+        const dataModel = this.dataModelForm?.getSelectedDataModel();
+        if (!dataModel?.id) {
+            this.toast.showError('Please select a data model');
+            return;
+        }
+
+        const data = this.convertToModel();
+        const shouldGenerateToken = this.authForm?.shouldGenerateToken();
+
+        this.isSaving = true;
         this.deviceService.createDevice(data).subscribe({
             next: (result) => {
                 const device = result.data?.createDevice;
                 this.submitted = true;
                 this.toast.showSuccess('Successfully created device');
 
-                // Generate communication token after device creation if "device to server" communication is enabled
+                // Generate communication token after device creation when
+                // "device to server" communication is enabled.
                 if (shouldGenerateToken && device?.id) {
                     this.deviceService.generateDeviceToken(device.id).subscribe({
                         next: (token) => {
-                            this.tokenInput.nativeElement.value = token;
+                            this.authForm?.setToken(token);
                             this.toast.showSuccess('Device token generated');
+                            this.isSaving = false;
                         },
                         error: (err) => {
                             console.error('Failed to generate token', err);
                             this.toast.showError('Failed to generate device token');
+                            this.isSaving = false;
                         },
                     });
+                } else {
+                    this.isSaving = false;
                 }
             },
             error: (err) => {
                 console.error('Failed to create device', err);
                 this.toast.showError('Failed to create device');
+                this.isSaving = false;
             },
         });
     }
 
-    public onTestConnectionClick(): void {
-        const url = this.deviceCreateMetadataFormGroup.get('deviceURL')?.value;
-        if (!url) {
+    public onTestConnection(url: string): void {
+        if (!url || !this.metadataForm) {
             return;
         }
 
-        this.isTestingConnection = true;
+        this.metadataForm.isTestingConnection = true;
         this.deviceService.testDeviceConnection(url).subscribe({
             next: (isReachable) => {
-                this.isTestingConnection = false;
+                this.metadataForm.isTestingConnection = false;
                 if (isReachable) {
                     this.toast.showSuccess('Device is reachable');
                 } else {
@@ -232,138 +239,36 @@ export class DeviceCreateComponent
                 }
             },
             error: () => {
-                this.isTestingConnection = false;
+                this.metadataForm.isTestingConnection = false;
                 this.toast.showError('Failed to test connection');
             },
         });
     }
 
-    public onEnableConnectionClick(
-        event: Event,
-        communication: string
-    ) {
-        event.stopPropagation();
-        // Token is now generated after device creation in onSaveClick, not on checkbox toggle
-    }
-
-    public displayDataModel(dataModel: DataModelInfoFragment): string {
-        return dataModel && dataModel.name ? dataModel.name : '';
-    }
-
-    public onCodeToggleClick() {
-        this.mode = Mode.CODE;
-    }
-
-    public async onUiToggleClick() {
-        const dataModel = this.deviceCreateOutputFormGroup.get('dataModel').value;
-        const code: string = dataModel?.schema;
-
-        if (code) {
-            this.schema = JSON.parse(code);
-        }
-        this.mode = Mode.UI;
-    }
-
-    public onDataModelSelected(dataModel: MatAutocompleteSelectedEvent) {
-        this.schema = JSON.parse(dataModel.option.value.schema);
-    }
-
-    public editorInit(editor: any) {
-        this.editorInstance = editor;
-    }
-
     private convertToModel(): DeviceInput {
-        const host = this.deviceCreateMetadataFormGroup.get('deviceURL').value
+        const metadata = this.metadataForm?.getValue();
+        const auth = this.authForm?.getValue();
+        const dataModel = this.dataModelForm?.getSelectedDataModel();
+
+        const host = metadata?.deviceURL
             ? {
-                  url: this.deviceCreateMetadataFormGroup.get('deviceURL')
-                      .value,
-                  turnOffEndpoint:
-                      this.deviceCreateMetadataFormGroup.get('turnOffEndpoint')
-                          .value,
-                  turnOnEndpoint:
-                      this.deviceCreateMetadataFormGroup.get('turnOnEndpoint')
-                          .value,
+                  url: metadata.deviceURL,
+                  turnOffEndpoint: metadata.turnOffEndpoint,
+                  turnOnEndpoint: metadata.turnOnEndpoint,
               }
             : null;
+
         return {
-            name: this.deviceCreateMetadataFormGroup.get('name').value,
-            description:
-                this.deviceCreateMetadataFormGroup.get('description').value,
+            name: metadata?.name,
+            description: metadata?.description,
             host,
             status: DeviceStatus.Active,
             auth: {
-                credentialForDevice: this.getAuthorizationCredentials(
-                    this.selectedAuthorizationPolicy
-                ),
-                credentialForService: this.tokenInput.nativeElement.value,
+                credentialForDevice: auth?.credentials,
+                credentialForService: auth?.serverToken,
             },
-            dataModel: (this.deviceCreateOutputFormGroup.get('dataModel').value as DataModelInfoFragment).id,
-            tags: this.tags.length > 0 ? this.tags : undefined,
+            dataModel: (dataModel as DataModelInfoFragment)?.id,
+            tags: metadata?.tags?.length ? metadata.tags : undefined,
         };
-    }
-
-
-    private getAuthorizationCredentials(
-        policy: AuthPolicy
-    ): CredentialDataInput {
-        switch (policy) {
-            case AuthPolicy.None:
-                return null;
-            case AuthPolicy.Basic:
-                return {
-                    basic: {
-                        username: this.deviceCreateAuthorizationFormGroup.get(
-                            'authCredentialsBasicUsername'
-                        ).value,
-                        password: this.deviceCreateAuthorizationFormGroup.get(
-                            'authCredentialsBasicPassword'
-                        ).value,
-                    },
-                };
-            case AuthPolicy.OAuth:
-                return {
-                    oauth: {
-                        clientId: this.deviceCreateAuthorizationFormGroup.get(
-                            'authCredentialsOAuthClientID'
-                        ).value,
-                        clientSecret:
-                            this.deviceCreateAuthorizationFormGroup.get(
-                                'authCredentialsOAuthClientSecret'
-                            ).value,
-                        url: this.deviceCreateAuthorizationFormGroup.get(
-                            'authCredentialsOAuthURL'
-                        ).value,
-                    },
-                };
-            case AuthPolicy.Certificate:
-                return {
-                    certificateOAuth: {
-                        clientId: this.deviceCreateAuthorizationFormGroup.get(
-                            'authCredentialsCertificateClientID'
-                        ).value,
-                        url: this.deviceCreateAuthorizationFormGroup.get(
-                            'authCredentialsCertificateClientSecret'
-                        ).value,
-                        certificate:
-                            this.deviceCreateAuthorizationFormGroup.get(
-                                'authCredentialsCertificateClientCert'
-                            ).value,
-                    },
-                };
-            case AuthPolicy.Bearer:
-                return {
-                    bearerToken: {
-                        token: this.deviceCreateAuthorizationFormGroup.get(
-                            'authCredentialsBearerToken'
-                        ).value,
-                    },
-                };
-        }
-    }
-
-    private _filterStates(value: DataModelInfoFragment): DataModelInfoFragment[] {
-        const filterValue = value.name.toLowerCase();
-
-        return this.dataModels.filter(state => state.name.toLowerCase().includes(filterValue));
     }
 }
