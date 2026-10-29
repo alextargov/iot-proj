@@ -210,6 +210,23 @@ mat-divider {
         position: relative;
     }
 
+    // Kiosk mode: drop the sidebar and all surrounding chrome so the dashboard
+    // fills the screen edge-to-edge. The dashboard component itself also hides
+    // its own toolbar via .dashboard--kiosk.
+    &__wrapper--kiosk {
+        padding: 0;
+        gap: 0;
+
+        .app__left-panel {
+            display: none;
+        }
+
+        .app__right-panel {
+            border-radius: 0;
+            box-shadow: none;
+        }
+    }
+
     &__left-panel {
         width: 240px;
         flex-shrink: 0;

@@ -1,4 +1,4 @@
-<div class="dashboard">
+<div class="dashboard" [class.dashboard--kiosk]="isKiosk">
     <!-- Toolbar -->
     <div class="dashboard__toolbar">
         <div class="dashboard__toolbar-left">
@@ -38,6 +38,17 @@
                 <mat-icon>{{ isLocked ? 'lock' : 'lock_open' }}</mat-icon>
                 {{ isLocked ? 'Unlock' : 'Lock' }}
             </button>
+
+            <button
+                mat-stroked-button
+                (click)="toggleKiosk()"
+                [disabled]="!currentLayout"
+                [attr.aria-pressed]="isKiosk"
+                matTooltip="Fullscreen / kiosk mode"
+            >
+                <mat-icon>{{ isKiosk ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
+                {{ isKiosk ? 'Exit' : 'Kiosk' }}
+            </button>
         </div>
     </div>
 
@@ -74,9 +85,17 @@
                             <div class="widget-header" [class.drag-handler]="!isLocked">
                                 <span class="widget-title">{{ item.widget?.title }}</span>
                                 @if (!isLocked) {
-                                    <button mat-icon-button class="widget-remove" (click)="removeWidget(item)" matTooltip="Remove widget" [attr.aria-label]="'Remove widget ' + (item.widget?.title || '')">
-                                        <mat-icon>close</mat-icon>
-                                    </button>
+                                    <div class="widget-actions">
+                                        <button mat-icon-button class="widget-action" (click)="editWidget(item)" matTooltip="Edit widget" [attr.aria-label]="'Edit widget ' + (item.widget?.title || '')">
+                                            <mat-icon>edit</mat-icon>
+                                        </button>
+                                        <button mat-icon-button class="widget-action" (click)="duplicateWidget(item)" matTooltip="Duplicate widget" [attr.aria-label]="'Duplicate widget ' + (item.widget?.title || '')">
+                                            <mat-icon>content_copy</mat-icon>
+                                        </button>
+                                        <button mat-icon-button class="widget-remove" (click)="removeWidget(item)" matTooltip="Remove widget" [attr.aria-label]="'Remove widget ' + (item.widget?.title || '')">
+                                            <mat-icon>close</mat-icon>
+                                        </button>
+                                    </div>
                                 }
                             </div>
                             <div class="widget-content">

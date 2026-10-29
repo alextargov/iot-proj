@@ -18,6 +18,7 @@ import { DashboardLayoutService } from '../../shared/services/dashboard-layout/d
 import {
     DashboardLayoutInfoFragment,
     DashboardWidgetInfoFragment,
+    DashboardWidgetInput,
     DashboardWidgetType,
 } from '../../shared/graphql/generated';
 import {
@@ -27,6 +28,7 @@ import {
 } from './components/widget-config-dialog/widget-config-dialog.component';
 import { ToastrService } from '../../shared/services/toastr/toastr.service';
 import { ConfirmDialogService } from '../../shared/components/confirm-dialog/confirm-dialog.service';
+import { EventBusService } from '../../shared/services/eventbus/eventbus.service';
 
 interface Safe extends GridsterConfig {
     draggable: Draggable;
@@ -56,10 +58,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
     public loadError = false;
     /** Feedback for the debounced position auto-save. */
     public saveState: 'idle' | 'saving' | 'saved' | 'error' = 'idle';
+    /** Kiosk/fullscreen presentation mode (chrome hidden, editing locked). */
+    public isKiosk = false;
 
     private destroy$ = new Subject<void>();
     private positionChange$ = new Subject<void>();
     private lastLayoutId: string | null = null;
+    private savedResetTimer: ReturnType<typeof setTimeout> | null = null;
+    private readonly fullscreenChangeHandler = (): void => this.onFullscreenChange();
+    private wasLockedBeforeKiosk = true;
 
     readonly DashboardWidgetType = DashboardWidgetType;
 
@@ -69,11 +76,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
         private readonly cdr: ChangeDetectorRef,
         private readonly dialog: MatDialog,
         private readonly toast: ToastrService,
-        private readonly confirm: ConfirmDialogService
+        private readonly confirm: ConfirmDialogService,
+        private readonly eventBus: EventBusService
     ) {}
 
     ngOnInit(): void {
         this.initGridsterOptions();
+
+        document.addEventListener('fullscreenchange', this.fullscreenChangeHandler);
 
         // Debounce position changes to avoid too many API calls
         this.positionChange$
@@ -92,6 +102,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
 
     ngOnDestroy(): void {
+        document.removeEventListener('fullscreenchange', this.fullscreenChangeHandler);
+        if (this.savedResetTimer) {
+            clearTimeout(this.savedResetTimer);
+        }
+        // Make sure we never leave the global chrome hidden if we're torn down
+        // while in kiosk mode.
+        if (this.isKiosk) {
+            this.eventBus.emit('kiosk:changed', { active: false });
+        }
         this.destroy$.next();
         this.destroy$.complete();
     }
@@ -279,6 +298,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
                 next: () => {
                     this.saveState = 'saved';
                     this.cdr.markForCheck();
+                    // Clear the "saved" badge after a moment so the indicator
+                    // reflects live state rather than sticking permanently.
+                    if (this.savedResetTimer) {
+                        clearTimeout(this.savedResetTimer);
+                    }
+                    this.savedResetTimer = setTimeout(() => {
+                        this.saveState = 'idle';
+                        this.cdr.markForCheck();
+                    }, 2000);
                 },
                 error: (err) => {
                     console.error('Failed to save widget positions:', err);
@@ -351,6 +379,60 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.cdr.markForCheck();
     }
 
+    /**
+     * Toggle kiosk/fullscreen presentation mode: enter browser fullscreen, hide
+     * the global chrome (via the event bus), and force the layout locked.
+     */
+    public toggleKiosk(): void {
+        if (this.isKiosk) {
+            this.exitKiosk();
+            if (document.fullscreenElement) {
+                document.exitFullscreen().catch(() => {});
+            }
+            return;
+        }
+
+        this.enterKiosk();
+        const el = document.documentElement;
+        if (el.requestFullscreen) {
+            el.requestFullscreen().catch((err) => {
+                // Fullscreen can be rejected (not a user gesture, policy). We
+                // still honour kiosk mode by hiding chrome — graceful fallback.
+                console.warn('Fullscreen request rejected; kiosk chrome only', err);
+            });
+        }
+    }
+
+    private enterKiosk(): void {
+        if (this.isKiosk) return;
+        this.isKiosk = true;
+        // Remember the pre-kiosk lock state so we can restore it on exit.
+        this.wasLockedBeforeKiosk = this.isLocked;
+        if (!this.isLocked) {
+            this.onLockButtonClick(); // force locked (read-only) in kiosk
+        }
+        this.eventBus.emit('kiosk:changed', { active: true });
+        this.cdr.markForCheck();
+    }
+
+    private exitKiosk(): void {
+        if (!this.isKiosk) return;
+        this.isKiosk = false;
+        // Restore the editing state the user had before entering kiosk.
+        if (this.isLocked !== this.wasLockedBeforeKiosk) {
+            this.onLockButtonClick();
+        }
+        this.eventBus.emit('kiosk:changed', { active: false });
+        this.cdr.markForCheck();
+    }
+
+    /** Keep kiosk state in sync when the user leaves fullscreen via Esc. */
+    private onFullscreenChange(): void {
+        if (!document.fullscreenElement && this.isKiosk) {
+            this.exitKiosk();
+        }
+    }
+
     public openAddWidgetDialog(): void {
         const dialogRef = this.dialog.open(WidgetConfigDialogComponent, {
             width: '600px',
@@ -364,18 +446,96 @@ export class DashboardComponent implements OnInit, OnDestroy {
         });
     }
 
+    /** Open the config dialog pre-filled with a tile's current settings. */
+    public editWidget(item: DashboardGridsterItem): void {
+        if (!item.widget) return;
+
+        const dialogRef = this.dialog.open(WidgetConfigDialogComponent, {
+            width: '600px',
+            data: {
+                mode: 'edit',
+                widgetType: item.widget.widgetType,
+                title: item.widget.title,
+                config: item.widgetConfig,
+            } as WidgetConfigDialogData,
+        });
+
+        dialogRef.afterClosed().subscribe((result: WidgetConfigDialogResult | undefined) => {
+            if (!result || !item.widget) return;
+
+            // Only title + config change here; grid position/size are owned by
+            // the drag/resize autosave path and must not be clobbered.
+            this.dashboardLayoutService
+                .updateWidget(item.widget.id, {
+                    title: result.title,
+                    config: JSON.stringify(result.config),
+                })
+                .subscribe({
+                    next: (updated) => {
+                        item.widget = updated;
+                        item.widgetConfig = result.config;
+                        this.toast.showSuccess('Widget updated');
+                        this.cdr.markForCheck();
+                    },
+                    error: (err) => {
+                        console.error('Failed to update widget:', err);
+                        this.toast.showError('Failed to update widget');
+                    },
+                });
+        });
+    }
+
+    /** Clone a tile (same type/config/size) into the first free cell. */
+    public duplicateWidget(item: DashboardGridsterItem): void {
+        if (!item.widget || !this.currentLayout) return;
+
+        const cols = item.widget.gridCols;
+        const rows = item.widget.gridRows;
+        const { x, y } = this.findFreeCell(cols, rows);
+
+        const input: DashboardWidgetInput = {
+            widgetType: item.widget.widgetType,
+            title: `${item.widget.title} (copy)`,
+            gridX: x,
+            gridY: y,
+            gridCols: cols,
+            gridRows: rows,
+            config: JSON.stringify(item.widgetConfig ?? {}),
+        };
+
+        this.appendWidget(input, item.widgetConfig, 'Widget duplicated');
+    }
+
     private addWidgetToLayout(config: WidgetConfigDialogResult): void {
         if (!this.currentLayout) return;
+
+        const cols = this.getDefaultCols(config.widgetType);
+        const rows = this.getDefaultRows(config.widgetType);
+        const { x, y } = this.findFreeCell(cols, rows);
 
         const input = {
             widgetType: config.widgetType,
             title: config.title,
-            gridX: 0,
-            gridY: 0,
-            gridCols: this.getDefaultCols(config.widgetType),
-            gridRows: this.getDefaultRows(config.widgetType),
+            gridX: x,
+            gridY: y,
+            gridCols: cols,
+            gridRows: rows,
             config: JSON.stringify(config.config),
         };
+
+        this.appendWidget(input, config.config, 'Widget added');
+    }
+
+    /**
+     * Persist a new widget and push it onto the local grid. Shared by the
+     * add-widget, duplicate-widget, and template flows.
+     */
+    private appendWidget(
+        input: DashboardWidgetInput,
+        parsedConfig: any,
+        successMessage: string
+    ): void {
+        if (!this.currentLayout) return;
 
         this.dashboardLayoutService.addWidget(this.currentLayout.id, input).subscribe({
             next: (widget) => {
@@ -385,18 +545,57 @@ export class DashboardComponent implements OnInit, OnDestroy {
                     cols: widget.gridCols,
                     rows: widget.gridRows,
                     widget: widget,
-                    widgetConfig: config.config,
+                    widgetConfig: parsedConfig,
                     dragEnabled: !this.isLocked,
                     resizeEnabled: !this.isLocked,
                 };
                 this.dashboard.push(gridsterItem);
-                this.toast.showSuccess('Widget added');
+                this.toast.showSuccess(successMessage);
                 this.cdr.markForCheck();
             },
             error: (err) => {
                 console.error('Failed to add widget:', err);
                 this.toast.showError('Failed to add widget');
             },
+        });
+    }
+
+    /**
+     * Find the first free top-left cell for a cols×rows block on the 12-column
+     * grid, scanning top-to-bottom then left-to-right. Falls back to the row
+     * just below the lowest existing item when the scanned region is full, so a
+     * returned position never overlaps an existing tile.
+     */
+    private findFreeCell(cols: number, rows: number): { x: number; y: number } {
+        const gridCols = 12;
+        const maxX = Math.max(0, gridCols - cols);
+
+        // Lowest occupied row, used to bound the scan and as the fallback.
+        const maxBottom = this.dashboard.reduce(
+            (max, item) => Math.max(max, (item.y ?? 0) + (item.rows ?? 0)),
+            0
+        );
+
+        for (let y = 0; y <= maxBottom; y++) {
+            for (let x = 0; x <= maxX; x++) {
+                if (!this.collides(x, y, cols, rows)) {
+                    return { x, y };
+                }
+            }
+        }
+
+        // Grid is full across the scanned rows; drop the tile below everything.
+        return { x: 0, y: maxBottom };
+    }
+
+    /** Rectangle-overlap test of a candidate block against existing tiles. */
+    private collides(x: number, y: number, cols: number, rows: number): boolean {
+        return this.dashboard.some((item) => {
+            const ix = item.x ?? 0;
+            const iy = item.y ?? 0;
+            const ic = item.cols ?? 0;
+            const ir = item.rows ?? 0;
+            return x < ix + ic && x + cols > ix && y < iy + ir && y + rows > iy;
         });
     }
 

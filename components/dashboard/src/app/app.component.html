@@ -2,6 +2,7 @@
     class="app__wrapper"
     [class.app__wrapper--handset]="isHandset"
     [class.app__wrapper--sidebar-open]="sidebarOpen"
+    [class.app__wrapper--kiosk]="isKiosk"
 >
     @if (isHandset) {
         <button
@@ -96,6 +97,10 @@
                                         <mat-icon>more_vert</mat-icon>
                                     </button>
                                     <mat-menu #dashboardMenu="matMenu">
+                                        <button mat-menu-item (click)="renameDashboard(layout, $event)">
+                                            <mat-icon>edit</mat-icon>
+                                            <span>Rename</span>
+                                        </button>
                                         @if (!layout.isDefault) {
                                             <button mat-menu-item (click)="setAsDefault(layout, $event)">
                                                 <mat-icon>star_outline</mat-icon>

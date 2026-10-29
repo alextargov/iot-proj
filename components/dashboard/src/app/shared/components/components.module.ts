@@ -14,6 +14,8 @@ import { SchemaNodeEditorComponent } from './schema-node-editor/schema-node-edit
 import { CoreModule } from '../../core/core.module';
 import { DeviceStatusPipe, WidgetStatusPipe, StatusConfigPipe } from '../pipes/status.pipe';
 import { ConfirmDialogComponent } from './confirm-dialog/confirm-dialog.component';
+import { PromptDialogComponent } from './prompt-dialog/prompt-dialog.component';
+import { TemplatePickerDialogComponent } from './template-picker-dialog/template-picker-dialog.component';
 import { EmptyStateComponent } from './empty-state/empty-state.component';
 import { LoadingStateComponent } from './loading-state/loading-state.component';
 import { ErrorStateComponent } from './error-state/error-state.component';
@@ -39,6 +41,8 @@ import { ConnectionStatusComponent } from './connection-status/connection-status
         WidgetStatusPipe,
         StatusConfigPipe,
         ConfirmDialogComponent,
+        PromptDialogComponent,
+        TemplatePickerDialogComponent,
         EmptyStateComponent,
         LoadingStateComponent,
         ErrorStateComponent,
@@ -54,6 +58,8 @@ import { ConnectionStatusComponent } from './connection-status/connection-status
         WidgetStatusPipe,
         StatusConfigPipe,
         ConfirmDialogComponent,
+        PromptDialogComponent,
+        TemplatePickerDialogComponent,
         EmptyStateComponent,
         LoadingStateComponent,
         ErrorStateComponent,

@@ -21,6 +21,7 @@ export interface EventMap {
     'alert:triggered': { alertId: string; deviceId: string };
     'theme:changed': { theme: 'light' | 'dark' };
     'navigation:changed': { path: string };
+    'kiosk:changed': { active: boolean };
 }
 
 export type EventName = keyof EventMap;

@@ -180,6 +180,38 @@
     }
 }
 
+.widget-actions {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    margin-left: 8px;
+}
+
+.widget-action {
+    width: 24px;
+    height: 24px;
+    line-height: 24px;
+    flex-shrink: 0;
+
+    mat-icon {
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+    }
+}
+
+// Kiosk / fullscreen presentation mode: hide the editing chrome and let the
+// grid fill the viewport. Editing is already force-locked in kiosk.
+.dashboard--kiosk {
+    .dashboard__toolbar {
+        display: none;
+    }
+
+    .dashboard__content {
+        height: 100vh;
+    }
+}
+
 .widget-content {
     flex: 1;
     overflow: hidden;
