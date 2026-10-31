@@ -29,6 +29,11 @@ export class WidgetDetailsComponent implements OnInit, OnDestroy {
     public loadError = false;
     public running = false;
 
+    /** Next scheduled fire time, computed once when the widget loads (and after
+     *  its schedule/status changes) rather than on every change-detection tick —
+     *  the cron scan is expensive for unsatisfiable expressions. */
+    public nextRunDate: Date | null = null;
+
     /** Read-only Monaco options for the generated-code view. */
     public readonly codeEditorOptions = {
         theme: 'vs-dark',
@@ -63,13 +68,15 @@ export class WidgetDetailsComponent implements OnInit, OnDestroy {
         return this.authService.hasRole('OPERATOR');
     }
 
-    /** Next scheduled fire time computed from the cron schedule, or null when
-     *  the widget is unscheduled, inactive, or the expression can't be parsed. */
-    public get nextRunDate(): Date | null {
+    /** Recomputes the cached next-run time from the current widget schedule.
+     *  Null when the widget is unscheduled, inactive, or the expression can't
+     *  be parsed. */
+    private updateNextRunDate(): void {
         if (!this.widget?.schedule || this.widget.status !== 'ACTIVE') {
-            return null;
+            this.nextRunDate = null;
+            return;
         }
-        return nextRun(this.widget.schedule);
+        this.nextRunDate = nextRun(this.widget.schedule);
     }
 
     public ngOnInit(): void {
@@ -101,6 +108,7 @@ export class WidgetDetailsComponent implements OnInit, OnDestroy {
                         this.loadError = true;
                         return;
                     }
+                    this.updateNextRunDate();
                     this.resolveDeviceNames(widget.deviceIds ?? []);
                 },
                 error: () => {

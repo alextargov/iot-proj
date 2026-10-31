@@ -39,6 +39,12 @@ function parseField(field: string, min: number, max: number): Set<number> {
             const [a, b] = rangePart.split('-').map((n) => parseInt(n, 10));
             lo = a;
             hi = b;
+        } else if (stepPart) {
+            // Standard cron treats a bare `N/step` as `N..max by step`
+            // (e.g. `5/15` in a minute field → 5,20,35,50), not the single
+            // value `N`.
+            lo = parseInt(rangePart, 10);
+            hi = max;
         } else {
             lo = hi = parseInt(rangePart, 10);
         }
