@@ -322,7 +322,6 @@ type ComplexityRoot struct {
 		RunWidget                    func(childComplexity int, id string) int
 		SetAutomationRuleEnabled     func(childComplexity int, id string, enabled bool) int
 		SetDeviceOperation           func(childComplexity int, id string, op OperationType) int
-		SetOperation                 func(childComplexity int, op OperationType, data interface{}) int
 		TestIntegration              func(childComplexity int, id string) int
 		UpdateAlertRule              func(childComplexity int, id string, input UpdateAlertRuleInput) int
 		UpdateAutomationRule         func(childComplexity int, id string, input UpdateAutomationRuleInput) int
@@ -366,39 +365,38 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		AlertEvents              func(childComplexity int, deviceID *string, ruleID *string, first *int, after *string) int
-		AlertRule                func(childComplexity int, id string) int
-		AlertRules               func(childComplexity int, deviceID *string, first *int, after *string) int
-		AuditLogs                func(childComplexity int, first *int, after *string) int
-		AuditLogsForResource     func(childComplexity int, resourceType string, resourceID string, first *int) int
-		AutomationRule           func(childComplexity int, id string) int
-		AutomationRules          func(childComplexity int, first *int, after *string) int
-		DashboardLayout          func(childComplexity int, id string) int
-		DashboardLayouts         func(childComplexity int) int
-		DataModelVersion         func(childComplexity int, dataModelID string, version int) int
-		DataModelVersions        func(childComplexity int, dataModelID string) int
-		DataModels               func(childComplexity int) int
-		DefaultDashboardLayout   func(childComplexity int) int
-		Device                   func(childComplexity int, id string) int
-		DeviceAggregatedMetrics  func(childComplexity int, deviceID string, aggregation AggregationType, filter *MetricFilterInput) int
-		DeviceByIDAndAggregation func(childComplexity int, id string, aggregation AggregationType) int
-		DeviceMetrics            func(childComplexity int, deviceID string, filter *MetricFilterInput) int
-		DeviceMetricsSeries      func(childComplexity int, deviceID string, metricNames []string, filter *MetricFilterInput) int
-		DeviceTags               func(childComplexity int) int
-		Devices                  func(childComplexity int) int
-		DevicesByTags            func(childComplexity int, tags []string) int
-		DevicesPage              func(childComplexity int, first *int, after *string) int
-		Integration              func(childComplexity int, id string) int
-		Integrations             func(childComplexity int) int
-		Me                       func(childComplexity int) int
-		Organization             func(childComplexity int, id string) int
-		Organizations            func(childComplexity int) int
-		TestDeviceConnection     func(childComplexity int, url string) int
-		Users                    func(childComplexity int) int
-		Widget                   func(childComplexity int, id string) int
-		Widgets                  func(childComplexity int) int
-		WidgetsPage              func(childComplexity int, first *int, after *string) int
-		__resolve__service       func(childComplexity int) int
+		AlertEvents             func(childComplexity int, deviceID *string, ruleID *string, first *int, after *string) int
+		AlertRule               func(childComplexity int, id string) int
+		AlertRules              func(childComplexity int, deviceID *string, first *int, after *string) int
+		AuditLogs               func(childComplexity int, first *int, after *string) int
+		AuditLogsForResource    func(childComplexity int, resourceType string, resourceID string, first *int) int
+		AutomationRule          func(childComplexity int, id string) int
+		AutomationRules         func(childComplexity int, first *int, after *string) int
+		DashboardLayout         func(childComplexity int, id string) int
+		DashboardLayouts        func(childComplexity int) int
+		DataModelVersion        func(childComplexity int, dataModelID string, version int) int
+		DataModelVersions       func(childComplexity int, dataModelID string) int
+		DataModels              func(childComplexity int) int
+		DefaultDashboardLayout  func(childComplexity int) int
+		Device                  func(childComplexity int, id string) int
+		DeviceAggregatedMetrics func(childComplexity int, deviceID string, aggregation AggregationType, filter *MetricFilterInput) int
+		DeviceMetrics           func(childComplexity int, deviceID string, filter *MetricFilterInput) int
+		DeviceMetricsSeries     func(childComplexity int, deviceID string, metricNames []string, filter *MetricFilterInput) int
+		DeviceTags              func(childComplexity int) int
+		Devices                 func(childComplexity int) int
+		DevicesByTags           func(childComplexity int, tags []string) int
+		DevicesPage             func(childComplexity int, first *int, after *string) int
+		Integration             func(childComplexity int, id string) int
+		Integrations            func(childComplexity int) int
+		Me                      func(childComplexity int) int
+		Organization            func(childComplexity int, id string) int
+		Organizations           func(childComplexity int) int
+		TestDeviceConnection    func(childComplexity int, url string) int
+		Users                   func(childComplexity int) int
+		Widget                  func(childComplexity int, id string) int
+		Widgets                 func(childComplexity int) int
+		WidgetsPage             func(childComplexity int, first *int, after *string) int
+		__resolve__service      func(childComplexity int) int
 	}
 
 	RuleAction struct {
@@ -487,7 +485,6 @@ type MutationResolver interface {
 	CloneDevice(ctx context.Context, id string) (*Device, error)
 	UpdateDevice(ctx context.Context, id string, input UpdateDeviceInput) (*Device, error)
 	SetDeviceOperation(ctx context.Context, id string, op OperationType) (*Device, error)
-	SetOperation(ctx context.Context, op OperationType, data interface{}) (bool, error)
 	DeleteDevice(ctx context.Context, id string) (string, error)
 	CreateWidget(ctx context.Context, input WidgetInput) (*Widget, error)
 	UpdateWidget(ctx context.Context, id string, input WidgetInput) (*Widget, error)
@@ -537,7 +534,6 @@ type QueryResolver interface {
 	DeviceTags(ctx context.Context) ([]string, error)
 	DevicesPage(ctx context.Context, first *int, after *string) (*DevicePage, error)
 	Device(ctx context.Context, id string) (*Device, error)
-	DeviceByIDAndAggregation(ctx context.Context, id string, aggregation AggregationType) (*Device, error)
 	Widgets(ctx context.Context) ([]*Widget, error)
 	WidgetsPage(ctx context.Context, first *int, after *string) (*WidgetPage, error)
 	Widget(ctx context.Context, id string) (*Widget, error)
@@ -1944,17 +1940,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.SetDeviceOperation(childComplexity, args["id"].(string), args["op"].(OperationType)), true
-	case "Mutation.setOperation":
-		if e.ComplexityRoot.Mutation.SetOperation == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_setOperation_args(ctx, rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.ComplexityRoot.Mutation.SetOperation(childComplexity, args["op"].(OperationType), args["data"].(interface{})), true
 	case "Mutation.testIntegration":
 		if e.ComplexityRoot.Mutation.TestIntegration == nil {
 			break
@@ -2338,17 +2323,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.DeviceAggregatedMetrics(childComplexity, args["deviceId"].(string), args["aggregation"].(AggregationType), args["filter"].(*MetricFilterInput)), true
-	case "Query.deviceByIdAndAggregation":
-		if e.ComplexityRoot.Query.DeviceByIDAndAggregation == nil {
-			break
-		}
-
-		args, err := ec.field_Query_deviceByIdAndAggregation_args(ctx, rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.ComplexityRoot.Query.DeviceByIDAndAggregation(childComplexity, args["id"].(string), args["aggregation"].(AggregationType)), true
 	case "Query.deviceMetrics":
 		if e.ComplexityRoot.Query.DeviceMetrics == nil {
 			break
@@ -4186,28 +4160,6 @@ func (ec *executionContext) field_Mutation_setDeviceOperation_args(ctx context.C
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_setOperation_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
-	var err error
-	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "op",
-		func(ctx context.Context, v any) (OperationType, error) {
-			return ec.unmarshalNOperationType2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐOperationType(ctx, v)
-		})
-	if err != nil {
-		return nil, err
-	}
-	args["op"] = arg0
-	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "data",
-		func(ctx context.Context, v any) (any, error) {
-			return ec.unmarshalOAny2interface(ctx, v)
-		})
-	if err != nil {
-		return nil, err
-	}
-	args["data"] = arg1
-	return args, nil
-}
-
 func (ec *executionContext) field_Mutation_testIntegration_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -4733,28 +4685,6 @@ func (ec *executionContext) field_Query_deviceAggregatedMetrics_args(ctx context
 		return nil, err
 	}
 	args["filter"] = arg2
-	return args, nil
-}
-
-func (ec *executionContext) field_Query_deviceByIdAndAggregation_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
-	var err error
-	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id",
-		func(ctx context.Context, v any) (string, error) {
-			return ec.unmarshalNID2string(ctx, v)
-		})
-	if err != nil {
-		return nil, err
-	}
-	args["id"] = arg0
-	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "aggregation",
-		func(ctx context.Context, v any) (AggregationType, error) {
-			return ec.unmarshalNAggregationType2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐAggregationType(ctx, v)
-		})
-	if err != nil {
-		return nil, err
-	}
-	args["aggregation"] = arg1
 	return args, nil
 }
 
@@ -9184,74 +9114,6 @@ func (ec *executionContext) fieldContext_Mutation_setDeviceOperation(ctx context
 	return fc, nil
 }
 
-func (ec *executionContext) _Mutation_setOperation(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_Mutation_setOperation(ctx, field)
-		},
-		func(ctx context.Context) (any, error) {
-			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Mutation().SetOperation(ctx, fc.Args["op"].(OperationType),
-				func() any {
-					if fc.Args["data"] == nil {
-						return nil
-					}
-					return fc.Args["data"].(any)
-				}())
-		},
-		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
-			directive0 := next
-
-			directive1 := func(ctx context.Context) (any, error) {
-				minimum, err := ec.unmarshalNRole2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐRole(ctx, "OPERATOR")
-				if err != nil {
-					var zeroVal bool
-					return zeroVal, err
-				}
-				if ec.Directives.HasRole == nil {
-					var zeroVal bool
-					return zeroVal, errors.New("directive hasRole is not implemented")
-				}
-				return ec.Directives.HasRole(ctx, nil, directive0, minimum)
-			}
-
-			next = directive1
-			return next
-		},
-		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
-			return ec.marshalNBoolean2bool(ctx, selections, v)
-		},
-		true,
-		true,
-	)
-}
-func (ec *executionContext) fieldContext_Mutation_setOperation(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_setOperation_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Mutation_deleteDevice(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -12384,50 +12246,6 @@ func (ec *executionContext) fieldContext_Query_device(ctx context.Context, field
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_device_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Query_deviceByIdAndAggregation(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_Query_deviceByIdAndAggregation(ctx, field)
-		},
-		func(ctx context.Context) (any, error) {
-			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Query().DeviceByIDAndAggregation(ctx, fc.Args["id"].(string), fc.Args["aggregation"].(AggregationType))
-		},
-		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v *Device) graphql.Marshaler {
-			return ec.marshalODevice2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐDevice(ctx, selections, v)
-		},
-		true,
-		false,
-	)
-}
-func (ec *executionContext) fieldContext_Query_deviceByIdAndAggregation(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.childFields_Device(ctx, field)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_deviceByIdAndAggregation_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -19301,13 +19119,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "setOperation":
-			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_setOperation(ctx, field)
-			})
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "deleteDevice":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_deleteDevice(ctx, field)
@@ -19968,28 +19779,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_device(ctx, field)
-				if res == graphql.RequiredNull {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx,
-					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "deviceByIdAndAggregation":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_deviceByIdAndAggregation(ctx, field)
 				if res == graphql.RequiredNull {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -22896,24 +22685,6 @@ func (ec *executionContext) marshalOAlertSeverity2ᚖgithubᚗcomᚋalextargov�
 		return graphql.Null
 	}
 	return v
-}
-
-func (ec *executionContext) unmarshalOAny2interface(ctx context.Context, v any) (any, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := graphql.UnmarshalAny(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalOAny2interface(ctx context.Context, sel ast.SelectionSet, v any) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	_ = sel
-	_ = ctx
-	res := graphql.MarshalAny(v)
-	return res
 }
 
 func (ec *executionContext) marshalOAuth2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐAuth(ctx context.Context, sel ast.SelectionSet, v *Auth) graphql.Marshaler {

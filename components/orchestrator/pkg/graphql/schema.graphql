@@ -677,7 +677,6 @@ type Query {
     deviceTags: [String!]!
     devicesPage(first: Int = 20, after: PageCursor): DevicePage!
     device(id: ID!): Device
-    deviceByIdAndAggregation(id: ID!, aggregation: AggregationType!): Device
     widgets: [Widget]!
     widgetsPage(first: Int = 20, after: PageCursor): WidgetPage!
     widget(id: ID!): Widget
@@ -710,7 +709,6 @@ type Mutation {
     cloneDevice(id: ID!): Device! @hasRole(minimum: OPERATOR)
     updateDevice(id: ID!, input: UpdateDeviceInput!): Device! @hasRole(minimum: OPERATOR)
     setDeviceOperation(id: ID!, op: OperationType!): Device! @hasRole(minimum: OPERATOR)
-    setOperation(op: OperationType!, data: Any): Boolean! @hasRole(minimum: OPERATOR)
     deleteDevice(id: String!): String! @hasRole(minimum: OPERATOR)
     createWidget(input: WidgetInput!): Widget! @hasRole(minimum: OPERATOR)
     updateWidget(id: ID!, input: WidgetInput!): Widget! @hasRole(minimum: OPERATOR)

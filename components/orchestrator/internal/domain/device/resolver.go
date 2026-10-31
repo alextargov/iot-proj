@@ -165,10 +165,6 @@ func (r *Resolver) Device(ctx context.Context, id string) (*graphql.Device, erro
 	})
 }
 
-func (r *Resolver) DeviceByIDAndAggregation(ctx context.Context, id string, aggregation graphql.AggregationType) (*graphql.Device, error) {
-	return nil, nil
-}
-
 func (r *Resolver) CreateDevice(ctx context.Context, input graphql.DeviceInput) (*graphql.Device, error) {
 	return transaction.WithTransactionResult(ctx, r.transact, func(ctx context.Context) (*graphql.Device, error) {
 		convertedIn := r.deviceConverter.InputFromGraphQL(input)
@@ -263,10 +259,6 @@ func (r *Resolver) publishStatus(deviceID, status string) {
 	if r.statusPublisher != nil {
 		r.statusPublisher.Publish(deviceID, status)
 	}
-}
-
-func (r *Resolver) SetOperation(ctx context.Context, op graphql.OperationType, data interface{}) (bool, error) {
-	return false, nil
 }
 
 func (r *Resolver) Host(ctx context.Context, obj *graphql.Device) (*graphql.Host, error) {

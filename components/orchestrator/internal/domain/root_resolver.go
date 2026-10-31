@@ -306,10 +306,6 @@ func (r *queryResolver) Device(ctx context.Context, id string) (*graphql.Device,
 	return r.device.Device(ctx, id)
 }
 
-func (r *queryResolver) DeviceByIDAndAggregation(ctx context.Context, id string, aggregation graphql.AggregationType) (*graphql.Device, error) {
-	return r.device.DeviceByIDAndAggregation(ctx, id, aggregation)
-}
-
 func (r *queryResolver) Widget(ctx context.Context, id string) (*graphql.Widget, error) {
 	return r.widget.Widget(ctx, id)
 }
@@ -438,10 +434,6 @@ func (r *mutationResolver) UpdateDevice(ctx context.Context, id string, in graph
 
 func (r *mutationResolver) SetDeviceOperation(ctx context.Context, id string, op graphql.OperationType) (*graphql.Device, error) {
 	return r.device.SetDeviceOperation(ctx, id, op)
-}
-
-func (r *mutationResolver) SetOperation(ctx context.Context, op graphql.OperationType, data interface{}) (bool, error) {
-	return r.device.SetOperation(ctx, op, data)
 }
 
 func (r *mutationResolver) DeleteDevice(ctx context.Context, id string) (string, error) {
