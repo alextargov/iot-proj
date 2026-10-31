@@ -63,7 +63,13 @@
             @if (isGauge) {
                 <mat-form-field appearance="outline" class="full-width">
                     <mat-label>Metric Name</mat-label>
-                    <input matInput formControlName="metricName" placeholder="e.g., temperature">
+                    <input matInput formControlName="metricName" placeholder="e.g., temperature" [matAutocomplete]="gaugeMetricAuto">
+                    <mat-autocomplete #gaugeMetricAuto="matAutocomplete">
+                        @for (m of metricNames; track m) {
+                            <mat-option [value]="m">{{ m }}</mat-option>
+                        }
+                    </mat-autocomplete>
+                    <mat-hint>Suggestions come from the device's recorded metrics</mat-hint>
                 </mat-form-field>
 
                 <div class="row">
@@ -77,6 +83,9 @@
                         <input matInput type="number" formControlName="maxValue">
                     </mat-form-field>
                 </div>
+                @if (hasMinMaxError) {
+                    <p class="field-error">Max Value must be greater than Min Value.</p>
+                }
 
                 <div class="row">
                     <mat-form-field appearance="outline">
@@ -92,13 +101,45 @@
                         }
                     </mat-form-field>
                 </div>
+
+                <!-- Gauge Thresholds -->
+                <div class="thresholds" formArrayName="thresholds">
+                    <div class="thresholds__header">
+                        <label class="section-label">Color Thresholds</label>
+                        <button type="button" mat-stroked-button (click)="addThreshold()">
+                            <mat-icon>add</mat-icon>
+                            Add threshold
+                        </button>
+                    </div>
+                    <p class="thresholds__hint">
+                        Gauge turns the color of the highest threshold the value reaches. No thresholds = green.
+                    </p>
+                    @for (row of thresholds.controls; track $index) {
+                        <div class="thresholds__row" [formGroupName]="$index">
+                            <mat-form-field appearance="outline" class="thresholds__value">
+                                <mat-label>At value ≥</mat-label>
+                                <input matInput type="number" formControlName="value">
+                            </mat-form-field>
+                            <input type="color" formControlName="color" class="thresholds__color" aria-label="Threshold color">
+                            <button type="button" mat-icon-button (click)="removeThreshold($index)" matTooltip="Remove threshold" aria-label="Remove threshold">
+                                <mat-icon>delete</mat-icon>
+                            </button>
+                        </div>
+                    }
+                </div>
             }
 
             <!-- Line Chart Config -->
             @if (isLineChart) {
                 <mat-form-field appearance="outline" class="full-width">
                     <mat-label>Metric Name (optional)</mat-label>
-                    <input matInput formControlName="metricName" placeholder="Leave empty for all metrics">
+                    <input matInput formControlName="metricName" placeholder="Leave empty for all metrics" [matAutocomplete]="lineMetricAuto">
+                    <mat-autocomplete #lineMetricAuto="matAutocomplete">
+                        @for (m of metricNames; track m) {
+                            <mat-option [value]="m">{{ m }}</mat-option>
+                        }
+                    </mat-autocomplete>
+                    <mat-hint>Suggestions come from the device's recorded metrics</mat-hint>
                 </mat-form-field>
 
                 <mat-form-field appearance="outline" class="full-width">
@@ -109,6 +150,8 @@
                         }
                     </mat-select>
                 </mat-form-field>
+
+                <mat-checkbox formControlName="showLegend">Show legend</mat-checkbox>
             }
 
             <!-- Status Indicator Config -->
@@ -129,7 +172,13 @@
             @if (isStatCard) {
                 <mat-form-field appearance="outline" class="full-width">
                     <mat-label>Metric Name</mat-label>
-                    <input matInput formControlName="metricName" placeholder="e.g., power">
+                    <input matInput formControlName="metricName" placeholder="e.g., power" [matAutocomplete]="statMetricAuto">
+                    <mat-autocomplete #statMetricAuto="matAutocomplete">
+                        @for (m of metricNames; track m) {
+                            <mat-option [value]="m">{{ m }}</mat-option>
+                        }
+                    </mat-autocomplete>
+                    <mat-hint>Suggestions come from the device's recorded metrics</mat-hint>
                 </mat-form-field>
 
                 <div class="row">
@@ -172,7 +221,13 @@
             @if (isTable) {
                 <mat-form-field appearance="outline" class="full-width">
                     <mat-label>Metric Name (optional)</mat-label>
-                    <input matInput formControlName="metricName" placeholder="Leave empty for all metrics">
+                    <input matInput formControlName="metricName" placeholder="Leave empty for all metrics" [matAutocomplete]="tableMetricAuto">
+                    <mat-autocomplete #tableMetricAuto="matAutocomplete">
+                        @for (m of metricNames; track m) {
+                            <mat-option [value]="m">{{ m }}</mat-option>
+                        }
+                    </mat-autocomplete>
+                    <mat-hint>Suggestions come from the device's recorded metrics</mat-hint>
                 </mat-form-field>
 
                 <div class="row">
@@ -195,6 +250,71 @@
                 </div>
             }
         </form>
+
+        <!-- Live Preview -->
+        <div class="widget-preview">
+            <label class="section-label">Preview</label>
+            @if (canPreview) {
+                <div class="widget-preview__pane">
+                    @switch (selectedWidgetType) {
+                        @case (DashboardWidgetType.Gauge) {
+                            <app-gauge-widget
+                                [deviceId]="previewConfig.deviceId"
+                                [metricName]="previewConfig.metricName"
+                                [minValue]="previewConfig.minValue ?? 0"
+                                [maxValue]="previewConfig.maxValue ?? 100"
+                                [unit]="previewConfig.unit"
+                                [decimals]="previewConfig.decimals ?? 1"
+                                [thresholds]="previewConfig.thresholds"
+                                [refreshInterval]="60000">
+                            </app-gauge-widget>
+                        }
+                        @case (DashboardWidgetType.LineChart) {
+                            <app-line-chart-widget
+                                [deviceId]="previewConfig.deviceId"
+                                [metricNames]="previewConfig.metricNames"
+                                [timeRange]="previewConfig.timeRange || 'hour'"
+                                [showLegend]="previewConfig.showLegend"
+                                [refreshInterval]="60000">
+                            </app-line-chart-widget>
+                        }
+                        @case (DashboardWidgetType.StatusIndicator) {
+                            <app-status-indicator-widget
+                                [deviceId]="previewConfig.deviceId"
+                                [size]="previewConfig.size || 'medium'"
+                                [showLabel]="previewConfig.showLabel !== false"
+                                [refreshInterval]="60000">
+                            </app-status-indicator-widget>
+                        }
+                        @case (DashboardWidgetType.StatCard) {
+                            <app-stat-card-widget
+                                [deviceId]="previewConfig.deviceId"
+                                [metricName]="previewConfig.metricName"
+                                [aggregation]="previewConfig.aggregation || 'average'"
+                                [timeRange]="previewConfig.timeRange || 'hour'"
+                                [unit]="previewConfig.unit"
+                                [decimals]="previewConfig.decimals ?? 1"
+                                [refreshInterval]="60000">
+                            </app-stat-card-widget>
+                        }
+                        @case (DashboardWidgetType.Table) {
+                            <app-table-widget
+                                [deviceId]="previewConfig.deviceId"
+                                [metricName]="previewConfig.metricName"
+                                [timeRange]="previewConfig.timeRange || 'hour'"
+                                [limit]="previewConfig.limit ?? 10"
+                                [refreshInterval]="60000">
+                            </app-table-widget>
+                        }
+                    }
+                </div>
+            } @else {
+                <div class="widget-preview__placeholder">
+                    <mat-icon>visibility_off</mat-icon>
+                    <span>Select a device to preview this widget</span>
+                </div>
+            }
+        </div>
     }
 </mat-dialog-content>
 

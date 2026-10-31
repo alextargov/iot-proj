@@ -108,6 +108,7 @@
                                             [maxValue]="item.widgetConfig?.maxValue ?? 100"
                                             [unit]="item.widgetConfig?.unit"
                                             [decimals]="item.widgetConfig?.decimals ?? 1"
+                                            [thresholds]="item.widgetConfig?.thresholds || []"
                                             [refreshInterval]="refreshInterval">
                                         </app-gauge-widget>
                                     }
@@ -116,6 +117,7 @@
                                             [deviceId]="item.widgetConfig?.deviceId"
                                             [metricNames]="item.widgetConfig?.metricNames"
                                             [timeRange]="item.widgetConfig?.timeRange || 'hour'"
+                                            [showLegend]="item.widgetConfig?.showLegend !== false"
                                             [refreshInterval]="refreshInterval">
                                         </app-line-chart-widget>
                                     }
