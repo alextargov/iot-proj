@@ -464,6 +464,10 @@ func (r *mutationResolver) DeleteWidget(ctx context.Context, id string) (string,
 	return r.widget.DeleteWidget(ctx, id)
 }
 
+func (r *mutationResolver) RunWidget(ctx context.Context, id string) (*graphql.Widget, error) {
+	return r.widget.RunWidget(ctx, id)
+}
+
 func (r *mutationResolver) CreateDataModel(ctx context.Context, in graphql.DataModelInput) (*graphql.DataModel, error) {
 	return r.dataModel.CreateDataModel(ctx, in)
 }

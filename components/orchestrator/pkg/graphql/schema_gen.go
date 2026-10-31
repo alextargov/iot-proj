@@ -319,6 +319,7 @@ type ComplexityRoot struct {
 		RenameOrganization           func(childComplexity int, id string, name string) int
 		RevokeDeviceCertificate      func(childComplexity int, deviceID string) int
 		RollbackDataModel            func(childComplexity int, dataModelID string, toVersion int) int
+		RunWidget                    func(childComplexity int, id string) int
 		SetAutomationRuleEnabled     func(childComplexity int, id string, enabled bool) int
 		SetDeviceOperation           func(childComplexity int, id string, op OperationType) int
 		SetOperation                 func(childComplexity int, op OperationType, data interface{}) int
@@ -492,6 +493,7 @@ type MutationResolver interface {
 	UpdateWidget(ctx context.Context, id string, input WidgetInput) (*Widget, error)
 	CloneWidget(ctx context.Context, id string) (*Widget, error)
 	DeleteWidget(ctx context.Context, id string) (string, error)
+	RunWidget(ctx context.Context, id string) (*Widget, error)
 	CreateDataModel(ctx context.Context, input DataModelInput) (*DataModel, error)
 	DeleteDataModel(ctx context.Context, id string) (string, error)
 	UpdateDataModel(ctx context.Context, id string, input UpdateDataModelInput) (*DataModel, error)
@@ -1909,6 +1911,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.RollbackDataModel(childComplexity, args["dataModelId"].(string), args["toVersion"].(int)), true
+	case "Mutation.runWidget":
+		if e.ComplexityRoot.Mutation.RunWidget == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_runWidget_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.RunWidget(childComplexity, args["id"].(string)), true
 	case "Mutation.setAutomationRuleEnabled":
 		if e.ComplexityRoot.Mutation.SetAutomationRuleEnabled == nil {
 			break
@@ -4112,6 +4125,20 @@ func (ec *executionContext) field_Mutation_rollbackDataModel_args(ctx context.Co
 		return nil, err
 	}
 	args["toVersion"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_runWidget_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -9529,6 +9556,68 @@ func (ec *executionContext) fieldContext_Mutation_deleteWidget(ctx context.Conte
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_deleteWidget_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_runWidget(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_runWidget(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().RunWidget(ctx, fc.Args["id"].(string))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				minimum, err := ec.unmarshalNRole2githubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐRole(ctx, "OPERATOR")
+				if err != nil {
+					var zeroVal *Widget
+					return zeroVal, err
+				}
+				if ec.Directives.HasRole == nil {
+					var zeroVal *Widget
+					return zeroVal, errors.New("directive hasRole is not implemented")
+				}
+				return ec.Directives.HasRole(ctx, nil, directive0, minimum)
+			}
+
+			next = directive1
+			return next
+		},
+		func(ctx context.Context, selections ast.SelectionSet, v *Widget) graphql.Marshaler {
+			return ec.marshalNWidget2ᚖgithubᚗcomᚋalextargovᚋiotᚑprojᚋcomponentsᚋorchestratorᚋpkgᚋgraphqlᚐWidget(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_runWidget(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Widget(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_runWidget_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -19250,6 +19339,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "deleteWidget":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_deleteWidget(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "runWidget":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_runWidget(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++

@@ -2,6 +2,7 @@ package widget
 
 import (
 	"context"
+	"time"
 
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/k8s"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/model"
@@ -25,6 +26,7 @@ type WidgetSvc interface {
 	Clone(ctx context.Context, id string) (string, error)
 	Delete(ctx context.Context, id string) error
 	GetByID(ctx context.Context, id string) (*model.Widget, error)
+	UpdateLastExecuted(ctx context.Context, id string) error
 }
 
 type HostSvc interface {
@@ -316,6 +318,68 @@ func (r *Resolver) CloneWidget(ctx context.Context, id string) (*graphql.Widget,
 	}
 
 	return r.widgetConverter.ToGraphQL(widget), nil
+}
+
+// RunWidget triggers an immediate, on-demand execution of a widget regardless
+// of its schedule. It (re)applies the widget's Application CR — bumping its
+// generation so the controller re-runs the build/deploy pipeline — then records
+// the run time, mirroring what the cron scheduler does on a scheduled tick.
+func (r *Resolver) RunWidget(ctx context.Context, id string) (*graphql.Widget, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	// Loads the widget within the tenant scope (service enforces tenancy).
+	widget, err := r.widgetSvc.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	// code/workspace live on the Application CR, not the DB — read them back so
+	// the re-applied spec carries the current source.
+	sourceCode := widget.Code
+	workspace := widget.Workspace
+	if app, appErr := r.scheduler.GetApplication(ctx, id); appErr != nil {
+		logger.C(ctx).Warnf("could not load Application CR for widget %s: %v", id, appErr)
+	} else if app != nil {
+		sourceCode = app.SourceCode
+		workspace = app.Workspace
+	}
+
+	application := &k8s.Application{
+		WidgetID:   id,
+		SourceCode: sourceCode,
+		Workspace:  workspace,
+	}
+
+	// Unlike create/update/clone (where a scheduling failure is non-fatal
+	// because the CR converges later), an explicit "run now" must report
+	// whether the run was actually triggered.
+	if _, err = r.scheduler.Schedule(ctx, application); err != nil {
+		logger.C(ctx).Errorf("error while triggering run for widget %s: %v", id, err)
+		return nil, err
+	}
+
+	if err = r.widgetSvc.UpdateLastExecuted(ctx, id); err != nil {
+		// The run was triggered; failing to stamp the timestamp is non-fatal.
+		logger.C(ctx).Errorf("error while recording last-executed time for widget %s: %v", id, err)
+	}
+
+	now := time.Now()
+	widget.LastExecutedAt = &now
+	result := r.widgetConverter.ToGraphQL(widget)
+	result.Code = sourceCode
+	result.Workspace = workspace
+
+	return result, nil
 }
 
 func (r *Resolver) DeleteWidget(ctx context.Context, id string) (string, error) {
