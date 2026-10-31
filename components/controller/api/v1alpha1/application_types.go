@@ -36,7 +36,7 @@ type ApplicationSpec struct {
 	ReplicasCount int `json:"replicas_count,omitempty"`
 }
 
-// +kubebuilder:validation:Enum=Initial;Code Obtained;Build Started;Build Ready;Deployment Ready;Deployment Started
+// +kubebuilder:validation:Enum=Initial;Code Obtained;Build Started;Build Ready;Deployment Ready;Deployment Started;Error
 type State string
 
 const (
@@ -46,6 +46,9 @@ const (
 	StateBuildReady        State = "Build Ready"
 	StateDeploymentReady   State = "Deployment Ready"
 	StateDeploymentStarted State = "Deployment Started"
+	// StateError is a terminal phase set when a build or deployment fails. The
+	// error detail is recorded in Status.Error.
+	StateError State = "Error"
 )
 
 // +kubebuilder:validation:Enum=Build Error;Deployment Error

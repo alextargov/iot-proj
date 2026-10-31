@@ -57,8 +57,11 @@ func main() {
 	var metricsAddr string
 	var enableLeaderElection bool
 	var probeAddr string
+	var imagePrefix string
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
+	flag.StringVar(&imagePrefix, "image-prefix", envOrDefault("IMAGE_PREFIX", function.DefaultImagePrefix),
+		"Registry/image prefix for built widget images. The full image is <prefix><app-name>:latest.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
@@ -90,7 +93,7 @@ func main() {
 		setupLog.Error(err, "unable to create k8s client")
 		os.Exit(1)
 	}
-	appCode := function.NewFunctionBuilder(mgrClient)
+	appCode := function.NewFunctionBuilder(mgrClient, imagePrefix)
 
 	controller := controllers.NewApplicationReconciler(
 		status.NewManager(mgrClient, appCode, k8s.NewPodManager(k8sClient, "system"), k8s.NewDeploymentManager(k8sClient, "system"), time.Second*10),
@@ -119,4 +122,13 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+}
+
+// envOrDefault returns the value of the environment variable key, or def when
+// it is unset or empty.
+func envOrDefault(key, def string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return def
 }

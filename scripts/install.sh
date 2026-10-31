@@ -46,9 +46,8 @@ installDatabase
 
 echo "Starting installation..."
 echo "Path to charts: " ${CHARTS}
-#helm upgrade --install --atomic --timeout "${TIMEOUT}" -f ./mergedOverrides.yaml --create-namespace --namespace "${RELEASE_NS}" iot "${CHARTS}"
-helm upgrade --install --atomic --timeout "${TIMEOUT}" -f ./mergedOverrides.yaml --create-namespace --namespace "${RELEASE_NS}" iot /Users/I540050/SAPDevelop/iot-automation/charts/components
-#trap "cleanup_trap" RETURN EXIT INT TERM
+helm upgrade --install --atomic --timeout "${TIMEOUT}" -f ./mergedOverrides.yaml --create-namespace --namespace "${RELEASE_NS}" iot "${CHARTS}"
+trap "cleanup_trap" RETURN EXIT INT TERM
 echo "Installation finished successfully"
 
 STATUS=$(helm status iot -n iot-system -o json | jq .info.status)

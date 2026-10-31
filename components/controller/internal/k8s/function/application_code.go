@@ -16,6 +16,9 @@ import (
 
 type app struct {
 	k8sClient client.Client
+	// imagePrefix is prepended to the per-widget image tag, e.g.
+	// "alextargov/iot-". The full image is imagePrefix + <name> + ":latest".
+	imagePrefix string
 }
 
 const BUILD_IMAGE = "gcr.io/kaniko-project/executor:latest"
@@ -23,12 +26,24 @@ const CONFIGMAP_DOCKERFILE = "dockerfile-config"
 const CONFIGMAP_PACKAGE_JSON = "packagejson-config"
 const SECRET_DOCKER_AUTH = "docker-secret"
 
+// DefaultImagePrefix is used when no image prefix is configured.
+const DefaultImagePrefix = "alextargov/iot-"
+
 var log = ctrl.Log.WithName("application_code")
 
-func NewFunctionBuilder(k8sClient client.Client) *app {
-	return &app{
-		k8sClient: k8sClient,
+func NewFunctionBuilder(k8sClient client.Client, imagePrefix string) *app {
+	if imagePrefix == "" {
+		imagePrefix = DefaultImagePrefix
 	}
+	return &app{
+		k8sClient:   k8sClient,
+		imagePrefix: imagePrefix,
+	}
+}
+
+// image returns the fully-qualified image reference for a given application name.
+func (c *app) image(name string) string {
+	return fmt.Sprintf("%s%s:latest", c.imagePrefix, name)
 }
 
 // newOwnerReference creates an owner reference to the Application CR for garbage collection
@@ -36,33 +51,6 @@ func newOwnerReference(app *opv1alpha1.Application) metav1.OwnerReference {
 	return *metav1.NewControllerRef(app, opv1alpha1.GroupVersion.WithKind("Application"))
 }
 
-func (c *app) DeployCodeConfigmap(ctx context.Context, name, namespace, contents string) error {
-	cmData := make(map[string]string, 0)
-	cmData["server.js"] = contents
-
-	newConfigMap := &apiv1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-		},
-		Data: cmData,
-	}
-
-	cmMeta := types.NamespacedName{
-		Namespace: namespace,
-		Name:      name,
-	}
-
-	if err := c.k8sClient.Get(ctx, cmMeta, &apiv1.ConfigMap{}); err != nil {
-		log.Info(fmt.Sprintf("Creating configmap with name \"%s\"", name))
-		return c.k8sClient.Create(ctx, newConfigMap)
-	} else {
-		log.Info(fmt.Sprintf("Updating configmap with name \"%s\"", name))
-		return c.k8sClient.Update(ctx, newConfigMap)
-	}
-}
-
-// DeployCodeConfigmapWithOwner creates or updates the code configmap with an owner reference
 func (c *app) DeployCodeConfigmapWithOwner(ctx context.Context, application *opv1alpha1.Application, contents string) error {
 	cmData := make(map[string]string, 0)
 	cmData["server.js"] = contents
@@ -90,100 +78,6 @@ func (c *app) DeployCodeConfigmapWithOwner(ctx context.Context, application *opv
 	}
 }
 
-func (c *app) DeployImageBuilder(ctx context.Context, name, namespace string) error {
-	podName := fmt.Sprintf("%s-builder", name)
-	pod := &apiv1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      podName,
-			Namespace: namespace,
-		},
-		Spec: apiv1.PodSpec{
-			Containers: []apiv1.Container{
-				{
-					Name:  podName,
-					Image: BUILD_IMAGE,
-					Args: []string{
-						"--dockerfile=/workspace/Dockerfile",
-						"--context=dir://workspace",
-						fmt.Sprintf("--destination=alextargov/iot-%s:latest", name),
-					},
-					VolumeMounts: []apiv1.VolumeMount{
-						{
-							Name:      "dockerfile-storage",
-							MountPath: "/workspace/Dockerfile",
-							SubPath:   "Dockerfile",
-							ReadOnly:  true,
-						},
-						{
-							Name:      "packagejson-storage",
-							MountPath: "/workspace/package.json",
-							SubPath:   "package.json",
-							ReadOnly:  true,
-						},
-						{
-							Name:      "docker-secret",
-							MountPath: "/kaniko/.docker/config.json",
-							SubPath:   "config.json",
-							ReadOnly:  true,
-						},
-						{
-							Name:      name,
-							MountPath: "/workspace/server.js",
-							SubPath:   "server.js",
-							ReadOnly:  true,
-						},
-					},
-					ImagePullPolicy: apiv1.PullIfNotPresent},
-			},
-			RestartPolicy: apiv1.RestartPolicyNever,
-			Volumes: []apiv1.Volume{
-				{
-					Name: "dockerfile-storage",
-					VolumeSource: apiv1.VolumeSource{
-						ConfigMap: &apiv1.ConfigMapVolumeSource{
-							LocalObjectReference: apiv1.LocalObjectReference{
-								Name: CONFIGMAP_DOCKERFILE,
-							},
-						},
-					},
-				},
-				{
-					Name: "packagejson-storage",
-					VolumeSource: apiv1.VolumeSource{
-						ConfigMap: &apiv1.ConfigMapVolumeSource{
-							LocalObjectReference: apiv1.LocalObjectReference{
-								Name: CONFIGMAP_PACKAGE_JSON,
-							},
-						},
-					},
-				},
-				{
-					Name: "docker-secret",
-					VolumeSource: apiv1.VolumeSource{
-						Secret: &apiv1.SecretVolumeSource{
-							SecretName: SECRET_DOCKER_AUTH,
-						},
-					},
-				},
-				{
-					Name: name,
-					VolumeSource: apiv1.VolumeSource{
-						ConfigMap: &apiv1.ConfigMapVolumeSource{
-							LocalObjectReference: apiv1.LocalObjectReference{
-								Name: name,
-							},
-						},
-					},
-				},
-			},
-		},
-		Status: apiv1.PodStatus{},
-	}
-
-	log.Info(fmt.Sprintf("Creating image builder with name \"%s\"", podName))
-	return c.k8sClient.Create(ctx, pod)
-}
-
 // DeployImageBuilderWithOwner creates the image builder pod with an owner reference
 func (c *app) DeployImageBuilderWithOwner(ctx context.Context, application *opv1alpha1.Application) error {
 	podName := fmt.Sprintf("%s-builder", application.Name)
@@ -201,7 +95,7 @@ func (c *app) DeployImageBuilderWithOwner(ctx context.Context, application *opv1
 					Args: []string{
 						"--dockerfile=/workspace/Dockerfile",
 						"--context=dir://workspace",
-						fmt.Sprintf("--destination=alextargov/iot-%s:latest", application.Name),
+						fmt.Sprintf("--destination=%s", c.image(application.Name)),
 					},
 					VolumeMounts: []apiv1.VolumeMount{
 						{
@@ -301,48 +195,6 @@ func (c *app) DeleteImageBuilder(ctx context.Context, name, namespace string) er
 	return nil
 }
 
-func (c *app) PushFunctionDeployment(ctx context.Context, replicas int, name, namespace string) error {
-	replicaPtr := int32(replicas)
-	deployment := &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-		},
-		Spec: appsv1.DeploymentSpec{
-			Replicas: &replicaPtr,
-			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					"app": name,
-				},
-			},
-			Template: apiv1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{
-						"app": name,
-					},
-				},
-				Spec: apiv1.PodSpec{
-					Containers: []apiv1.Container{
-						{
-							Name:  name,
-							Image: fmt.Sprintf("alextargov/iot-%s:latest", name),
-							Ports: []apiv1.ContainerPort{
-								{
-									Name:          "http",
-									Protocol:      apiv1.ProtocolTCP,
-									ContainerPort: 80,
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	}
-
-	return c.k8sClient.Create(ctx, deployment)
-}
-
 // PushFunctionDeploymentWithOwner creates the deployment with an owner reference
 func (c *app) PushFunctionDeploymentWithOwner(ctx context.Context, application *opv1alpha1.Application) error {
 	replicaPtr := int32(application.Spec.ReplicasCount)
@@ -369,7 +221,7 @@ func (c *app) PushFunctionDeploymentWithOwner(ctx context.Context, application *
 					Containers: []apiv1.Container{
 						{
 							Name:  application.Name,
-							Image: fmt.Sprintf("alextargov/iot-%s:latest", application.Name),
+							Image: c.image(application.Name),
 							Ports: []apiv1.ContainerPort{
 								{
 									Name:          "http",
@@ -385,31 +237,6 @@ func (c *app) PushFunctionDeploymentWithOwner(ctx context.Context, application *
 	}
 
 	return c.k8sClient.Create(ctx, deployment)
-}
-
-func (c *app) PushFunctionService(ctx context.Context, name, namespace string) error {
-	svc := &apiv1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-		},
-		Spec: apiv1.ServiceSpec{
-			Selector: map[string]string{
-				"app": name,
-			},
-			Ports: []apiv1.ServicePort{{
-				Name:     "http",
-				Protocol: apiv1.ProtocolTCP,
-				Port:     int32(3000),
-				TargetPort: intstr.IntOrString{
-					Type:   intstr.Int,
-					IntVal: int32(3000),
-				},
-			}},
-		},
-	}
-
-	return c.k8sClient.Create(ctx, svc)
 }
 
 // PushFunctionServiceWithOwner creates the service with an owner reference
@@ -454,6 +281,24 @@ func (c *app) DeleteFunctionResources(ctx context.Context, name, namespace strin
 		},
 	}
 
+	// The code configmap shares the application's name; the builder pod is
+	// "<name>-builder". Owner references GC these once the Application is gone,
+	// but delete them explicitly too so cleanup is immediate and also covers
+	// resources created before ownership was wired.
+	configMap := &apiv1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+	}
+
+	builderPod := &apiv1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fmt.Sprintf("%s-builder", name),
+			Namespace: namespace,
+		},
+	}
+
 	if err := c.k8sClient.Delete(ctx, deployment); err != nil {
 		if !kubeerrors.IsNotFound(err) {
 			return err
@@ -468,6 +313,22 @@ func (c *app) DeleteFunctionResources(ctx context.Context, name, namespace strin
 		}
 
 		log.Error(err, fmt.Sprintf("%s svc resource was not found on API server", name))
+	}
+
+	if err := c.k8sClient.Delete(ctx, configMap); err != nil {
+		if !kubeerrors.IsNotFound(err) {
+			return err
+		}
+
+		log.Error(err, fmt.Sprintf("%s configmap resource was not found on API server", name))
+	}
+
+	if err := c.k8sClient.Delete(ctx, builderPod); err != nil {
+		if !kubeerrors.IsNotFound(err) {
+			return err
+		}
+
+		log.Error(err, fmt.Sprintf("%s-builder pod resource was not found on API server", name))
 	}
 
 	return nil

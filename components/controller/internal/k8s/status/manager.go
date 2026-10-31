@@ -25,10 +25,10 @@ type RequeueResult struct {
 type statusUpdaterFunc func(application *v1alpha1.Application)
 
 type Function interface {
-	DeployCodeConfigmap(context context.Context, name, namespace, contents string) error
-	DeployImageBuilder(ctx context.Context, name, namespace string) error
-	PushFunctionDeployment(ctx context.Context, replicas int, name, namespace string) error
-	PushFunctionService(ctx context.Context, name, namespace string) error
+	DeployCodeConfigmapWithOwner(ctx context.Context, application *v1alpha1.Application, contents string) error
+	DeployImageBuilderWithOwner(ctx context.Context, application *v1alpha1.Application) error
+	PushFunctionDeploymentWithOwner(ctx context.Context, application *v1alpha1.Application) error
+	PushFunctionServiceWithOwner(ctx context.Context, application *v1alpha1.Application) error
 	DeleteImageBuilder(ctx context.Context, name, namespace string) error
 }
 
@@ -89,7 +89,7 @@ func (m *manager) BuildImage(ctx context.Context, application *v1alpha1.Applicat
 		return err
 	}
 
-	if err := m.function.DeployImageBuilder(ctx, application.Name, application.Namespace); err != nil {
+	if err := m.function.DeployImageBuilderWithOwner(ctx, application); err != nil {
 		log.Error(err, "while deploying image builder")
 		return err
 	}
@@ -101,14 +101,18 @@ func (m *manager) BuildImage(ctx context.Context, application *v1alpha1.Applicat
 	})
 }
 
-// BuildError sets the error status for a build failure.
+// BuildError sets the error status for a build failure and transitions the
+// Application to the terminal StateError phase so the reconciler stops
+// requeuing it.
 func (m *manager) BuildError(ctx context.Context, application *v1alpha1.Application) error {
 	if err := application.Validate(); err != nil {
 		return err
 	}
 
+	logUpdateStatusWith(v1alpha1.StateError)
 	return m.updateStatusFunc(ctx, application, func(application *v1alpha1.Application) {
 		status := &application.Status
+		status.Phase = v1alpha1.StateError
 		status.Error = v1alpha1.ErrorState{
 			Type:    v1alpha1.BuildErrorType,
 			Message: "build error",
@@ -124,7 +128,7 @@ func (m *manager) ObtainCode(ctx context.Context, application *v1alpha1.Applicat
 
 	code := application.Spec.SourceCode
 
-	if err := m.function.DeployCodeConfigmap(ctx, application.Name, application.Namespace, code); err != nil {
+	if err := m.function.DeployCodeConfigmapWithOwner(ctx, application, code); err != nil {
 		return err
 	}
 
@@ -191,13 +195,13 @@ func (m *manager) Deploy(ctx context.Context, application *v1alpha1.Application)
 	}
 
 	log.Info("Creating Function Deployment")
-	if err := m.function.PushFunctionDeployment(ctx, application.Spec.ReplicasCount, application.Name, application.Namespace); err != nil {
+	if err := m.function.PushFunctionDeploymentWithOwner(ctx, application); err != nil {
 		log.Error(err, fmt.Sprintf("while pushing deployment to cluster with name \"%s\"", application.Name))
 		return err
 	}
 
 	log.Info("Creating Function Service")
-	if err := m.function.PushFunctionService(ctx, application.Name, application.Namespace); err != nil {
+	if err := m.function.PushFunctionServiceWithOwner(ctx, application); err != nil {
 		log.Error(err, fmt.Sprintf("while pushing service to cluster with name \"%s\"", application.Name))
 		return err
 	}
@@ -209,14 +213,18 @@ func (m *manager) Deploy(ctx context.Context, application *v1alpha1.Application)
 	})
 }
 
-// DeploymentError sets the error status for a deployment failure.
+// DeploymentError sets the error status for a deployment failure and
+// transitions the Application to the terminal StateError phase so the
+// reconciler stops requeuing it.
 func (m *manager) DeploymentError(ctx context.Context, application *v1alpha1.Application, errMsg string) error {
 	if err := application.Validate(); err != nil {
 		return err
 	}
 
+	logUpdateStatusWith(v1alpha1.StateError)
 	return m.updateStatusFunc(ctx, application, func(application *v1alpha1.Application) {
 		status := &application.Status
+		status.Phase = v1alpha1.StateError
 		status.Error = v1alpha1.ErrorState{
 			Type:    v1alpha1.DeploymentErrorType,
 			Message: errMsg,

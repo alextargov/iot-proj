@@ -73,6 +73,7 @@ spec:
                     - Image Ready
                     - Deployment Ready
                     - Deployment Started
+                    - Error
                   type: string
               type: object
           type: object

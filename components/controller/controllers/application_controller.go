@@ -5,6 +5,7 @@ import (
 	"fmt"
 	opv1alpha1 "github.com/alextargov/iot-proj/components/controller/api/v1alpha1"
 	logger "github.com/alextargov/iot-proj/components/controller/internal/log"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -122,6 +123,14 @@ func (r *ApplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			return ctrl.Result{RequeueAfter: result.RequeueAfter}, nil
 		}
 		r.Recorder.Event(application, corev1.EventTypeNormal, "DeploymentReady", "Application deployed and ready")
+	case opv1alpha1.StateDeploymentReady:
+		// Terminal success state: nothing to do. Reconcile is still invoked on
+		// child-resource changes once ownership is wired, so log and stop.
+		logger.C(ctx).Info("Application is deployed and ready; nothing to reconcile")
+	case opv1alpha1.StateError:
+		// Terminal failure state: the error detail lives in Status.Error. Do not
+		// requeue — the Application must be updated (new generation) to retry.
+		logger.C(ctx).Info(fmt.Sprintf("Application is in error state: %s - %s", application.Status.Error.Type, application.Status.Error.Message))
 	}
 
 	return ctrl.Result{}, nil
@@ -178,5 +187,9 @@ func (r ApplicationReconciler) handleError(ctx context.Context, app *opv1alpha1.
 func (r *ApplicationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&opv1alpha1.Application{}).
+		Owns(&appsv1.Deployment{}).
+		Owns(&corev1.Service{}).
+		Owns(&corev1.ConfigMap{}).
+		Owns(&corev1.Pod{}).
 		Complete(r)
 }
