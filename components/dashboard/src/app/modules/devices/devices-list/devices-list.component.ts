@@ -12,6 +12,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { DeviceInfoFragment } from 'src/app/shared/graphql/generated';
 import { MatDialog } from '@angular/material/dialog';
 import { DeviceDeleteComponent } from '../device-delete/device-delete.component';
+import { DeviceEditDialogComponent } from '../device-edit-dialog/device-edit-dialog.component';
 import { getDeviceStatusConfig, StatusConfig } from 'src/app/shared/utils/status-config.utils';
 import { AuthService } from 'src/app/shared/services/auth/auth.service';
 import { ToastrService } from 'src/app/shared/services/toastr/toastr.service';
@@ -409,6 +410,27 @@ export class DevicesListComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     public onEdit(device: DeviceInfoFragment): void {
-        this.router.navigate(['devices', device.id]);
+        const dialogRef = this.dialog.open(DeviceEditDialogComponent, {
+            data: { device },
+            autoFocus: 'dialog',
+        });
+
+        dialogRef.afterClosed().subscribe((input) => {
+            if (!input) {
+                return;
+            }
+            this.deviceService.updateDevice(device.id, input).subscribe({
+                next: (result) => {
+                    const updated = result.data?.updateDevice;
+                    if (updated) {
+                        this.dataSource.data = this.dataSource.data.map((d) =>
+                            d.id === updated.id ? updated : d
+                        );
+                    }
+                    this.toast.showSuccess(`Device "${device.name}" updated`);
+                },
+                error: () => this.toast.showError('Failed to update device'),
+            });
+        });
     }
 }

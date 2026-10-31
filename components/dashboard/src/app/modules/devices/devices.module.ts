@@ -9,6 +9,7 @@ import { DeviceCreateComponent } from './device-create/device-create.component';
 import { DevicesListComponent } from './devices-list/devices-list.component';
 import { DeviceDeleteComponent } from './device-delete/device-delete.component';
 import { DeviceDetailComponent } from './device-detail/device-detail.component';
+import { DeviceEditDialogComponent } from './device-edit-dialog/device-edit-dialog.component';
 import { MonacoEditorModule } from 'ngx-monaco-editor-v2';
 import { ChartsModule } from '../../shared/components/charts/charts.module';
 
@@ -23,6 +24,7 @@ import { DeviceDatamodelFormComponent } from './device-create/components/device-
         DevicesListComponent,
         DeviceDeleteComponent,
         DeviceDetailComponent,
+        DeviceEditDialogComponent,
         // Device create sub-components
         DeviceMetadataFormComponent,
         DeviceAuthFormComponent,

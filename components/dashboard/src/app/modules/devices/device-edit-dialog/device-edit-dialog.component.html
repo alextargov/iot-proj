@@ -1,0 +1,81 @@
+<div class="device-edit-dialog">
+    <h1 mat-dialog-title>Edit device</h1>
+    <div mat-dialog-content>
+        <form [formGroup]="form" class="device-edit-dialog__form">
+            <mat-form-field appearance="outline" class="device-edit-dialog__field">
+                <mat-label>Name</mat-label>
+                <input matInput formControlName="name" autocomplete="off" />
+                @if (form.get('name')?.hasError('required')) {
+                    <mat-error>Name is required</mat-error>
+                }
+                @if (form.get('name')?.hasError('maxlength')) {
+                    <mat-error>Name is too long</mat-error>
+                }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="device-edit-dialog__field">
+                <mat-label>Description</mat-label>
+                <textarea
+                    matInput
+                    formControlName="description"
+                    rows="2"
+                ></textarea>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="device-edit-dialog__field">
+                <mat-label>Status</mat-label>
+                <mat-select formControlName="status">
+                    @for (status of statuses; track status) {
+                        <mat-option [value]="status">{{ status }}</mat-option>
+                    }
+                </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="device-edit-dialog__field">
+                <mat-label>Device URL</mat-label>
+                <input matInput formControlName="url" autocomplete="off" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="device-edit-dialog__field">
+                <mat-label>Turn-on endpoint</mat-label>
+                <input matInput formControlName="turnOnEndpoint" autocomplete="off" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="device-edit-dialog__field">
+                <mat-label>Turn-off endpoint</mat-label>
+                <input matInput formControlName="turnOffEndpoint" autocomplete="off" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="device-edit-dialog__field">
+                <mat-label>Tags</mat-label>
+                <mat-chip-grid #chipGrid aria-label="Device tags">
+                    @for (tag of tags; track tag) {
+                        <mat-chip-row (removed)="removeTag(tag)">
+                            {{ tag }}
+                            <button matChipRemove [attr.aria-label]="'Remove ' + tag">
+                                <mat-icon>cancel</mat-icon>
+                            </button>
+                        </mat-chip-row>
+                    }
+                    <input
+                        placeholder="Add tag…"
+                        [matChipInputFor]="chipGrid"
+                        [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+                        (matChipInputTokenEnd)="addTag($event)"
+                    />
+                </mat-chip-grid>
+            </mat-form-field>
+        </form>
+    </div>
+    <div mat-dialog-actions align="end">
+        <button mat-button (click)="cancel()">Cancel</button>
+        <button
+            mat-raised-button
+            color="primary"
+            [disabled]="form.invalid"
+            (click)="save()"
+        >
+            Save
+        </button>
+    </div>
+</div>
