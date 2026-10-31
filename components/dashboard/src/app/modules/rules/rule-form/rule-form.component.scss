@@ -92,3 +92,147 @@
     gap: 8px;
     margin-top: 16px;
 }
+
+// Structured notification config
+.notification-config {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 12px;
+    width: 100%;
+
+    .channel-field {
+        flex: 0 0 160px;
+    }
+
+    .grow {
+        flex: 1 1 260px;
+    }
+
+    .advanced-toggle {
+        flex-basis: 100%;
+        justify-content: flex-start;
+        padding-left: 0;
+        color: rgba(0, 0, 0, 0.6);
+        font-size: 0.8125rem;
+    }
+}
+
+// Test-against-recent-metrics panel
+.test-panel {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px dashed #e0e0e0;
+
+    .test-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-left: 12px;
+        color: rgba(0, 0, 0, 0.6);
+        font-size: 0.875rem;
+
+        mat-spinner {
+            display: inline-block;
+        }
+    }
+
+    .test-result {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 12px;
+        padding: 10px 12px;
+        border-radius: 8px;
+        font-weight: 500;
+
+        &--fire {
+            background: #fff3e0;
+            color: #e65100;
+        }
+        &--quiet {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        &--error {
+            background: #fff3e0;
+            color: #ef6c00;
+        }
+        &--neutral {
+            background: #f5f5f5;
+            color: rgba(0, 0, 0, 0.6);
+        }
+    }
+
+    .test-note {
+        margin: 8px 0 0;
+        font-size: 0.8125rem;
+        color: #ef6c00;
+    }
+
+    .test-breakdown {
+        margin-top: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .test-group {
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 8px 12px;
+
+        &--matched {
+            border-color: #e65100;
+            background: #fffaf3;
+        }
+
+        .test-group-head {
+            font-weight: 500;
+            font-size: 0.8125rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+
+            .test-badge {
+                font-size: 0.6875rem;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                color: rgba(0, 0, 0, 0.5);
+            }
+        }
+
+        ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        li {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.875rem;
+            padding: 2px 0;
+
+            mat-icon {
+                font-size: 18px;
+                width: 18px;
+                height: 18px;
+            }
+
+            &.cond-ok mat-icon {
+                color: #2e7d32;
+            }
+            &.cond-bad mat-icon {
+                color: rgba(0, 0, 0, 0.38);
+            }
+
+            .cond-actual {
+                color: rgba(0, 0, 0, 0.55);
+                font-size: 0.8125rem;
+            }
+        }
+    }
+}

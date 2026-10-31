@@ -173,6 +173,88 @@
                     <mat-icon>add</mat-icon>
                     Add Condition Group
                 </button>
+
+                <!-- Test against recent metrics -->
+                <div class="test-panel">
+                    <button
+                        mat-stroked-button
+                        type="button"
+                        (click)="runTest()"
+                        [disabled]="testing || !form.get('deviceId')?.value"
+                    >
+                        <mat-icon>science</mat-icon>
+                        Test against recent metrics
+                    </button>
+
+                    @if (testing) {
+                        <span class="test-status">
+                            <mat-spinner diameter="18"></mat-spinner> Evaluating…
+                        </span>
+                    }
+
+                    @if (testError) {
+                        <div class="test-result test-result--error">
+                            <mat-icon>error_outline</mat-icon>
+                            <span>{{ testError }}</span>
+                        </div>
+                    }
+
+                    @if (testResult) {
+                        @if (testResult.empty) {
+                            <div class="test-result test-result--neutral">
+                                <mat-icon>info</mat-icon>
+                                <span>Add at least one condition to test.</span>
+                            </div>
+                        } @else {
+                            <div
+                                class="test-result"
+                                [class.test-result--fire]="testResult.wouldFire"
+                                [class.test-result--quiet]="!testResult.wouldFire"
+                            >
+                                <mat-icon>{{ testResult.wouldFire ? 'notifications_active' : 'notifications_off' }}</mat-icon>
+                                <span>
+                                    {{ testResult.wouldFire
+                                        ? 'This alert WOULD FIRE against the latest metrics.'
+                                        : 'This alert would not fire against the latest metrics.' }}
+                                </span>
+                            </div>
+
+                            @if (testResult.hasMissing) {
+                                <p class="test-note">
+                                    Some metrics have no recent data — those conditions can't match.
+                                </p>
+                            }
+
+                            <div class="test-breakdown">
+                                @for (group of testResult.groups; track $index; let gi = $index) {
+                                    <div class="test-group" [class.test-group--matched]="group.matched">
+                                        <div class="test-group-head">
+                                            Group {{ gi + 1 }}
+                                            <span class="test-badge">{{ group.matched ? 'match' : 'no match' }}</span>
+                                        </div>
+                                        <ul>
+                                            @for (c of group.conditions; track $index) {
+                                                <li [class.cond-ok]="c.matched" [class.cond-bad]="!c.matched">
+                                                    <mat-icon>{{ c.matched ? 'check' : 'close' }}</mat-icon>
+                                                    <span>
+                                                        {{ c.metricName }} {{ operatorSymbol(c.operator) }} {{ c.threshold }}
+                                                        <span class="cond-actual">
+                                                            @if (c.missing) {
+                                                                (no recent data)
+                                                            } @else {
+                                                                (latest: {{ c.actual }})
+                                                            }
+                                                        </span>
+                                                    </span>
+                                                </li>
+                                            }
+                                        </ul>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    }
+                </div>
             </mat-card-content>
         </mat-card>
 
@@ -190,44 +272,106 @@
                     *ngFor="let notif of notifications.controls; let ni = index"
                     class="notification-row"
                 >
-                    <div [formGroupName]="ni" class="notification-fields">
-                        <mat-form-field appearance="outline">
-                            <mat-label>Type</mat-label>
-                            <mat-select formControlName="type">
-                                <mat-option *ngFor="let type of notificationTypes" [value]="type">
-                                    {{ type | titlecase }}
-                                </mat-option>
-                            </mat-select>
-                        </mat-form-field>
+                    <div [formGroupName]="ni" class="notification-block">
+                        <div class="notification-head">
+                            <mat-form-field appearance="outline" class="type-field">
+                                <mat-label>Type</mat-label>
+                                <mat-select
+                                    formControlName="type"
+                                    (selectionChange)="onChannelChange(ni)"
+                                >
+                                    <mat-option *ngFor="let type of notificationTypes" [value]="type">
+                                        {{ type | titlecase }}
+                                    </mat-option>
+                                </mat-select>
+                            </mat-form-field>
 
-                        <mat-form-field appearance="outline" class="config-field">
-                            <mat-label>Configuration (JSON)</mat-label>
-                            <textarea
-                                matInput
-                                formControlName="config"
-                                rows="2"
-                                placeholder='{"recipients": ["user@example.com"]}'
-                            ></textarea>
-                            <mat-hint>
-                                Email: &#123;"recipients": ["email&#64;example.com"]&#125; | Webhook: &#123;"url":"https://..."&#125;
-                            </mat-hint>
-                            @if (notif.get('config')?.hasError('required')) {
-                                <mat-error>Configuration is required.</mat-error>
-                            }
-                            @if (notif.get('config')?.hasError('json')) {
-                                <mat-error>Enter valid JSON.</mat-error>
-                            }
-                        </mat-form-field>
+                            <button
+                                mat-icon-button
+                                color="warn"
+                                type="button"
+                                (click)="removeNotification(ni)"
+                                matTooltip="Remove notification"
+                            >
+                                <mat-icon>delete</mat-icon>
+                            </button>
+                        </div>
 
+                        <!-- Email: recipient chips -->
+                        @if (notif.get('type')?.value === 'email') {
+                            <mat-form-field appearance="outline" class="full-width">
+                                <mat-label>Recipients</mat-label>
+                                <mat-chip-grid #chipGrid aria-label="Email recipients">
+                                    @for (email of notif.get('recipients')?.value ?? []; track email) {
+                                        <mat-chip-row (removed)="removeRecipient(ni, email)">
+                                            {{ email }}
+                                            <button matChipRemove [attr.aria-label]="'Remove ' + email">
+                                                <mat-icon>cancel</mat-icon>
+                                            </button>
+                                        </mat-chip-row>
+                                    }
+                                    <input
+                                        placeholder="Add email…"
+                                        [matChipInputFor]="chipGrid"
+                                        [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+                                        (matChipInputTokenEnd)="addRecipient(ni, $event)"
+                                    />
+                                </mat-chip-grid>
+                                <mat-hint>Press Enter or comma to add. Invalid emails are ignored.</mat-hint>
+                                @if (!(notif.get('recipients')?.value?.length)) {
+                                    <mat-error>At least one recipient is recommended.</mat-error>
+                                }
+                            </mat-form-field>
+                        }
+
+                        <!-- Webhook: URL field -->
+                        @if (notif.get('type')?.value === 'webhook') {
+                            <mat-form-field appearance="outline" class="full-width">
+                                <mat-label>Webhook URL</mat-label>
+                                <input
+                                    matInput
+                                    formControlName="url"
+                                    placeholder="https://example.com/hook"
+                                    (input)="onWebhookUrlChange(ni)"
+                                />
+                                @if (notif.get('url')?.value && !isValidHttpUrl(notif.get('url')?.value)) {
+                                    <mat-error>Enter a valid http(s) URL.</mat-error>
+                                }
+                            </mat-form-field>
+                        }
+
+                        <!-- Advanced raw-JSON escape hatch -->
                         <button
-                            mat-icon-button
-                            color="warn"
+                            mat-button
                             type="button"
-                            (click)="removeNotification(ni)"
-                            matTooltip="Remove notification"
+                            class="advanced-toggle"
+                            (click)="toggleAdvanced(ni)"
                         >
-                            <mat-icon>delete</mat-icon>
+                            <mat-icon>{{ notif.get('showAdvanced')?.value ? 'expand_less' : 'expand_more' }}</mat-icon>
+                            Advanced (raw JSON)
                         </button>
+
+                        @if (notif.get('showAdvanced')?.value) {
+                            <mat-form-field appearance="outline" class="full-width config-field">
+                                <mat-label>Configuration (JSON)</mat-label>
+                                <textarea
+                                    matInput
+                                    formControlName="config"
+                                    rows="2"
+                                    (input)="onRawConfigChange(ni)"
+                                    placeholder='{"recipients": ["user@example.com"]}'
+                                ></textarea>
+                                <mat-hint>
+                                    Editing here overrides the structured fields above.
+                                </mat-hint>
+                                @if (notif.get('config')?.hasError('required')) {
+                                    <mat-error>Configuration is required.</mat-error>
+                                }
+                                @if (notif.get('config')?.hasError('json')) {
+                                    <mat-error>Enter valid JSON.</mat-error>
+                                }
+                            </mat-form-field>
+                        }
                     </div>
                 </div>
 

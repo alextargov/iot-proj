@@ -16,6 +16,7 @@ import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatSortModule } from '@angular/material/sort';
+import { MatChipsModule } from '@angular/material/chips';
 
 import { SharedModule } from '../../shared/shared.module';
 import { AlertsRoutingModule } from './alerts-routing.module';
@@ -48,6 +49,7 @@ import { AlertEventsComponent } from './alert-events/alert-events.component';
         MatTooltipModule,
         MatPaginatorModule,
         MatSortModule,
+        MatChipsModule,
     ],
     exports: [
         AlertsListComponent,

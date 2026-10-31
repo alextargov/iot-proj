@@ -8,6 +8,7 @@ import {
     Validators,
 } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { MatChipInputEvent } from '@angular/material/chips';
 import {
     AlertService,
     AlertSeverity,
@@ -20,6 +21,16 @@ import { MetricsService } from '../../../shared/services/metrics/metrics.service
 import { DeviceInfoFragment } from '../../../shared/graphql/generated';
 import { ToastrService } from '../../../shared/services/toastr/toastr.service';
 import { HasUnsavedChanges } from '../../../core/guards/unsaved-changes.guard';
+import {
+    TestResult,
+    TestGroup,
+    evaluateConditions,
+    parseNotificationConfig,
+    buildNotificationConfig,
+    isValidEmail,
+    isValidHttpUrl,
+    StructuredNotification,
+} from '../../../shared/utils/notification-config.utils';
 
 /** Validates that a control's value is well-formed JSON (empty is allowed). */
 export function jsonValidator(
@@ -56,6 +67,14 @@ export class AlertFormComponent implements OnInit, HasUnsavedChanges {
     severities = Object.values(AlertSeverity);
     operators = Object.values(AlertConditionOperator);
     notificationTypes = ['email', 'webhook'];
+
+    /** Chip-input separator key codes (Enter, comma). */
+    readonly separatorKeysCodes: number[] = [13, 188];
+
+    /** Result of the last "test against recent metrics" run, or null. */
+    testResult: TestResult | null = null;
+    testing = false;
+    testError: string | null = null;
 
     constructor(
         private fb: FormBuilder,
@@ -143,10 +162,22 @@ export class AlertFormComponent implements OnInit, HasUnsavedChanges {
         });
     }
 
-    createNotification(): FormGroup {
+    createNotification(
+        type = 'email',
+        structured: StructuredNotification = { recipients: [], url: '' }
+    ): FormGroup {
         return this.fb.group({
-            type: ['email', Validators.required],
-            config: ['', [Validators.required, jsonValidator]],
+            type: [type, Validators.required],
+            // Structured fields drive the serialized config below.
+            recipients: [structured.recipients],
+            url: [structured.url],
+            // Canonical config string sent to the backend; kept in sync with
+            // the structured fields and editable via the "advanced" panel.
+            config: [
+                buildNotificationConfig(type, structured),
+                [Validators.required, jsonValidator],
+            ],
+            showAdvanced: [false],
         });
     }
 
@@ -190,6 +221,67 @@ export class AlertFormComponent implements OnInit, HasUnsavedChanges {
     removeNotification(index: number): void {
         this.notifications.removeAt(index);
     }
+
+    // --- Structured notification config -----------------------------------
+
+    /** Re-serialize structured fields into the canonical config string. */
+    private syncConfig(group: AbstractControl): void {
+        const type = group.get('type')?.value;
+        const structured: StructuredNotification = {
+            recipients: group.get('recipients')?.value ?? [],
+            url: group.get('url')?.value ?? '',
+        };
+        group
+            .get('config')
+            ?.setValue(buildNotificationConfig(type, structured));
+        group.get('config')?.markAsDirty();
+    }
+
+    onChannelChange(index: number): void {
+        this.syncConfig(this.notifications.at(index));
+    }
+
+    addRecipient(index: number, event: MatChipInputEvent): void {
+        const value = (event.value || '').trim();
+        const group = this.notifications.at(index);
+        if (value && isValidEmail(value)) {
+            const current: string[] = group.get('recipients')?.value ?? [];
+            if (!current.includes(value)) {
+                group.get('recipients')?.setValue([...current, value]);
+                this.syncConfig(group);
+            }
+        }
+        event.chipInput?.clear();
+    }
+
+    removeRecipient(index: number, recipient: string): void {
+        const group = this.notifications.at(index);
+        const current: string[] = group.get('recipients')?.value ?? [];
+        group
+            .get('recipients')
+            ?.setValue(current.filter((r) => r !== recipient));
+        this.syncConfig(group);
+    }
+
+    onWebhookUrlChange(index: number): void {
+        this.syncConfig(this.notifications.at(index));
+    }
+
+    /** Parse an edited raw-JSON config back into the structured fields. */
+    onRawConfigChange(index: number): void {
+        const group = this.notifications.at(index);
+        const structured = parseNotificationConfig(group.get('config')?.value);
+        group.get('recipients')?.setValue(structured.recipients);
+        group.get('url')?.setValue(structured.url);
+    }
+
+    toggleAdvanced(index: number): void {
+        const ctrl = this.notifications.at(index).get('showAdvanced');
+        ctrl?.setValue(!ctrl.value);
+    }
+
+    public isValidEmail = isValidEmail;
+    public isValidHttpUrl = isValidHttpUrl;
 
     loadDevices(): void {
         this.deviceService.getAllDevices().subscribe({
@@ -265,18 +357,23 @@ export class AlertFormComponent implements OnInit, HasUnsavedChanges {
         // Populate notifications
         if (alert.notifications) {
             alert.notifications.forEach((notif: any) => {
-                this.notifications.push(
-                    this.fb.group({
-                        type: [notif.type, Validators.required],
-                        config: [notif.config, [Validators.required, jsonValidator]],
-                    })
-                );
+                const structured = parseNotificationConfig(notif.config);
+                const group = this.createNotification(notif.type, structured);
+                // Preserve the stored config verbatim (may contain keys the
+                // structured UI doesn't model).
+                group.get('config')?.setValue(notif.config);
+                this.notifications.push(group);
             });
         }
     }
 
     getOperatorDisplay(operator: AlertConditionOperator): string {
         return this.alertService.getOperatorDisplay(operator);
+    }
+
+    /** Operator symbol from a raw string value (for the test breakdown). */
+    operatorSymbol(operator: string): string {
+        return this.alertService.getOperatorDisplay(operator as AlertConditionOperator);
     }
 
     private operatorPhrase(op: AlertConditionOperator): string {
@@ -329,6 +426,58 @@ export class AlertFormComponent implements OnInit, HasUnsavedChanges {
         return `Raise a ${raw.severity ?? ''} alert and ${notify} when ${deviceName}'s ${when}.`;
     }
 
+    // --- Test against recent metrics --------------------------------------
+
+    /** Current condition groups as plain objects for the evaluator. */
+    private currentGroups(): TestGroup[] {
+        const raw = this.form.value;
+        return (raw.conditionGroups ?? []).map((g: any) => ({
+            conditions: (g.conditions ?? []).map((c: any) => ({
+                metricName: c.metricName,
+                operator: c.operator,
+                threshold: Number(c.threshold),
+            })),
+        }));
+    }
+
+    runTest(): void {
+        const deviceId = this.form.get('deviceId')?.value;
+        if (!deviceId) {
+            this.testError = 'Select a device first.';
+            this.testResult = null;
+            return;
+        }
+        this.testing = true;
+        this.testError = null;
+        this.testResult = null;
+
+        // Pull a recent window of metrics and keep the latest value per name.
+        this.metricsService.getMetrics(deviceId, { limit: 200 }).subscribe({
+            next: (metrics) => {
+                const latest = new Map<string, number>();
+                // getMetrics returns rows; keep the most recent per metricName.
+                const sorted = [...metrics].sort(
+                    (a, b) =>
+                        new Date(b.recordedAt).getTime() -
+                        new Date(a.recordedAt).getTime()
+                );
+                for (const m of sorted) {
+                    if (!latest.has(m.metricName)) {
+                        latest.set(m.metricName, m.metricValue);
+                    }
+                }
+                this.testResult = evaluateConditions(this.currentGroups(), latest);
+                this.testing = false;
+                this.cdr.detectChanges();
+            },
+            error: () => {
+                this.testError = 'Could not load recent metrics for this device.';
+                this.testing = false;
+                this.cdr.detectChanges();
+            },
+        });
+    }
+
     save(): void {
         if (this.form.invalid) {
             this.form.markAllAsTouched();
@@ -337,6 +486,13 @@ export class AlertFormComponent implements OnInit, HasUnsavedChanges {
 
         this.saving = true;
         const formValue = this.form.value;
+
+        // Notifications carry structured helper fields in the form; the backend
+        // only wants { type, config }.
+        const notifications = (formValue.notifications ?? []).map((n: any) => ({
+            type: n.type,
+            config: n.config,
+        }));
 
         // Build conditions array
         const conditions: any[] = [];
@@ -358,7 +514,7 @@ export class AlertFormComponent implements OnInit, HasUnsavedChanges {
                 severity: formValue.severity,
                 cooldownMinutes: formValue.cooldownMinutes,
                 conditions,
-                notifications: formValue.notifications,
+                notifications,
             };
 
             this.alertService.updateAlertRule(this.alertId, input).subscribe({
@@ -382,7 +538,7 @@ export class AlertFormComponent implements OnInit, HasUnsavedChanges {
                 severity: formValue.severity,
                 cooldownMinutes: formValue.cooldownMinutes,
                 conditions,
-                notifications: formValue.notifications,
+                notifications,
             };
 
             this.alertService.createAlertRule(input).subscribe({

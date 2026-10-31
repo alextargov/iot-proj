@@ -15,6 +15,7 @@ import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatSortModule } from '@angular/material/sort';
+import { MatChipsModule } from '@angular/material/chips';
 
 import { SharedModule } from '../../shared/shared.module';
 import { RulesRoutingModule } from './rules-routing.module';
@@ -41,6 +42,7 @@ import { RuleFormComponent } from './rule-form/rule-form.component';
         MatTooltipModule,
         MatPaginatorModule,
         MatSortModule,
+        MatChipsModule,
     ],
 })
 export class RulesModule {}

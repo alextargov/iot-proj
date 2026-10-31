@@ -8,6 +8,7 @@ import {
     Validators,
 } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { MatChipInputEvent } from '@angular/material/chips';
 import { RuleService } from '../../../shared/services/rule/rule.service';
 import { DeviceService } from '../../../shared/services/device/device.service';
 import { IntegrationService } from '../../../shared/services/integration/integration.service';
@@ -24,6 +25,16 @@ import {
 } from '../../../shared/graphql/generated';
 import { ToastrService } from '../../../shared/services/toastr/toastr.service';
 import { HasUnsavedChanges } from '../../../core/guards/unsaved-changes.guard';
+import {
+    TestResult,
+    TestGroup,
+    evaluateConditions,
+    parseNotificationConfig,
+    buildNotificationConfig,
+    isValidEmail,
+    isValidHttpUrl,
+    StructuredNotification,
+} from '../../../shared/utils/notification-config.utils';
 
 /** Validates that a control's value is well-formed JSON (empty is allowed). */
 export function jsonValidator(
@@ -55,6 +66,17 @@ export class RuleFormComponent implements OnInit, HasUnsavedChanges {
     editingId: string | null = null;
     saving = false;
     private submitted = false;
+
+    /** Chip-input separator key codes (Enter, comma). */
+    readonly separatorKeysCodes: number[] = [13, 188];
+
+    /** Result of the last "test against recent metrics" run, or null. */
+    testResult: TestResult | null = null;
+    testing = false;
+    testError: string | null = null;
+
+    public isValidEmail = isValidEmail;
+    public isValidHttpUrl = isValidHttpUrl;
 
     readonly operators = Object.values(RuleConditionOperator);
     readonly actionTypes = Object.values(RuleActionType);
@@ -188,7 +210,11 @@ export class RuleFormComponent implements OnInit, HasUnsavedChanges {
             targetDeviceId: [''],
             operation: [OperationType.TurnOn],
             notificationType: ['email'],
-            notificationConfig: ['{"recipients":[""]}', jsonValidator],
+            // Structured notification fields drive notificationConfig below.
+            recipients: [[] as string[]],
+            url: [''],
+            notificationConfig: ['{"recipients":[]}', jsonValidator],
+            showAdvanced: [false],
             integrationId: [''],
             delaySeconds: [5],
         });
@@ -210,6 +236,132 @@ export class RuleFormComponent implements OnInit, HasUnsavedChanges {
         const ctrl = this.actions.at(i);
         this.actions.removeAt(i);
         this.actions.insert(target, ctrl);
+    }
+
+    // ---- Structured notification config ----
+
+    private syncConfig(group: AbstractControl): void {
+        const channel = group.get('notificationType')?.value;
+        const structured: StructuredNotification = {
+            recipients: group.get('recipients')?.value ?? [],
+            url: group.get('url')?.value ?? '',
+        };
+        group
+            .get('notificationConfig')
+            ?.setValue(buildNotificationConfig(channel, structured));
+        group.get('notificationConfig')?.markAsDirty();
+    }
+
+    onChannelChange(index: number): void {
+        this.syncConfig(this.actions.at(index));
+    }
+
+    addRecipient(index: number, event: MatChipInputEvent): void {
+        const value = (event.value || '').trim();
+        const group = this.actions.at(index);
+        if (value && isValidEmail(value)) {
+            const current: string[] = group.get('recipients')?.value ?? [];
+            if (!current.includes(value)) {
+                group.get('recipients')?.setValue([...current, value]);
+                this.syncConfig(group);
+            }
+        }
+        event.chipInput?.clear();
+    }
+
+    removeRecipient(index: number, recipient: string): void {
+        const group = this.actions.at(index);
+        const current: string[] = group.get('recipients')?.value ?? [];
+        group
+            .get('recipients')
+            ?.setValue(current.filter((r) => r !== recipient));
+        this.syncConfig(group);
+    }
+
+    onWebhookUrlChange(index: number): void {
+        this.syncConfig(this.actions.at(index));
+    }
+
+    onRawConfigChange(index: number): void {
+        const group = this.actions.at(index);
+        const structured = parseNotificationConfig(
+            group.get('notificationConfig')?.value
+        );
+        group.get('recipients')?.setValue(structured.recipients);
+        group.get('url')?.setValue(structured.url);
+    }
+
+    toggleAdvanced(index: number): void {
+        const ctrl = this.actions.at(index).get('showAdvanced');
+        ctrl?.setValue(!ctrl.value);
+    }
+
+    // ---- Test against recent metrics ----
+
+    private currentGroups(): TestGroup[] {
+        const raw = this.form.getRawValue();
+        return (raw.groups ?? []).map((g: any) => ({
+            conditions: (g.conditions ?? []).map((c: any) => ({
+                metricName: c.metricName,
+                operator: c.operator,
+                threshold: Number(c.threshold),
+            })),
+        }));
+    }
+
+    operatorSymbol(op: string): string {
+        switch (op) {
+            case 'GT':
+                return '>';
+            case 'LT':
+                return '<';
+            case 'GTE':
+                return '>=';
+            case 'LTE':
+                return '<=';
+            case 'EQ':
+                return '=';
+            case 'NE':
+                return '!=';
+            default:
+                return op;
+        }
+    }
+
+    runTest(): void {
+        const deviceId = this.form.get('deviceId')?.value;
+        if (!deviceId) {
+            this.testError = 'Select a device first.';
+            this.testResult = null;
+            return;
+        }
+        this.testing = true;
+        this.testError = null;
+        this.testResult = null;
+
+        this.metricsService.getMetrics(deviceId, { limit: 200 }).subscribe({
+            next: (metrics) => {
+                const latest = new Map<string, number>();
+                const sorted = [...metrics].sort(
+                    (a, b) =>
+                        new Date(b.recordedAt).getTime() -
+                        new Date(a.recordedAt).getTime()
+                );
+                for (const m of sorted) {
+                    if (!latest.has(m.metricName)) {
+                        latest.set(m.metricName, m.metricValue);
+                    }
+                }
+                this.testResult = evaluateConditions(this.currentGroups(), latest);
+                this.testing = false;
+                this.cdr.detectChanges();
+            },
+            error: () => {
+                this.testError = 'Could not load recent metrics for this device.';
+                this.testing = false;
+                this.cdr.detectChanges();
+            },
+        });
     }
 
     // ---- Plain-English summary ----
@@ -323,16 +475,20 @@ export class RuleFormComponent implements OnInit, HasUnsavedChanges {
 
             this.actions.clear();
             for (const a of rule.actions) {
+                const structured = parseNotificationConfig(a.notificationConfig);
                 this.actions.push(
                     this.fb.group({
                         type: [a.type, Validators.required],
                         targetDeviceId: [a.targetDeviceId ?? ''],
                         operation: [a.operation ?? OperationType.TurnOn],
                         notificationType: [a.notificationType ?? 'email'],
+                        recipients: [structured.recipients],
+                        url: [structured.url],
                         notificationConfig: [
                             a.notificationConfig ?? '{}',
                             jsonValidator,
                         ],
+                        showAdvanced: [false],
                         integrationId: [a.integrationId ?? ''],
                         delaySeconds: [a.delaySeconds ?? 5],
                     })
