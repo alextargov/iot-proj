@@ -94,6 +94,12 @@ mutation UpdateDevice($id: ID!, $input: UpdateDeviceInput!) {
     }
 }
 
+mutation SetDeviceOperation($id: ID!, $op: OperationType!) {
+    setDeviceOperation(id: $id, op: $op) {
+        ...DeviceInfo
+    }
+}
+
 mutation DeleteDevice($id: String!) {
     deleteDevice(id: $id)
 }

@@ -74,6 +74,6 @@ export class NgxBlocklyComponent1 {
     }
 
     onCode(code: string) {
-        console.log(code);
+        // no-op: generated code is consumed by the parent via bindings.
     }
 }

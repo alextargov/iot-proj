@@ -57,6 +57,12 @@ mutation CloneWidget($id: ID!) {
     }
 }
 
+mutation RunWidget($id: ID!) {
+    runWidget(id: $id) {
+        ...WidgetInfo
+    }
+}
+
 mutation DeleteWidget($id: ID!) {
     deleteWidget(id: $id)
 }

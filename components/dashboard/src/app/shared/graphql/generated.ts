@@ -516,9 +516,9 @@ export type Mutation = {
   renameOrganization: Organization;
   revokeDeviceCertificate: Scalars['Boolean']['output'];
   rollbackDataModel: DataModel;
+  runWidget: Widget;
   setAutomationRuleEnabled: AutomationRule;
   setDeviceOperation: Device;
-  setOperation: Scalars['Boolean']['output'];
   testIntegration: Scalars['Boolean']['output'];
   updateAlertRule: AlertRule;
   updateAutomationRule: AutomationRule;
@@ -690,6 +690,11 @@ export type MutationRollbackDataModelArgs = {
 };
 
 
+export type MutationRunWidgetArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
 export type MutationSetAutomationRuleEnabledArgs = {
   enabled: Scalars['Boolean']['input'];
   id: Scalars['ID']['input'];
@@ -698,12 +703,6 @@ export type MutationSetAutomationRuleEnabledArgs = {
 
 export type MutationSetDeviceOperationArgs = {
   id: Scalars['ID']['input'];
-  op: OperationType;
-};
-
-
-export type MutationSetOperationArgs = {
-  data?: InputMaybe<Scalars['Any']['input']>;
   op: OperationType;
 };
 
@@ -846,7 +845,6 @@ export type Query = {
   defaultDashboardLayout?: Maybe<DashboardLayout>;
   device?: Maybe<Device>;
   deviceAggregatedMetrics?: Maybe<AggregatedMetric>;
-  deviceByIdAndAggregation?: Maybe<Device>;
   deviceMetrics: Array<DeviceMetric>;
   deviceMetricsSeries: Array<MetricSeries>;
   deviceTags: Array<Scalars['String']['output']>;
@@ -935,12 +933,6 @@ export type QueryDeviceAggregatedMetricsArgs = {
   aggregation: AggregationType;
   deviceId: Scalars['ID']['input'];
   filter?: InputMaybe<MetricFilterInput>;
-};
-
-
-export type QueryDeviceByIdAndAggregationArgs = {
-  aggregation: AggregationType;
-  id: Scalars['ID']['input'];
 };
 
 
@@ -1557,6 +1549,19 @@ export type UpdateDeviceMutation = { __typename?: 'Mutation', updateDevice: { __
         | { __typename?: 'OAuthCredentialData', clientId: string, clientSecret: string, url: string }
        | null } | null, host?: { __typename?: 'Host', id: string, url: string, turnOnEndpoint?: string | null, turnOffEndpoint?: string | null } | null } };
 
+export type SetDeviceOperationMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  op: OperationType;
+}>;
+
+
+export type SetDeviceOperationMutation = { __typename?: 'Mutation', setDeviceOperation: { __typename?: 'Device', id: string, name: string, description?: string | null, status: DeviceStatus, tenantId: string, tags?: Array<string> | null, hasCertificate: boolean, certificateSerial?: string | null, certificateExpiresAt?: any | null, createdAt?: any | null, updatedAt?: any | null, auth?: { __typename?: 'Auth', credentialForService?: string | null, credentialForDevice?:
+        | { __typename?: 'BasicCredentialData', username: string, password: string }
+        | { __typename?: 'BearerTokenCredentialData', token: string }
+        | { __typename?: 'CertificateOAuthCredentialData', clientId: string, certificate: string, url: string }
+        | { __typename?: 'OAuthCredentialData', clientId: string, clientSecret: string, url: string }
+       | null } | null, host?: { __typename?: 'Host', id: string, url: string, turnOnEndpoint?: string | null, turnOffEndpoint?: string | null } | null } };
+
 export type DeleteDeviceMutationVariables = Exact<{
   id: Scalars['String']['input'];
 }>;
@@ -1789,6 +1794,13 @@ export type CloneWidgetMutationVariables = Exact<{
 
 
 export type CloneWidgetMutation = { __typename?: 'Mutation', cloneWidget: { __typename?: 'Widget', id: string, name: string, description?: string | null, status: WidgetStatus, tenantId: string, code: string, workspace: string, deviceIds?: Array<string> | null, schedule?: string | null, lastExecutedAt?: any | null, createdAt?: any | null, updatedAt?: any | null } };
+
+export type RunWidgetMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type RunWidgetMutation = { __typename?: 'Mutation', runWidget: { __typename?: 'Widget', id: string, name: string, description?: string | null, status: WidgetStatus, tenantId: string, code: string, workspace: string, deviceIds?: Array<string> | null, schedule?: string | null, lastExecutedAt?: any | null, createdAt?: any | null, updatedAt?: any | null } };
 
 export type DeleteWidgetMutationVariables = Exact<{
   id: Scalars['ID']['input'];
@@ -2914,6 +2926,24 @@ export const UpdateDeviceDocument = gql`
       super(apollo);
     }
   }
+export const SetDeviceOperationDocument = gql`
+    mutation SetDeviceOperation($id: ID!, $op: OperationType!) {
+  setDeviceOperation(id: $id, op: $op) {
+    ...DeviceInfo
+  }
+}
+    ${DeviceInfoFragmentDoc}`;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class SetDeviceOperationGQL extends Apollo.Mutation<SetDeviceOperationMutation, SetDeviceOperationMutationVariables> {
+    document = SetDeviceOperationDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
 export const DeleteDeviceDocument = gql`
     mutation DeleteDevice($id: String!) {
   deleteDevice(id: $id)
@@ -3463,6 +3493,24 @@ export const CloneWidgetDocument = gql`
   })
   export class CloneWidgetGQL extends Apollo.Mutation<CloneWidgetMutation, CloneWidgetMutationVariables> {
     document = CloneWidgetDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const RunWidgetDocument = gql`
+    mutation RunWidget($id: ID!) {
+  runWidget(id: $id) {
+    ...WidgetInfo
+  }
+}
+    ${WidgetInfoFragmentDoc}`;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class RunWidgetGQL extends Apollo.Mutation<RunWidgetMutation, RunWidgetMutationVariables> {
+    document = RunWidgetDocument;
     
     constructor(apollo: Apollo.Apollo) {
       super(apollo);

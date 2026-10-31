@@ -14,44 +14,13 @@ import {
     UpdateWidgetMutation,
     WidgetInfoFragment,
     WidgetInput,
+    CloneWidgetDocument,
+    CloneWidgetMutation,
+    RunWidgetDocument,
+    RunWidgetMutation,
 } from '../../graphql/generated';
 import { FetchResult } from '@apollo/client/core';
-import { Apollo, gql } from 'apollo-angular';
-
-const CloneWidgetDocument = gql`
-    mutation CloneWidget($id: ID!) {
-        cloneWidget(id: $id) {
-            id
-            name
-            description
-            status
-        }
-    }
-`;
-
-interface CloneWidgetMutation {
-    cloneWidget: WidgetInfoFragment;
-}
-
-// runWidget exists in the schema but has no generated service yet (types are
-// regenerated only against a running orchestrator), so call it inline.
-const RunWidgetDocument = gql`
-    mutation RunWidget($id: ID!) {
-        runWidget(id: $id) {
-            id
-            name
-            status
-            lastExecutedAt
-        }
-    }
-`;
-
-interface RunWidgetMutation {
-    runWidget: Pick<
-        WidgetInfoFragment,
-        'id' | 'name' | 'status' | 'lastExecutedAt'
-    >;
-}
+import { Apollo } from 'apollo-angular';
 
 @Injectable({
     providedIn: 'root',

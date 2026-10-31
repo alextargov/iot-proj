@@ -12,161 +12,41 @@ import {
     GetDeviceGQL,
     OnDeviceStatusChangedGQL,
     DeviceStatus as GqlDeviceStatus,
-    DeviceInfoFragmentDoc,
     OperationType,
+    CloneDeviceDocument,
+    CloneDeviceMutation,
+    GetDeviceTagsDocument,
+    GetDeviceTagsQuery,
+    GetDevicesByTagsDocument,
+    GetDevicesByTagsQuery,
+    UpdateDeviceDocument,
+    UpdateDeviceMutation,
+    UpdateDeviceInput,
+    GenerateDeviceTokenDocument,
+    GenerateDeviceTokenMutation,
+    GenerateDeviceCertificateDocument,
+    GenerateDeviceCertificateMutation,
+    RevokeDeviceCertificateDocument,
+    RevokeDeviceCertificateMutation,
+    SetDeviceOperationDocument,
+    SetDeviceOperationMutation,
+    TestDeviceConnectionDocument,
+    TestDeviceConnectionQuery,
 } from '../../graphql/generated';
 import { DeviceInput } from '../../graphql/generated';
 import { FetchResult } from '@apollo/client/core';
-import { Apollo, gql } from 'apollo-angular';
+import { Apollo } from 'apollo-angular';
 
-// Temporary inline definitions until types are regenerated
-const GenerateDeviceTokenDocument = gql`
-    mutation GenerateDeviceToken {
-        generateDeviceToken
-    }
-`;
-
-const GenerateDeviceCertificateDocument = gql`
-    mutation GenerateDeviceCertificate($deviceId: ID!) {
-        generateDeviceCertificate(deviceId: $deviceId) {
-            certificate
-            privateKey
-            caCertificate
-            serial
-            expiresAt
-        }
-    }
-`;
-
-const RevokeDeviceCertificateDocument = gql`
-    mutation RevokeDeviceCertificate($deviceId: ID!) {
-        revokeDeviceCertificate(deviceId: $deviceId)
-    }
-`;
-
-const SetDeviceOperationDocument = gql`
-    mutation SetDeviceOperation($id: ID!, $op: OperationType!) {
-        setDeviceOperation(id: $id, op: $op) {
-            ...DeviceInfo
-        }
-    }
-    ${DeviceInfoFragmentDoc}
-`;
-
-interface SetDeviceOperationMutation {
-    setDeviceOperation: DeviceInfoFragment;
-}
-
+/**
+ * Certificate bundle returned at issuance. The private key is present only on
+ * the generate response (never persisted/returned afterwards).
+ */
 export interface DeviceCertificate {
     certificate: string;
     privateKey?: string | null;
     caCertificate: string;
     serial: string;
     expiresAt: string;
-}
-
-interface GenerateDeviceCertificateMutation {
-    generateDeviceCertificate: DeviceCertificate;
-}
-
-interface RevokeDeviceCertificateMutation {
-    revokeDeviceCertificate: boolean;
-}
-
-const TestDeviceConnectionDocument = gql`
-    query TestDeviceConnection($url: String!) {
-        testDeviceConnection(url: $url)
-    }
-`;
-
-const CloneDeviceDocument = gql`
-    mutation CloneDevice($id: ID!) {
-        cloneDevice(id: $id) {
-            id
-            name
-            description
-            status
-        }
-    }
-`;
-
-interface CloneDeviceMutation {
-    cloneDevice: DeviceInfoFragment;
-}
-
-const GetDeviceTagsDocument = gql`
-    query GetDeviceTags {
-        deviceTags
-    }
-`;
-
-interface GetDeviceTagsQuery {
-    deviceTags: string[];
-}
-
-const GetDevicesByTagsDocument = gql`
-    query GetDevicesByTags($tags: [String!]!) {
-        devicesByTags(tags: $tags) {
-            id
-            name
-            description
-            status
-            tenantId
-            tags
-            host {
-                id
-                url
-                turnOnEndpoint
-                turnOffEndpoint
-            }
-            hasCertificate
-            certificateSerial
-            certificateExpiresAt
-            createdAt
-            updatedAt
-        }
-    }
-`;
-
-interface GetDevicesByTagsQuery {
-    devicesByTags: DeviceInfoFragment[];
-}
-
-const UpdateDeviceDocument = gql`
-    mutation UpdateDevice($id: ID!, $input: UpdateDeviceInput!) {
-        updateDevice(id: $id, input: $input) {
-            id
-            name
-            description
-            status
-        }
-    }
-`;
-
-interface UpdateDeviceMutation {
-    updateDevice: DeviceInfoFragment;
-}
-
-interface UpdateDeviceInput {
-    name?: string;
-    description?: string;
-    status?: DeviceStatus;
-    host?: {
-        url: string;
-        turnOnEndpoint?: string;
-        turnOffEndpoint?: string;
-    };
-    auth?: any;
-    dataModel?: string;
-    tags?: string[];
-}
-
-interface GenerateDeviceTokenMutation {
-    generateDeviceToken: string;
-}
-
-interface TestDeviceConnectionQuery {
-    testDeviceConnection: boolean;
 }
 
 @Injectable({
