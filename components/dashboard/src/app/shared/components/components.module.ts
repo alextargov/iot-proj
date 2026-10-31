@@ -20,6 +20,7 @@ import { EmptyStateComponent } from './empty-state/empty-state.component';
 import { LoadingStateComponent } from './loading-state/loading-state.component';
 import { ErrorStateComponent } from './error-state/error-state.component';
 import { ConnectionStatusComponent } from './connection-status/connection-status.component';
+import { SkeletonComponent } from './skeleton/skeleton.component';
 
 @NgModule({
     imports: [
@@ -47,6 +48,7 @@ import { ConnectionStatusComponent } from './connection-status/connection-status
         LoadingStateComponent,
         ErrorStateComponent,
         ConnectionStatusComponent,
+        SkeletonComponent,
     ],
     exports: [
         CommonModule,
@@ -64,6 +66,7 @@ import { ConnectionStatusComponent } from './connection-status/connection-status
         LoadingStateComponent,
         ErrorStateComponent,
         ConnectionStatusComponent,
+        SkeletonComponent,
     ],
 })
 export class ComponentsModule {}

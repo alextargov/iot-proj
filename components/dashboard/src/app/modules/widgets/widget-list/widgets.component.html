@@ -16,6 +16,16 @@
         <mat-icon matSuffix>search</mat-icon>
     </mat-form-field>
 
+    @if (activeStatusFilter) {
+        <mat-chip-set class="widget-list__active-filter">
+            <mat-chip [removable]="true" (removed)="clearStatusFilter()">
+                <mat-icon matChipAvatar>filter_list</mat-icon>
+                Status: {{ statusFilterLabel }}
+                <mat-icon matChipRemove>cancel</mat-icon>
+            </mat-chip>
+        </mat-chip-set>
+    }
+
     @if (loading) {
         <app-loading-state message="Loading widgets…"></app-loading-state>
     } @else if (loadError) {

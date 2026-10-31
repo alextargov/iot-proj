@@ -8,13 +8,14 @@ import { Subject } from 'rxjs';
 import { finalize, takeUntil } from 'rxjs/operators';
 import { DeviceService } from 'src/app/shared/services/device/device.service';
 import { ContentHeaderButton } from '../../../shared/components/content-header/content-header.component';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { DeviceInfoFragment } from 'src/app/shared/graphql/generated';
 import { MatDialog } from '@angular/material/dialog';
 import { DeviceDeleteComponent } from '../device-delete/device-delete.component';
 import { getDeviceStatusConfig, StatusConfig } from 'src/app/shared/utils/status-config.utils';
 import { AuthService } from 'src/app/shared/services/auth/auth.service';
 import { ToastrService } from 'src/app/shared/services/toastr/toastr.service';
+import { DeviceStatus } from 'src/app/shared/graphql/generated';
 
 @Component({
     standalone: false,
@@ -32,6 +33,8 @@ export class DevicesListComponent implements OnInit, AfterViewInit, OnDestroy {
     ];
     dataSource = new MatTableDataSource<DeviceInfoFragment>();
     activeTagFilter: string | null = null;
+    /** Status deep-link filter: 'active' | 'initial' | 'issues' | null. */
+    public activeStatusFilter: string | null = null;
     /** All distinct tags in use across the tenant's devices (server-sourced). */
     public availableTags: string[] = [];
     /** Human-readable search term for the empty-results message. */
@@ -55,6 +58,7 @@ export class DevicesListComponent implements OnInit, AfterViewInit, OnDestroy {
     constructor(
         private deviceService: DeviceService,
         private router: Router,
+        private route: ActivatedRoute,
         private dialog: MatDialog,
         private authService: AuthService,
         private toast: ToastrService
@@ -85,7 +89,12 @@ export class DevicesListComponent implements OnInit, AfterViewInit, OnDestroy {
 
         this.dataSource.filterPredicate = (data: DeviceInfoFragment, filter: string) => {
             // Parse the combined filter
-            const { search, tag } = JSON.parse(filter || '{}');
+            const { search, tag, status } = JSON.parse(filter || '{}');
+
+            // Status deep-link filter (from the Home overview cards).
+            if (status && !this.matchesStatus(data, status)) {
+                return false;
+            }
 
             // Check tag filter first
             if (tag && !data.tags?.includes(tag)) {
@@ -104,6 +113,9 @@ export class DevicesListComponent implements OnInit, AfterViewInit, OnDestroy {
 
             return true;
         };
+
+        // Deep-link: Home stat segments navigate with ?status=active|initial|issues.
+        this.activeStatusFilter = this.route.snapshot.queryParamMap.get('status');
 
         this.loadDevices();
 
@@ -153,6 +165,9 @@ export class DevicesListComponent implements OnInit, AfterViewInit, OnDestroy {
             .subscribe({
                 next: (deviceList) => {
                     this.dataSource.data = deviceList;
+                    // Re-apply any active filters (e.g. a status deep-link)
+                    // now that rows exist.
+                    this.applyFilters();
                 },
                 error: () => {
                     this.loadError = true;
@@ -170,10 +185,48 @@ export class DevicesListComponent implements OnInit, AfterViewInit, OnDestroy {
         this.dataSource.filter = JSON.stringify({
             search: this.searchFilter,
             tag: this.activeTagFilter,
+            status: this.activeStatusFilter,
         });
 
         if (this.dataSource.paginator) {
             this.dataSource.paginator.firstPage();
+        }
+    }
+
+    /** Whether a device matches a Home deep-link status token. "issues"
+     *  groups ERROR and UNREACHABLE together (matching the overview card). */
+    private matchesStatus(device: DeviceInfoFragment, status: string): boolean {
+        switch (status) {
+            case 'active':
+                return device.status === DeviceStatus.Active;
+            case 'initial':
+                return device.status === DeviceStatus.Initial;
+            case 'issues':
+                return (
+                    device.status === DeviceStatus.Error ||
+                    device.status === DeviceStatus.Unreachable
+                );
+            default:
+                return true;
+        }
+    }
+
+    public clearStatusFilter(): void {
+        this.activeStatusFilter = null;
+        this.applyFilters();
+    }
+
+    /** Human-readable label for the active status filter chip. */
+    public get statusFilterLabel(): string {
+        switch (this.activeStatusFilter) {
+            case 'active':
+                return 'Active';
+            case 'initial':
+                return 'Initial';
+            case 'issues':
+                return 'Issues';
+            default:
+                return '';
         }
     }
 

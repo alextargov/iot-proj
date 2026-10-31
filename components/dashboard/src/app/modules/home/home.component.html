@@ -1,25 +1,33 @@
 <div class="home__header">
-    <h2>Overview</h2>
+    <div class="home__header-title">
+        <h2>Overview</h2>
+        @if (lastUpdated) {
+            <span class="home__last-updated" aria-live="polite">
+                Last updated {{ lastUpdated | date: 'HH:mm:ss' }}
+            </span>
+        }
+    </div>
     <div class="home__header-actions">
-        <button mat-icon-button (click)="refreshStats()" [disabled]="isLoading" matTooltip="Refresh" aria-label="Refresh statistics">
+        <button
+            mat-icon-button
+            (click)="refresh()"
+            [disabled]="isInitialLoading"
+            matTooltip="Refresh"
+            aria-label="Refresh statistics"
+        >
             <mat-icon>refresh</mat-icon>
         </button>
     </div>
 </div>
 
 <div class="home__content">
-    @if (isLoading) {
-        <div class="home__loading">
-            <mat-spinner diameter="40"></mat-spinner>
-            <span>Loading dashboard...</span>
-        </div>
-    } @else if (error) {
+    @if (error && !overview) {
         <div class="home__error">
             <mat-icon>error_outline</mat-icon>
             <span>{{ error }}</span>
-            <button mat-button color="primary" (click)="refreshStats()">Retry</button>
+            <button mat-button color="primary" (click)="refresh()">Retry</button>
         </div>
-    } @else if (stats) {
+    } @else {
         <!-- Devices Card -->
         <mat-card class="home__card home__card--devices">
             <mat-card-header>
@@ -28,21 +36,48 @@
                 <mat-card-subtitle>IoT device management</mat-card-subtitle>
             </mat-card-header>
             <mat-card-content>
-                <div class="home__card-total">{{ stats.devices.total }}</div>
-                <div class="home__card-breakdown">
-                    <div class="home__card-stat home__card-stat--success">
-                        <span class="home__card-stat-value">{{ stats.devices.active }}</span>
-                        <span class="home__card-stat-label">Active</span>
+                @if (isInitialLoading) {
+                    <app-skeleton width="4rem" height="3rem" [count]="1"></app-skeleton>
+                    <app-skeleton width="100%" height="1.5rem" [count]="1"></app-skeleton>
+                } @else if (overview) {
+                    <button
+                        type="button"
+                        class="home__card-total home__card-total--link"
+                        (click)="navigateTo('/devices')"
+                        matTooltip="View all devices"
+                    >
+                        {{ overview.stats.devices.total }}
+                    </button>
+                    <div class="home__card-breakdown">
+                        <button
+                            type="button"
+                            class="home__card-stat home__card-stat--success"
+                            (click)="navigateTo('/devices', { status: 'active' })"
+                            matTooltip="View active devices"
+                        >
+                            <span class="home__card-stat-value">{{ overview.stats.devices.active }}</span>
+                            <span class="home__card-stat-label">Active</span>
+                        </button>
+                        <button
+                            type="button"
+                            class="home__card-stat home__card-stat--warning"
+                            (click)="navigateTo('/devices', { status: 'initial' })"
+                            matTooltip="View devices awaiting setup"
+                        >
+                            <span class="home__card-stat-value">{{ overview.stats.devices.initial }}</span>
+                            <span class="home__card-stat-label">Initial</span>
+                        </button>
+                        <button
+                            type="button"
+                            class="home__card-stat home__card-stat--error"
+                            (click)="navigateTo('/devices', { status: 'issues' })"
+                            matTooltip="View devices with errors or unreachable"
+                        >
+                            <span class="home__card-stat-value">{{ overview.stats.devices.error + overview.stats.devices.unreachable }}</span>
+                            <span class="home__card-stat-label">Issues</span>
+                        </button>
                     </div>
-                    <div class="home__card-stat home__card-stat--warning">
-                        <span class="home__card-stat-value">{{ stats.devices.initial }}</span>
-                        <span class="home__card-stat-label">Initial</span>
-                    </div>
-                    <div class="home__card-stat home__card-stat--error">
-                        <span class="home__card-stat-value">{{ stats.devices.error + stats.devices.unreachable }}</span>
-                        <span class="home__card-stat-label">Issues</span>
-                    </div>
-                </div>
+                }
             </mat-card-content>
             <mat-card-actions>
                 <button mat-button color="primary" (click)="navigateTo('/devices/create')">
@@ -60,17 +95,39 @@
                 <mat-card-subtitle>Automation workflows</mat-card-subtitle>
             </mat-card-header>
             <mat-card-content>
-                <div class="home__card-total">{{ stats.widgets.total }}</div>
-                <div class="home__card-breakdown">
-                    <div class="home__card-stat home__card-stat--success">
-                        <span class="home__card-stat-value">{{ stats.widgets.active }}</span>
-                        <span class="home__card-stat-label">Active</span>
+                @if (isInitialLoading) {
+                    <app-skeleton width="4rem" height="3rem" [count]="1"></app-skeleton>
+                    <app-skeleton width="100%" height="1.5rem" [count]="1"></app-skeleton>
+                } @else if (overview) {
+                    <button
+                        type="button"
+                        class="home__card-total home__card-total--link"
+                        (click)="navigateTo('/widgets')"
+                        matTooltip="View all widgets"
+                    >
+                        {{ overview.stats.widgets.total }}
+                    </button>
+                    <div class="home__card-breakdown">
+                        <button
+                            type="button"
+                            class="home__card-stat home__card-stat--success"
+                            (click)="navigateTo('/widgets', { status: 'active' })"
+                            matTooltip="View active widgets"
+                        >
+                            <span class="home__card-stat-value">{{ overview.stats.widgets.active }}</span>
+                            <span class="home__card-stat-label">Active</span>
+                        </button>
+                        <button
+                            type="button"
+                            class="home__card-stat home__card-stat--neutral"
+                            (click)="navigateTo('/widgets', { status: 'inactive' })"
+                            matTooltip="View inactive widgets"
+                        >
+                            <span class="home__card-stat-value">{{ overview.stats.widgets.inactive }}</span>
+                            <span class="home__card-stat-label">Inactive</span>
+                        </button>
                     </div>
-                    <div class="home__card-stat home__card-stat--neutral">
-                        <span class="home__card-stat-value">{{ stats.widgets.inactive }}</span>
-                        <span class="home__card-stat-label">Inactive</span>
-                    </div>
-                </div>
+                }
             </mat-card-content>
             <mat-card-actions>
                 <button mat-button color="primary" (click)="navigateTo('/widgets/create')">
@@ -80,29 +137,78 @@
             </mat-card-actions>
         </mat-card>
 
-        <!-- Quick Actions Card -->
-        <mat-card class="home__card home__card--actions">
+        <!-- Recent Devices Card -->
+        <mat-card class="home__card home__card--recent">
             <mat-card-header>
-                <mat-icon mat-card-avatar class="home__card-icon">bolt</mat-icon>
-                <mat-card-title>Quick Actions</mat-card-title>
-                <mat-card-subtitle>Common tasks</mat-card-subtitle>
+                <mat-icon mat-card-avatar class="home__card-icon">history</mat-icon>
+                <mat-card-title>Recent devices</mat-card-title>
+                <mat-card-subtitle>Recently updated</mat-card-subtitle>
             </mat-card-header>
             <mat-card-content>
-                <div class="home__quick-actions">
-                    <button mat-stroked-button (click)="navigateTo('/devices/create')">
-                        <mat-icon>add_circle</mat-icon>
-                        New Device
-                    </button>
-                    <button mat-stroked-button (click)="navigateTo('/widgets/create')">
-                        <mat-icon>add_circle</mat-icon>
-                        New Widget
-                    </button>
-                    <button mat-stroked-button (click)="navigateTo('/datamodel')">
-                        <mat-icon>schema</mat-icon>
-                        Data Models
-                    </button>
-                </div>
+                @if (isInitialLoading) {
+                    <app-skeleton width="100%" height="1.5rem" [count]="4"></app-skeleton>
+                } @else if (recentDevices.length) {
+                    <ul class="home__recent-list">
+                        @for (device of recentDevices; track trackByDeviceId($index, device)) {
+                            <li class="home__recent-item">
+                                <button
+                                    type="button"
+                                    class="home__recent-link"
+                                    (click)="navigateTo('/devices/' + device.id)"
+                                >
+                                    <span
+                                        class="status-badge status-badge--sm"
+                                        [ngClass]="statusConfig(device.status).cssClass"
+                                        [matTooltip]="statusConfig(device.status).tooltip"
+                                    >
+                                        <mat-icon class="status-badge__icon">{{ statusConfig(device.status).icon }}</mat-icon>
+                                    </span>
+                                    <span class="home__recent-name">{{ device.name }}</span>
+                                    <mat-icon class="home__recent-chevron">chevron_right</mat-icon>
+                                </button>
+                            </li>
+                        }
+                    </ul>
+                } @else {
+                    <p class="home__empty">No devices yet.</p>
+                }
             </mat-card-content>
+        </mat-card>
+
+        <!-- Open Alerts Card -->
+        <mat-card class="home__card home__card--alerts">
+            <mat-card-header>
+                <mat-icon mat-card-avatar class="home__card-icon">notifications_active</mat-icon>
+                <mat-card-title>Open alerts</mat-card-title>
+                <mat-card-subtitle>Unacknowledged events</mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+                @if (isInitialLoading) {
+                    <app-skeleton width="4rem" height="3rem" [count]="1"></app-skeleton>
+                } @else {
+                    <button
+                        type="button"
+                        class="home__card-total home__card-total--link"
+                        [class.home__card-total--alarm]="openAlerts > 0"
+                        (click)="navigateTo('/alerts')"
+                        matTooltip="View alerts"
+                    >
+                        {{ openAlerts }}
+                    </button>
+                    <p class="home__alerts-caption">
+                        @if (openAlerts > 0) {
+                            event(s) need attention
+                        } @else {
+                            All clear
+                        }
+                    </p>
+                }
+            </mat-card-content>
+            <mat-card-actions>
+                <button mat-button color="primary" (click)="navigateTo('/alerts')">
+                    <mat-icon>open_in_new</mat-icon> View Alerts
+                </button>
+            </mat-card-actions>
         </mat-card>
     }
 </div>

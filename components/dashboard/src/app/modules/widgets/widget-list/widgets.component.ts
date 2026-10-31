@@ -1,5 +1,5 @@
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ContentHeaderButton } from 'src/app/shared/components/content-header/content-header.component';
 import { MatTableDataSource } from '@angular/material/table';
 import {
@@ -40,6 +40,10 @@ export class WidgetsComponent implements OnInit {
     dataSource = new MatTableDataSource<WidgetInfoFragment>();
     public loading = true;
     public loadError = false;
+    /** Current text search term (composes with the status filter). */
+    private searchTerm = '';
+    /** Active status filter from the Home deep-link, or null for "all". */
+    public activeStatusFilter: WidgetStatus | null = null;
 
     public formatSchedule = formatSchedule;
 
@@ -90,6 +94,7 @@ export class WidgetsComponent implements OnInit {
     constructor(
         private widgetService: WidgetService,
         private router: Router,
+        private route: ActivatedRoute,
         private dialog: MatDialog,
         private toast: ToastrService,
         private authService: AuthService
@@ -102,14 +107,63 @@ export class WidgetsComponent implements OnInit {
 
     public ngOnInit(): void {
         this.dataSource.filterPredicate = (data: WidgetInfoFragment, filter: string) => {
-            const searchStr = filter.toLowerCase();
-            return (
-                data.name.toLowerCase().includes(searchStr) ||
-                (data.description?.toLowerCase().includes(searchStr) ?? false)
-            );
+            const { search, status } = JSON.parse(filter || '{}');
+
+            if (status && data.status !== status) {
+                return false;
+            }
+
+            if (search) {
+                const searchStr = (search as string).toLowerCase();
+                return (
+                    data.name.toLowerCase().includes(searchStr) ||
+                    (data.description?.toLowerCase().includes(searchStr) ?? false)
+                );
+            }
+
+            return true;
         };
 
+        // Deep-link: Home stat segments navigate with ?status=active|inactive.
+        const statusParam = this.route.snapshot.queryParamMap.get('status');
+        this.activeStatusFilter = this.toWidgetStatus(statusParam);
+
         this.loadWidgets();
+    }
+
+    /** Maps a deep-link status token to a WidgetStatus, or null if unknown. */
+    private toWidgetStatus(token: string | null): WidgetStatus | null {
+        switch ((token ?? '').toLowerCase()) {
+            case 'active':
+                return WidgetStatus.Active;
+            case 'inactive':
+                return WidgetStatus.Inactive;
+            default:
+                return null;
+        }
+    }
+
+    private applyFilters(): void {
+        this.dataSource.filter = JSON.stringify({
+            search: this.searchTerm,
+            status: this.activeStatusFilter,
+        });
+
+        if (this.dataSource.paginator) {
+            this.dataSource.paginator.firstPage();
+        }
+    }
+
+    public clearStatusFilter(): void {
+        this.activeStatusFilter = null;
+        this.applyFilters();
+    }
+
+    /** Human-readable label for the active status chip. */
+    public get statusFilterLabel(): string {
+        return this.activeStatusFilter === WidgetStatus.Active
+            ? 'Active'
+            : 'Inactive';
     }
 
     public loadWidgets(): void {
@@ -118,6 +172,7 @@ export class WidgetsComponent implements OnInit {
         this.widgetService.getAll().subscribe({
             next: (widgetList) => {
                 this.dataSource.data = widgetList;
+                this.applyFilters();
                 this.loading = false;
             },
             error: () => {
@@ -130,11 +185,8 @@ export class WidgetsComponent implements OnInit {
 
     public applyFilter(event: Event): void {
         const filterValue = (event.target as HTMLInputElement).value;
-        this.dataSource.filter = filterValue.trim().toLowerCase();
-
-        if (this.dataSource.paginator) {
-            this.dataSource.paginator.firstPage();
-        }
+        this.searchTerm = filterValue.trim().toLowerCase();
+        this.applyFilters();
     }
 
     public getStatusConfig(status: string): StatusConfig {

@@ -1,0 +1,27 @@
+<div class="prompt-dialog">
+    <h1 mat-dialog-title>{{ data.title }}</h1>
+    <div mat-dialog-content>
+        <mat-form-field appearance="outline" class="prompt-dialog__field">
+            <mat-label>{{ data.label }}</mat-label>
+            <input
+                matInput
+                [(ngModel)]="value"
+                (keyup.enter)="confirm()"
+                [maxlength]="data.maxLength"
+                aria-label="Value"
+                autocomplete="off"
+            />
+        </mat-form-field>
+    </div>
+    <div mat-dialog-actions align="end">
+        <button mat-button (click)="cancel()">{{ data.cancelText }}</button>
+        <button
+            mat-raised-button
+            color="primary"
+            [disabled]="!canConfirm"
+            (click)="confirm()"
+        >
+            {{ data.confirmText }}
+        </button>
+    </div>
+</div>
