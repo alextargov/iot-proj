@@ -26,7 +26,7 @@ type WidgetSvc interface {
 	Clone(ctx context.Context, id string) (string, error)
 	Delete(ctx context.Context, id string) error
 	GetByID(ctx context.Context, id string) (*model.Widget, error)
-	UpdateLastExecuted(ctx context.Context, id string) error
+	UpdateLastExecuted(ctx context.Context, id string) (time.Time, error)
 }
 
 type HostSvc interface {
@@ -339,10 +339,6 @@ func (r *Resolver) RunWidget(ctx context.Context, id string) (*graphql.Widget, e
 		return nil, err
 	}
 
-	if err = tx.Commit(); err != nil {
-		return nil, err
-	}
-
 	// code/workspace live on the Application CR, not the DB — read them back so
 	// the re-applied spec carries the current source.
 	sourceCode := widget.Code
@@ -362,19 +358,26 @@ func (r *Resolver) RunWidget(ctx context.Context, id string) (*graphql.Widget, e
 
 	// Unlike create/update/clone (where a scheduling failure is non-fatal
 	// because the CR converges later), an explicit "run now" must report
-	// whether the run was actually triggered.
+	// whether the run was actually triggered. Trigger the run *before*
+	// stamping the timestamp so a scheduling failure does not leave a
+	// persisted last-executed time.
 	if _, err = r.scheduler.Schedule(ctx, application); err != nil {
 		logger.C(ctx).Errorf("error while triggering run for widget %s: %v", id, err)
 		return nil, err
 	}
 
-	if err = r.widgetSvc.UpdateLastExecuted(ctx, id); err != nil {
-		// The run was triggered; failing to stamp the timestamp is non-fatal.
-		logger.C(ctx).Errorf("error while recording last-executed time for widget %s: %v", id, err)
+	// Persist the last-executed time inside the still-open transaction, then
+	// commit, so the timestamp we return is the one that was actually written.
+	executedAt, err := r.widgetSvc.UpdateLastExecuted(ctx, id)
+	if err != nil {
+		return nil, err
 	}
 
-	now := time.Now()
-	widget.LastExecutedAt = &now
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	widget.LastExecutedAt = &executedAt
 	result := r.widgetConverter.ToGraphQL(widget)
 	result.Code = sourceCode
 	result.Workspace = workspace

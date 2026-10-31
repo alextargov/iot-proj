@@ -3,6 +3,7 @@ package scheduler
 import (
 	"context"
 	"sync"
+	"time"
 
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/k8s"
 	"github.com/alextargov/iot-proj/components/orchestrator/internal/model"
@@ -14,7 +15,7 @@ import (
 // WidgetService defines the methods needed from the widget service
 type WidgetService interface {
 	GetScheduledWidgets(ctx context.Context) ([]*model.Widget, error)
-	UpdateLastExecuted(ctx context.Context, id string) error
+	UpdateLastExecuted(ctx context.Context, id string) (time.Time, error)
 	GetByID(ctx context.Context, id string) (*model.Widget, error)
 }
 
@@ -135,7 +136,7 @@ func (s *WidgetScheduler) executeWidget(ctx context.Context, widgetID, code, wor
 		return
 	}
 
-	if err := s.widgetSvc.UpdateLastExecuted(ctx, widgetID); err != nil {
+	if _, err := s.widgetSvc.UpdateLastExecuted(ctx, widgetID); err != nil {
 		logger.C(ctx).Errorf("Failed to update last_executed_at for widget %s: %v", widgetID, err)
 	}
 

@@ -175,7 +175,13 @@ func (s *service) GetScheduledWidgets(ctx context.Context) ([]*model.Widget, err
 	return s.widgetRepo.GetScheduledWidgets(ctx)
 }
 
-// UpdateLastExecuted updates the last execution timestamp for a widget
-func (s *service) UpdateLastExecuted(ctx context.Context, id string) error {
-	return s.widgetRepo.UpdateLastExecuted(ctx, id, time.Now())
+// UpdateLastExecuted updates the last execution timestamp for a widget and
+// returns the timestamp that was written so callers can reflect persisted
+// state without a reload.
+func (s *service) UpdateLastExecuted(ctx context.Context, id string) (time.Time, error) {
+	now := time.Now()
+	if err := s.widgetRepo.UpdateLastExecuted(ctx, id, now); err != nil {
+		return time.Time{}, err
+	}
+	return now, nil
 }
