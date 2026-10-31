@@ -6,6 +6,11 @@
         align-items: center;
         gap: 0.5rem;
         margin-bottom: 1rem;
+
+        button mat-spinner {
+            display: inline-block;
+            margin-right: 0.35rem;
+        }
     }
 
     &__spacer {
@@ -64,5 +69,21 @@
         font-family: 'Roboto Mono', monospace;
         font-size: 0.85rem;
         line-height: 1.5;
+    }
+
+    &__editor {
+        display: block;
+        height: 360px;
+        border-radius: 6px;
+        overflow: hidden;
+    }
+
+    &__cron {
+        margin-left: 0.5rem;
+        padding: 0.1rem 0.35rem;
+        border-radius: 4px;
+        background: rgba(0, 0, 0, 0.06);
+        font-size: 0.8rem;
+        color: rgba(0, 0, 0, 0.6);
     }
 }

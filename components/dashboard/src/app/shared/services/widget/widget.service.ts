@@ -33,6 +33,26 @@ interface CloneWidgetMutation {
     cloneWidget: WidgetInfoFragment;
 }
 
+// runWidget exists in the schema but has no generated service yet (types are
+// regenerated only against a running orchestrator), so call it inline.
+const RunWidgetDocument = gql`
+    mutation RunWidget($id: ID!) {
+        runWidget(id: $id) {
+            id
+            name
+            status
+            lastExecutedAt
+        }
+    }
+`;
+
+interface RunWidgetMutation {
+    runWidget: Pick<
+        WidgetInfoFragment,
+        'id' | 'name' | 'status' | 'lastExecutedAt'
+    >;
+}
+
 @Injectable({
     providedIn: 'root',
 })
@@ -97,5 +117,18 @@ export class WidgetService {
                 id,
             },
         });
+    }
+
+    /** Triggers an immediate, on-demand execution of the widget. Returns the
+     *  updated widget (with a refreshed lastExecutedAt), or null on failure. */
+    public run(
+        id: string
+    ): Observable<RunWidgetMutation['runWidget'] | null> {
+        return this.apollo
+            .mutate<RunWidgetMutation>({
+                mutation: RunWidgetDocument,
+                variables: { id },
+            })
+            .pipe(map((res) => res.data?.runWidget ?? null));
     }
 }

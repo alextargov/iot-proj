@@ -18,6 +18,20 @@
             </button>
             <span class="widget-details__spacer"></span>
             @if (canWrite) {
+                <button
+                    mat-flat-button
+                    color="primary"
+                    (click)="onRunNow()"
+                    [disabled]="running"
+                    matTooltip="Trigger an immediate run now"
+                >
+                    @if (running) {
+                        <mat-spinner diameter="18"></mat-spinner>
+                    } @else {
+                        <mat-icon>play_arrow</mat-icon>
+                    }
+                    Run now
+                </button>
                 <button mat-stroked-button color="primary" (click)="onEdit()">
                     <mat-icon>edit</mat-icon>
                     Edit
@@ -54,9 +68,21 @@
                         <dt>Schedule</dt>
                         <dd>
                             @if (widget.schedule) {
-                                <code>{{ widget.schedule }}</code>
+                                {{ formatSchedule(widget.schedule) }}
+                                <code class="widget-details__cron">{{ widget.schedule }}</code>
                             } @else {
                                 Not scheduled
+                            }
+                        </dd>
+
+                        <dt>Next run</dt>
+                        <dd>
+                            @if (nextRunDate) {
+                                {{ nextRunDate | date: 'medium' }}
+                            } @else if (widget.schedule && widget.status !== 'ACTIVE') {
+                                Paused (widget inactive)
+                            } @else {
+                                —
                             }
                         </dd>
 
@@ -110,7 +136,20 @@
                 <mat-card-title>Generated code</mat-card-title>
             </mat-card-header>
             <mat-card-content>
-                <pre class="widget-details__code"><code>{{ widget.code || '// No code generated' }}</code></pre>
+                @if (widget.code) {
+                    <ngx-monaco-editor
+                        class="widget-details__editor"
+                        [options]="codeEditorOptions"
+                        [ngModel]="widget.code"
+                        [ngModelOptions]="{ standalone: true }"
+                    ></ngx-monaco-editor>
+                } @else {
+                    <app-empty-state
+                        icon="code_off"
+                        title="No code generated"
+                        message="This widget has no generated code yet."
+                    ></app-empty-state>
+                }
             </mat-card-content>
         </mat-card>
 

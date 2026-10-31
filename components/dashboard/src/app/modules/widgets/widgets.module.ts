@@ -12,6 +12,7 @@ import { WidgetDetailsComponent } from './widget-details/widget-details.componen
 import 'blockly/blocks';
 import { BlocklyModule } from '../../shared/blockly';
 import { MatInputModule } from '@angular/material/input';
+import { MonacoEditorModule } from 'ngx-monaco-editor-v2';
 import { WidgetDeleteComponent } from './widget-delete/widget-delete.component';
 
 // Widget create sub-components
@@ -39,6 +40,9 @@ import { WidgetTemplateSelectorComponent } from './widget-create/components/widg
         MaterialModule,
         BlocklyModule,
         MatInputModule,
+        MonacoEditorModule.forRoot({
+            baseUrl: '/assets/monaco-editor/min/vs',
+        }),
 
         WidgetsRoutingModule,
         SharedModule,

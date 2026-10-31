@@ -8,6 +8,8 @@ import { ToastrService } from 'src/app/shared/services/toastr/toastr.service';
 import { AuthService } from 'src/app/shared/services/auth/auth.service';
 import { ConfirmDialogService } from 'src/app/shared/components/confirm-dialog/confirm-dialog.service';
 import { WidgetInfoFragment } from 'src/app/shared/graphql/generated';
+import { nextRun } from 'src/app/shared/utils/cron.utils';
+import { formatSchedule } from 'src/app/shared/constants/schedule-presets';
 
 interface LinkedDevice {
     id: string;
@@ -25,6 +27,25 @@ export class WidgetDetailsComponent implements OnInit, OnDestroy {
     public linkedDevices: LinkedDevice[] = [];
     public loading = true;
     public loadError = false;
+    public running = false;
+
+    /** Read-only Monaco options for the generated-code view. */
+    public readonly codeEditorOptions = {
+        theme: 'vs-dark',
+        language: 'javascript',
+        readOnly: true,
+        automaticLayout: true,
+        minimap: { enabled: false },
+        fontSize: 13,
+        wordWrap: 'on',
+        scrollBeyondLastLine: false,
+        lineNumbers: 'on',
+        folding: true,
+        tabSize: 2,
+        domReadOnly: true,
+    };
+
+    public formatSchedule = formatSchedule;
 
     private destroy$ = new Subject<void>();
 
@@ -40,6 +61,15 @@ export class WidgetDetailsComponent implements OnInit, OnDestroy {
 
     public get canWrite(): boolean {
         return this.authService.hasRole('OPERATOR');
+    }
+
+    /** Next scheduled fire time computed from the cron schedule, or null when
+     *  the widget is unscheduled, inactive, or the expression can't be parsed. */
+    public get nextRunDate(): Date | null {
+        if (!this.widget?.schedule || this.widget.status !== 'ACTIVE') {
+            return null;
+        }
+        return nextRun(this.widget.schedule);
     }
 
     public ngOnInit(): void {
@@ -108,6 +138,32 @@ export class WidgetDetailsComponent implements OnInit, OnDestroy {
         if (this.widget) {
             this.router.navigate(['widgets', this.widget.id, 'edit']);
         }
+    }
+
+    /** Triggers an immediate, on-demand run of the widget. */
+    public onRunNow(): void {
+        if (!this.widget || this.running) {
+            return;
+        }
+        const id = this.widget.id;
+        this.running = true;
+        this.widgetService.run(id).subscribe({
+            next: (updated) => {
+                this.running = false;
+                if (updated && this.widget) {
+                    // Reflect the fresh execution time without a full reload.
+                    this.widget = {
+                        ...this.widget,
+                        lastExecutedAt: updated.lastExecutedAt,
+                    };
+                }
+                this.toast.showSuccess('Widget run triggered');
+            },
+            error: () => {
+                this.running = false;
+                this.toast.showError('Failed to trigger widget run');
+            },
+        });
     }
 
     public onBack(): void {
