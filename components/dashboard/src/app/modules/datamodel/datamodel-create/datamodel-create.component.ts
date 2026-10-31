@@ -33,6 +33,15 @@ interface SchemaField {
         [key: string]: SchemaField;
     };
     items?: SchemaField; // for array
+    // Constraint keywords authored in the visual editor.
+    enum?: Array<string | number>;
+    format?: string;
+    minLength?: number | null;
+    maxLength?: number | null;
+    minimum?: number | null;
+    maximum?: number | null;
+    default?: string | number | boolean | null;
+    description?: string;
 }
 
 @Component({
@@ -179,10 +188,69 @@ export class DatamodelCreateComponent implements OnInit, HasUnsavedChanges {
             };
         }
 
-        return {
-            type: field.type,
-            // description: field.description || undefined
-        };
+        // Primitive: emit type plus any set constraint keywords.
+        const schema: any = { type: field.type };
+        this.applyConstraints(schema, field);
+        return schema;
+    }
+
+    /** Copies set (non-empty) constraint keywords onto the output schema,
+     *  applying only those relevant to the field's type. */
+    private applyConstraints(schema: any, field: SchemaField): void {
+        const isString = field.type === SchemaTypeEnum.String;
+        const isNumeric =
+            (field.type as string) === 'number' ||
+            (field.type as string) === 'integer';
+
+        if (field.description) {
+            schema.description = field.description;
+        }
+
+        if ((isString || isNumeric) && field.enum?.length) {
+            schema.enum = [...field.enum];
+        }
+
+        if (isString) {
+            if (field.format) {
+                schema.format = field.format;
+            }
+            if (this.isSetNumber(field.minLength)) {
+                schema.minLength = Number(field.minLength);
+            }
+            if (this.isSetNumber(field.maxLength)) {
+                schema.maxLength = Number(field.maxLength);
+            }
+        }
+
+        if (isNumeric) {
+            if (this.isSetNumber(field.minimum)) {
+                schema.minimum = Number(field.minimum);
+            }
+            if (this.isSetNumber(field.maximum)) {
+                schema.maximum = Number(field.maximum);
+            }
+        }
+
+        if (field.default !== undefined && field.default !== null && field.default !== '') {
+            schema.default = this.coerceDefault(field);
+        }
+    }
+
+    /** True when a numeric constraint input actually holds a value. */
+    private isSetNumber(value: number | null | undefined): boolean {
+        return value !== null && value !== undefined && !Number.isNaN(Number(value));
+    }
+
+    /** Coerces the default value to match the field type. */
+    private coerceDefault(field: SchemaField): string | number | boolean {
+        const raw = field.default as string | number | boolean;
+        if ((field.type as string) === 'number' || (field.type as string) === 'integer') {
+            return Number(raw);
+        }
+        if ((field.type as string) === 'boolean') {
+            return raw === true || raw === 'true';
+        }
+        return String(raw);
     }
 
     public async onUiToggleClick() {

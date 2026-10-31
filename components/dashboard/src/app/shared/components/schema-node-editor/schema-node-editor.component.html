@@ -8,7 +8,7 @@
                     matInput
                     [disabled]="isReadOnly"
                     [(ngModel)]="field.key"
-                    (ngModelChange)="onKeyChange(oldKey, $event)"
+                    (ngModelChange)="emitKeyChange($event)"
                 />
                 @if (field.keyError) {
                     <mat-error>{{ field.keyError }}</mat-error>
@@ -45,6 +45,20 @@
             </mat-form-field>
         }
 
+        <!-- Constraints toggle (primitive types only) -->
+        @if (supportsConstraints) {
+            <button
+                mat-button
+                type="button"
+                class="constraints-toggle"
+                (click)="toggleConstraints()"
+                [attr.aria-expanded]="!!field.showConstraints"
+            >
+                <mat-icon>{{ field.showConstraints ? 'expand_less' : 'tune' }}</mat-icon>
+                Constraints
+            </button>
+        }
+
         <!-- Delete icon (non-root only) -->
         @if (!isReadOnly && depth > 0) {
             <button mat-icon-button color="warn" (click)="remove.emit()" matTooltip="Remove field" aria-label="Remove schema field">
@@ -53,19 +67,129 @@
         }
     </div>
 
-    <!-- Object: recursively show properties -->
+    <!-- Constraints section (per-type) -->
+    @if (supportsConstraints && field.showConstraints) {
+        <div class="constraints" [style.margin-left.px]="20">
+            <!-- String constraints -->
+            @if (isStringField) {
+                <mat-form-field appearance="outline" class="w-48">
+                    <mat-label>Format</mat-label>
+                    <mat-select [disabled]="isReadOnly" [(ngModel)]="field.format">
+                        @for (f of stringFormats; track f) {
+                            <mat-option [value]="f">{{ f || '(none)' }}</mat-option>
+                        }
+                    </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="w-32">
+                    <mat-label>Min length</mat-label>
+                    <input matInput type="number" min="0" [disabled]="isReadOnly" [(ngModel)]="field.minLength" />
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="w-32">
+                    <mat-label>Max length</mat-label>
+                    <input matInput type="number" min="0" [disabled]="isReadOnly" [(ngModel)]="field.maxLength" />
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="w-48">
+                    <mat-label>Default</mat-label>
+                    <input matInput [disabled]="isReadOnly" [(ngModel)]="field.default" />
+                </mat-form-field>
+            }
+
+            <!-- Numeric constraints -->
+            @if (isNumericField) {
+                <mat-form-field appearance="outline" class="w-32">
+                    <mat-label>Minimum</mat-label>
+                    <input matInput type="number" [disabled]="isReadOnly" [(ngModel)]="field.minimum" />
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="w-32">
+                    <mat-label>Maximum</mat-label>
+                    <input matInput type="number" [disabled]="isReadOnly" [(ngModel)]="field.maximum" />
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="w-32">
+                    <mat-label>Default</mat-label>
+                    <input matInput type="number" [disabled]="isReadOnly" [(ngModel)]="field.default" />
+                </mat-form-field>
+            }
+
+            <!-- Enum (string & numeric) -->
+            @if (isStringField || isNumericField) {
+                <mat-form-field appearance="outline" class="w-64 enum-field">
+                    <mat-label>Allowed values (enum)</mat-label>
+                    <mat-chip-grid #enumGrid aria-label="Enum values">
+                        @for (val of field.enum ?? []; track val) {
+                            <mat-chip-row (removed)="removeEnumValue(val)">
+                                {{ val }}
+                                @if (!isReadOnly) {
+                                    <button matChipRemove [attr.aria-label]="'Remove ' + val">
+                                        <mat-icon>cancel</mat-icon>
+                                    </button>
+                                }
+                            </mat-chip-row>
+                        }
+                        <input
+                            placeholder="Add value…"
+                            [disabled]="isReadOnly"
+                            [matChipInputFor]="enumGrid"
+                            [matChipInputSeparatorKeyCodes]="[13, 188]"
+                            (matChipInputTokenEnd)="addEnumValue($event.value); $event.chipInput!.clear()"
+                        />
+                    </mat-chip-grid>
+                    <mat-hint>Press Enter or comma. Leave empty for no restriction.</mat-hint>
+                </mat-form-field>
+            }
+
+            <!-- Boolean default -->
+            @if (isBooleanField) {
+                <mat-form-field appearance="outline" class="w-32">
+                    <mat-label>Default</mat-label>
+                    <mat-select [disabled]="isReadOnly" [(ngModel)]="field.default">
+                        <mat-option [value]="null">(unset)</mat-option>
+                        <mat-option [value]="true">true</mat-option>
+                        <mat-option [value]="false">false</mat-option>
+                    </mat-select>
+                </mat-form-field>
+            }
+        </div>
+    }
+
+    <!-- Object: recursively show properties (ordered, drag-reorderable) -->
     @if (field.type === 'object') {
-        <div>
-            @for (item of field.properties | keyvalue; track item.key) {
-                <app-schema-node-editor
-                    [field]="field.properties![item.key]"
-                    [key]="item.key"
-                    [depth]="depth + 1"
-                    [parentType]="'object'"
-                    [isReadOnly]="isReadOnly"
-                    (keyChange)="onKeyChange($event.oldKey, $event.newKey)"
-                    (remove)="removeProperty(item.key)"
-                ></app-schema-node-editor>
+        <div
+            cdkDropList
+            (cdkDropListDropped)="dropProperty($event)"
+            [cdkDropListDisabled]="isReadOnly"
+        >
+            @for (k of orderedKeys; track k) {
+                @if (field.properties![k]) {
+                    <div class="property-row" cdkDrag [cdkDragDisabled]="isReadOnly">
+                        @if (!isReadOnly) {
+                            <button
+                                mat-icon-button
+                                cdkDragHandle
+                                class="drag-handle"
+                                type="button"
+                                matTooltip="Drag to reorder"
+                                aria-label="Drag to reorder field"
+                            >
+                                <mat-icon>drag_indicator</mat-icon>
+                            </button>
+                        }
+                        <app-schema-node-editor
+                            class="property-row__editor"
+                            [field]="field.properties![k]"
+                            [key]="k"
+                            [depth]="depth + 1"
+                            [parentType]="'object'"
+                            [isReadOnly]="isReadOnly"
+                            (keyChange)="onChildKeyChange($event)"
+                            (remove)="removeProperty(k)"
+                        ></app-schema-node-editor>
+                    </div>
+                }
             }
             @if (!isReadOnly) {
                 <button mat-icon-button color="primary" (click)="addProperty()" matTooltip="Add property" aria-label="Add schema property">
